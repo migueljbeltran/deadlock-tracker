@@ -1,26 +1,187 @@
 @import "tailwindcss";
 
+/* ========================================
+   THE PATRON'S LEDGER - Occult Noir Theme
+   ======================================== */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Backgrounds */
+  --bg-void: #080B10;
+  --bg-deep: #0D1117;
+  --surface: #161B22;
+  --surface-elevated: #1F2937;
+
+  /* Borders */
+  --border-subtle: #30363D;
+  --border-emphasis: #3DDC84;
+
+  /* Soul Green (Primary Accent) */
+  --soul: #3DDC84;
+  --soul-dim: #238636;
+  --soul-glow: rgba(61, 220, 132, 0.4);
+
+  /* Sigil Teal (Secondary) */
+  --sigil: #1ABC9C;
+
+  /* Amber/Gold (Warmth) */
+  --amber: #D4A853;
+  --amber-light: #F4D58D;
+  --amber-glow: rgba(212, 168, 83, 0.3);
+
+  /* Blood Red (Danger/Loss) */
+  --blood: #E74C3C;
+  --blood-dim: #922B21;
+
+  /* Text */
+  --text-primary: #E6EDF3;
+  --text-secondary: #8B949E;
+  --text-muted: #484F58;
+
+  /* Font families */
+  --font-display: "Cinzel Decorative", serif;
+  --font-heading: "Cinzel", serif;
+  --font-sans: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Colors */
+  --color-void: var(--bg-void);
+  --color-deep: var(--bg-deep);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+
+  --color-border-subtle: var(--border-subtle);
+  --color-border-emphasis: var(--border-emphasis);
+
+  --color-soul: var(--soul);
+  --color-soul-dim: var(--soul-dim);
+  --color-soul-glow: var(--soul-glow);
+
+  --color-sigil: var(--sigil);
+
+  --color-amber: var(--amber);
+  --color-amber-light: var(--amber-light);
+  --color-amber-glow: var(--amber-glow);
+
+  --color-blood: var(--blood);
+  --color-blood-dim: var(--blood-dim);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+
+  /* Fonts */
+  --font-display: var(--font-display);
+  --font-heading: var(--font-heading);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  /* Shadows */
+  --shadow-glow-soul: 0 0 20px var(--soul-glow);
+  --shadow-glow-soul-lg: 0 0 40px rgba(61, 220, 132, 0.5);
+  --shadow-glow-amber: 0 0 15px var(--amber-glow);
+  --shadow-inner-dark: inset 0 0 10px rgba(0, 0, 0, 0.5);
+
+  /* Animations */
+  --animate-ink-spread: ink-spread 800ms ease-out forwards;
+  --animate-sigil-pulse: sigil-pulse 1.5s ease-in-out infinite;
+  --animate-glow-shimmer: glow-shimmer 2s ease-in-out infinite;
+  --animate-float: float 3s ease-in-out infinite;
+  --animate-fade-in: fade-in 300ms ease-out forwards;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Keyframes */
+@keyframes ink-spread {
+  0% {
+    clip-path: circle(0% at 50% 50%);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    clip-path: circle(100% at 50% 50%);
+    opacity: 1;
   }
 }
 
+@keyframes sigil-pulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes glow-shimmer {
+  0%, 100% {
+    box-shadow: 0 0 10px var(--soul-glow);
+  }
+  50% {
+    box-shadow: 0 0 25px var(--soul-glow), 0 0 40px var(--soul-glow);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Base Styles */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Selection */
+::selection {
+  background-color: var(--soul-dim);
+  color: var(--text-primary);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-void);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Focus outline */
+*:focus-visible {
+  outline: 2px solid var(--soul);
+  outline-offset: 2px;
 }

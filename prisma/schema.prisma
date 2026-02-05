@@ -1,0 +1,89 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Player {
+  id        String        @id @default(cuid())
+  steamId   String        @unique
+  username  String
+  avatar    String?
+  rank      String?
+  rankTier  Int?
+  mmr       Int?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  matches   MatchPlayer[]
+}
+
+model Hero {
+  id        String        @id @default(cuid())
+  slug      String        @unique
+  name      String
+  imageUrl  String?
+  role      String?
+  matches   MatchPlayer[]
+  abilities Ability[]
+}
+
+model Ability {
+  id          String  @id @default(cuid())
+  heroId      String
+  name        String
+  description String?
+  imageUrl    String?
+  slot        Int
+  hero        Hero    @relation(fields: [heroId], references: [id])
+}
+
+model Match {
+  id         String        @id @default(cuid())
+  externalId String        @unique
+  startTime  DateTime
+  duration   Int // seconds
+  winner     String // "team1" or "team2"
+  gameMode   String?
+  avgMmr     Int?
+  players    MatchPlayer[]
+  createdAt  DateTime      @default(now())
+}
+
+model MatchPlayer {
+  id          String  @id @default(cuid())
+  matchId     String
+  playerId    String
+  heroId      String
+  team        String // "team1" or "team2"
+  kills       Int
+  deaths      Int
+  assists     Int
+  souls       Int?
+  soulsPerMin Float?
+  damage      Int?
+  healing     Int?
+  items       Json? // array of item slugs with timestamps
+  lane        String?
+
+  match  Match  @relation(fields: [matchId], references: [id])
+  player Player @relation(fields: [playerId], references: [id])
+  hero   Hero   @relation(fields: [heroId], references: [id])
+
+  @@unique([matchId, playerId])
+  @@index([playerId])
+  @@index([heroId])
+}
+
+model Item {
+  id       String  @id @default(cuid())
+  slug     String  @unique
+  name     String
+  imageUrl String?
+  category String? // weapon, vitality, spirit
+  tier     Int?
+  cost     Int?
+  stats    Json?
+}
