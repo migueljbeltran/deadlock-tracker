@@ -1,1 +1,5 @@
 hi guys, im making a deadlock (moba shooter game by valve) tracker site to hopefully be able to view other players, statistics, match history, hero stats, etc. i'm hoping to make it follow the same direction in design as the deadlock game itself.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
