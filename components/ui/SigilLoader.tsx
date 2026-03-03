@@ -26,7 +26,7 @@ export function SigilLoader({ size = "md", className }: SigilLoaderProps) {
     >
       {/* Outer ring */}
       <svg
-        className="absolute inset-0 animate-[sigil-pulse_1.5s_ease-in-out_infinite]"
+        className="absolute inset-0 animate-sigil-pulse"
         viewBox="0 0 50 50"
         fill="none"
       >
@@ -45,12 +45,12 @@ export function SigilLoader({ size = "md", className }: SigilLoaderProps) {
           stroke="var(--soul)"
           strokeWidth="1.5"
           strokeDasharray="4 4"
-          className="animate-[spin_8s_linear_infinite]"
+          className="animate-spin-slow"
         />
       </svg>
       {/* Inner glow */}
       <div
-        className="absolute rounded-full animate-[sigil-pulse_1.5s_ease-in-out_infinite]"
+        className="absolute rounded-full animate-sigil-pulse"
         style={{
           width: "40%",
           height: "40%",

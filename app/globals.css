@@ -89,6 +89,7 @@
   --animate-glow-shimmer: glow-shimmer 2s ease-in-out infinite;
   --animate-float: float 3s ease-in-out infinite;
   --animate-fade-in: fade-in 300ms ease-out forwards;
+  --animate-spin-slow: spin 8s linear infinite;
 }
 
 /* Keyframes */

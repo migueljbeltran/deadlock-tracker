@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 export function Footer() {
   return (
     <footer className="relative mt-auto border-t border-border-subtle bg-void">
@@ -29,18 +27,6 @@ export function Footer() {
             dltracker is not affiliated with Valve Corporation.
           </p>
           <div className="flex gap-6">
-            <Link
-              href="/about"
-              className="text-sm text-text-secondary hover:text-text-primary transition-colors"
-            >
-              About
-            </Link>
-            <Link
-              href="/privacy"
-              className="text-sm text-text-secondary hover:text-text-primary transition-colors"
-            >
-              Privacy
-            </Link>
             <a
               href="https://github.com"
               target="_blank"

@@ -15,7 +15,7 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
           hoverable && [
             "transition-all duration-200",
             "hover:border-soul hover:bg-surface-elevated",
-            "hover:shadow-[0_0_20px_var(--soul-glow)]",
+            "hover:shadow-glow-soul",
           ],
           className
         )}

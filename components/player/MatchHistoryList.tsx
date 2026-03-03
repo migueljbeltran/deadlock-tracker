@@ -1,0 +1,94 @@
+import Link from "next/link";
+import Image from "next/image";
+import type { DeadlockMatchMetadata, DeadlockHero } from "@/lib/api";
+import { formatDuration, formatTimeAgo } from "@/lib/utils/format";
+
+interface MatchHistoryListProps {
+  matches: DeadlockMatchMetadata[];
+  accountId: number;
+  heroMap: Map<number, DeadlockHero>;
+}
+
+export function MatchHistoryList({ matches, accountId, heroMap }: MatchHistoryListProps) {
+  if (matches.length === 0) {
+    return (
+      <p className="text-sm text-text-muted">
+        No match history available. Play some matches to see results here.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {matches.map((match) => {
+        const playerData = match.players?.find((p) => p.account_id === accountId);
+        const isVictory = playerData
+          ? playerData.team === match.winning_team
+          : false;
+        const hero = playerData ? heroMap.get(playerData.hero_id) : null;
+
+        return (
+          <Link
+            key={match.match_id}
+            href={`/match/${match.match_id}`}
+            className="flex items-center gap-3 rounded border border-border-subtle bg-surface p-3 transition-all hover:border-soul hover:bg-surface-elevated sm:gap-4"
+          >
+            {/* Result Badge */}
+            <div className="flex-shrink-0">
+              <span
+                className={`inline-block rounded px-2 py-0.5 text-center font-mono text-xs border ${
+                  isVictory
+                    ? "border-soul/30 bg-soul/10 text-soul"
+                    : "border-blood/30 bg-blood/10 text-blood"
+                }`}
+              >
+                {isVictory ? "VICTORY" : "DEFEAT"}
+              </span>
+            </div>
+
+            {/* Hero Icon */}
+            {hero?.images?.icon_image_small_webp ? (
+              <Image
+                src={hero.images.icon_image_small_webp}
+                alt={hero.name}
+                width={32}
+                height={32}
+                className="rounded flex-shrink-0"
+              />
+            ) : (
+              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded bg-surface-elevated text-xs text-text-muted">
+                ?
+              </div>
+            )}
+
+            {/* Hero Name */}
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm text-text-primary">
+                {hero?.name ?? "Unknown Hero"}
+              </p>
+              <p className="text-xs text-text-muted">
+                {formatTimeAgo(match.start_time)}
+              </p>
+            </div>
+
+            {/* K/D/A */}
+            {playerData && (
+              <div className="hidden items-center gap-1 text-xs sm:flex">
+                <span className="font-mono text-soul">{playerData.kills}</span>
+                <span className="text-text-muted">/</span>
+                <span className="font-mono text-blood">{playerData.deaths}</span>
+                <span className="text-text-muted">/</span>
+                <span className="font-mono text-sigil">{playerData.assists}</span>
+              </div>
+            )}
+
+            {/* Duration */}
+            <span className="flex-shrink-0 text-xs text-text-secondary font-mono">
+              {formatDuration(match.duration_s)}
+            </span>
+          </Link>
+        );
+      })}
+    </div>
+  );
+}

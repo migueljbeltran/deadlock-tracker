@@ -75,7 +75,7 @@ export async function getMatchHistory(
   limit: number = 20,
 ): Promise<DeadlockMatchMetadata[]> {
   return deadlockFetch<DeadlockMatchMetadata[]>(
-    `${GAME_API}/v1/matches/metadata?account_ids=${accountId}&include_player_info=true&limit=${limit}`,
+    `${GAME_API}/v1/matches/metadata?account_ids=${accountId}&include_player_info=true&limit=${limit}&order_by=start_time&order_direction=desc`,
     120,
   );
 }
@@ -83,10 +83,17 @@ export async function getMatchHistory(
 export async function getMatchDetail(
   matchId: number,
 ): Promise<DeadlockMatchMetadata> {
-  return deadlockFetch<DeadlockMatchMetadata>(
-    `${GAME_API}/v1/matches/${matchId}/metadata`,
+  // Use the bulk metadata endpoint with a tight match ID range.
+  // The single-match endpoint (/v1/matches/{id}/metadata) returns
+  // a different schema with numeric enums instead of strings.
+  const results = await deadlockFetch<DeadlockMatchMetadata[]>(
+    `${GAME_API}/v1/matches/metadata?min_match_id=${matchId}&max_match_id=${matchId}&include_player_info=true`,
     86400,
   );
+  if (results.length === 0) {
+    throw new ApiError("Match not found", 404, `matches/${matchId}`);
+  }
+  return results[0];
 }
 
 export async function getHeroAnalytics(): Promise<DeadlockHeroAnalytics[]> {

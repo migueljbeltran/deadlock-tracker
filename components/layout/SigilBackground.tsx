@@ -43,8 +43,8 @@ export function SigilBackground({ className, intensity = "subtle" }: SigilBackgr
           {/* Radiating lines */}
           {[...Array(12)].map((_, i) => {
             const angle = (i * 30 * Math.PI) / 180;
-            const x = Math.cos(angle) * 280;
-            const y = Math.sin(angle) * 280;
+            const x = Math.round(Math.cos(angle) * 280 * 100) / 100;
+            const y = Math.round(Math.sin(angle) * 280 * 100) / 100;
             return (
               <line
                 key={i}

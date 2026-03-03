@@ -1,12 +1,17 @@
+import Link from "next/link";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { SigilBackground } from "@/components/layout/SigilBackground";
 import { ArtDecoDivider } from "@/components/layout/ArtDecoDivider";
-import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { Search } from "lucide-react";
+import { HeroSearchSection } from "@/components/search/HeroSearchSection";
+import { getHeroes } from "@/lib/api";
 
-export default function Home() {
+export default async function Home() {
+  const heroes = await getHeroes().catch(() => []);
+  const playableCount = heroes.filter(
+    (h) => h.player_selectable !== false && !h.disabled && !h.in_development,
+  ).length;
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
@@ -30,24 +35,7 @@ export default function Home() {
             <ArtDecoDivider className="my-8 w-full max-w-sm" />
 
             {/* Search */}
-            <div className="w-full max-w-md">
-              <form className="flex gap-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
-                  <Input
-                    type="search"
-                    placeholder="Seek a soul..."
-                    className="pl-10"
-                  />
-                </div>
-                <Button type="submit">
-                  Consult
-                </Button>
-              </form>
-              <p className="mt-2 text-sm text-text-muted">
-                Search by Steam ID or username
-              </p>
-            </div>
+            <HeroSearchSection />
           </div>
         </section>
 
@@ -63,11 +51,11 @@ export default function Home() {
               {[
                 { label: "Souls Catalogued", value: "—", icon: "⬡" },
                 { label: "Matches Recorded", value: "—", icon: "◈" },
-                { label: "Heroes Documented", value: "—", icon: "◇" },
+                { label: "Heroes Documented", value: playableCount > 0 ? String(playableCount) : "—", icon: "◇" },
               ].map((stat) => (
                 <div
                   key={stat.label}
-                  className="flex flex-col items-center rounded border border-border-subtle bg-surface p-6 text-center transition-all hover:border-soul hover:shadow-[0_0_20px_var(--soul-glow)]"
+                  className="flex flex-col items-center rounded border border-border-subtle bg-surface p-6 text-center transition-all hover:border-soul hover:shadow-glow-soul"
                 >
                   <span className="text-2xl text-sigil mb-2">{stat.icon}</span>
                   <span className="font-mono text-3xl text-soul">{stat.value}</span>
@@ -88,12 +76,16 @@ export default function Home() {
               Explore hero statistics, track your performance, and uncover the secrets of the Cursed Apple.
             </p>
             <div className="flex justify-center gap-4">
-              <Button variant="primary">
-                Browse Heroes
-              </Button>
-              <Button variant="secondary">
-                View Leaderboard
-              </Button>
+              <Link href="/heroes">
+                <Button variant="primary">
+                  Browse Heroes
+                </Button>
+              </Link>
+              <Link href="/leaderboard">
+                <Button variant="secondary">
+                  View Leaderboard
+                </Button>
+              </Link>
             </div>
           </div>
         </section>
