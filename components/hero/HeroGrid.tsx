@@ -2,16 +2,17 @@
 
 import { useState, useMemo } from "react";
 import { Search } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/Input";
 import { HeroCard, type HeroWithStats } from "@/components/hero/HeroCard";
 
 type SortOption = "name" | "winRate" | "pickRate" | "matches";
 
 const sortLabels: Record<SortOption, string> = {
-  name: "Name (A–Z)",
-  winRate: "Win Rate (High → Low)",
-  pickRate: "Pick Rate (High → Low)",
-  matches: "Matches (High → Low)",
+  name: "Name (A-Z)",
+  winRate: "Win Rate (High - Low)",
+  pickRate: "Pick Rate (High - Low)",
+  matches: "Matches (High - Low)",
 };
 
 interface HeroGridProps {
@@ -77,13 +78,32 @@ export function HeroGrid({ heroes }: HeroGridProps) {
         </select>
       </div>
 
-      {/* Grid */}
+      {/* Grid with layout animations */}
       {filtered.length > 0 ? (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {filtered.map((hero) => (
-            <HeroCard key={hero.id} hero={hero} />
-          ))}
-        </div>
+        <motion.div
+          className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4"
+          layout
+        >
+          <AnimatePresence mode="popLayout">
+            {filtered.map((hero, idx) => (
+              <motion.div
+                key={hero.id}
+                layout
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{
+                  layout: { duration: 0.3, ease: "easeInOut" },
+                  opacity: { duration: 0.2 },
+                  scale: { duration: 0.2 },
+                  delay: idx < 20 ? idx * 0.02 : 0,
+                }}
+              >
+                <HeroCard hero={hero} />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </motion.div>
       ) : (
         <div className="flex flex-col items-center gap-2 py-16">
           <p className="font-heading text-text-secondary">No heroes found</p>

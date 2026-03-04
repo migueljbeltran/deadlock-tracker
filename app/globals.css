@@ -32,6 +32,10 @@
   --blood: #E74C3C;
   --blood-dim: #922B21;
 
+  /* Metallic accents */
+  --bronze: #CD7F32;
+  --silver: #C0C0C0;
+
   /* Text */
   --text-primary: #E6EDF3;
   --text-secondary: #8B949E;
@@ -67,6 +71,9 @@
   --color-blood: var(--blood);
   --color-blood-dim: var(--blood-dim);
 
+  --color-bronze: var(--bronze);
+  --color-silver: var(--silver);
+
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --color-text-muted: var(--text-muted);
@@ -90,6 +97,8 @@
   --animate-float: float 3s ease-in-out infinite;
   --animate-fade-in: fade-in 300ms ease-out forwards;
   --animate-spin-slow: spin 8s linear infinite;
+  --animate-flicker-slow: flicker-slow 4s ease-in-out infinite;
+  --animate-flicker-medium: flicker-medium 2.5s ease-in-out infinite;
 }
 
 /* Keyframes */
@@ -147,6 +156,28 @@
   }
 }
 
+@keyframes flicker-slow {
+  0%, 100% { opacity: 0.6; }
+  20% { opacity: 0.3; }
+  40% { opacity: 0.7; }
+  60% { opacity: 0.4; }
+  80% { opacity: 0.6; }
+}
+
+@keyframes flicker-medium {
+  0%, 100% { opacity: 0.5; }
+  15% { opacity: 0.8; }
+  30% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+  70% { opacity: 0.2; }
+  85% { opacity: 0.6; }
+}
+
+@keyframes shimmer-sweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
 /* Base Styles */
 body {
   background-color: var(--bg-deep);
@@ -154,6 +185,17 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Film grain overlay — subtle noise texture */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
 }
 
 /* Selection */
@@ -179,6 +221,24 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
+}
+
+/* Button shimmer — translating gradient sweep on hover */
+.btn-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.15) 50%,
+    transparent 60%
+  );
+  transform: translateX(-100%);
+  pointer-events: none;
+}
+.btn-shimmer:hover::after {
+  animation: shimmer-sweep 0.5s ease-out;
 }
 
 /* Focus outline */

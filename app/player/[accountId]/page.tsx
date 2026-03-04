@@ -15,9 +15,14 @@ import {
   getHeroes,
   getRanks,
 } from "@/lib/api";
+import { FadeIn } from "@/components/motion";
+import { Pagination } from "@/components/ui/Pagination";
+
+const MATCH_PAGE_SIZE = 20;
 
 interface PlayerPageProps {
   params: Promise<{ accountId: string }>;
+  searchParams: Promise<{ page?: string }>;
 }
 
 function isValidAccountId(id: string): boolean {
@@ -69,8 +74,9 @@ function estimateRankBadge(
   return Math.floor(avg / 10);
 }
 
-export default async function PlayerPage({ params }: PlayerPageProps) {
+export default async function PlayerPage({ params, searchParams }: PlayerPageProps) {
   const { accountId: raw } = await params;
+  const { page: pageParam } = await searchParams;
 
   if (!isValidAccountId(raw)) {
     notFound();
@@ -78,15 +84,23 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
 
   const accountId = Number(raw);
   const steam64 = accountIdToSteam64(accountId);
+  const rawPage = Number(pageParam);
+  const page = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
+
+  const offset = (page - 1) * MATCH_PAGE_SIZE;
+  const fetchLimit = offset + MATCH_PAGE_SIZE + 1;
 
   // Fetch all data in parallel
-  const [player, heroStats, matches, heroes, ranks] = await Promise.all([
+  const [player, heroStats, allMatches, heroes, ranks] = await Promise.all([
     getPlayerSummary(steam64),
     getPlayerHeroStats(accountId).catch(() => [] as Awaited<ReturnType<typeof getPlayerHeroStats>>),
-    getMatchHistory(accountId, 20).catch(() => [] as Awaited<ReturnType<typeof getMatchHistory>>),
+    getMatchHistory(accountId, fetchLimit).catch(() => [] as Awaited<ReturnType<typeof getMatchHistory>>),
     getHeroes(),
     getRanks(),
   ]);
+
+  const pageMatches = allMatches.slice(offset, offset + MATCH_PAGE_SIZE);
+  const hasNextPage = allMatches.length > offset + MATCH_PAGE_SIZE;
 
   if (!player) {
     notFound();
@@ -95,8 +109,8 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
   // Build hero lookup map
   const heroMap = new Map(heroes.map((h) => [h.id, h]));
 
-  // Estimate rank
-  const badgeLevel = estimateRankBadge(matches);
+  // Estimate rank from all fetched matches
+  const badgeLevel = estimateRankBadge(allMatches);
   const estimatedRank = badgeLevel != null
     ? ranks.find((r) => r.tier === badgeLevel) ?? null
     : null;
@@ -110,19 +124,23 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
 
         <div className="relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
           {/* Player Header */}
-          <PlayerHeader
-            player={player}
-            accountId={accountId}
-            estimatedRank={estimatedRank}
-          />
+          <FadeIn>
+            <PlayerHeader
+              player={player}
+              accountId={accountId}
+              estimatedRank={estimatedRank}
+            />
+          </FadeIn>
 
           <ArtDecoDivider className="my-8" />
 
           {/* Top Heroes */}
           <section className="mb-8">
-            <h2 className="font-heading text-xl text-amber mb-4">
-              Top Heroes
-            </h2>
+            <FadeIn delay={0.2}>
+              <h2 className="font-heading text-xl text-amber mb-4">
+                Top Heroes
+              </h2>
+            </FadeIn>
             <TopHeroes
               heroStats={heroStats}
               heroMap={heroMap}
@@ -132,14 +150,21 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
           <ArtDecoDivider variant="simple" className="my-8" />
 
           {/* Match History */}
-          <section>
-            <h2 className="font-heading text-xl text-amber mb-4">
-              Match History
-            </h2>
+          <section key={`matches-page-${page}`}>
+            <FadeIn delay={0.3}>
+              <h2 className="font-heading text-xl text-amber mb-4">
+                Match History
+              </h2>
+            </FadeIn>
             <MatchHistoryList
-              matches={matches}
+              matches={pageMatches}
               accountId={accountId}
               heroMap={heroMap}
+            />
+            <Pagination
+              currentPage={page}
+              hasNextPage={hasNextPage}
+              baseUrl={`/player/${accountId}`}
             />
           </section>
         </div>

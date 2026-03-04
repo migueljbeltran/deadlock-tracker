@@ -4,6 +4,7 @@ import { Footer } from "@/components/layout/Footer";
 import { SigilBackground } from "@/components/layout/SigilBackground";
 import { RegionSelector } from "@/components/leaderboard/RegionSelector";
 import { LeaderboardTable } from "@/components/leaderboard/LeaderboardTable";
+import { Pagination } from "@/components/ui/Pagination";
 import {
   getLeaderboard,
   getRanks,
@@ -24,21 +25,30 @@ export const metadata: Metadata = {
   description: "Deadlock ranked leaderboard across all regions.",
 };
 
+const PAGE_SIZE = 100;
+
 interface LeaderboardPageProps {
-  searchParams: Promise<{ region?: string }>;
+  searchParams: Promise<{ region?: string; page?: string }>;
 }
 
 export default async function LeaderboardPage({ searchParams }: LeaderboardPageProps) {
-  const { region: regionParam } = await searchParams;
+  const { region: regionParam, page: pageParam } = await searchParams;
   const region: DeadlockRegion = VALID_REGIONS.includes(regionParam as DeadlockRegion)
     ? (regionParam as DeadlockRegion)
     : "NAmerica";
+
+  const rawPage = Number(pageParam);
+  const page = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 
   const [entries, ranks, heroes] = await Promise.all([
     getLeaderboard(region),
     getRanks(),
     getHeroes(),
   ]);
+
+  const offset = (page - 1) * PAGE_SIZE;
+  const pageEntries = entries.slice(offset, offset + PAGE_SIZE);
+  const hasNextPage = entries.length > offset + PAGE_SIZE;
 
   const rankMap = new Map(ranks.map((r) => [r.tier, r]));
   const heroMap = new Map(heroes.map((h) => [h.id, h]));
@@ -63,11 +73,20 @@ export default async function LeaderboardPage({ searchParams }: LeaderboardPageP
             <RegionSelector currentRegion={region} />
           </div>
 
-          <LeaderboardTable
-            entries={entries}
-            rankMap={rankMap}
-            heroMap={heroMap}
-          />
+          <div key={`leaderboard-${region}-page-${page}`}>
+            <LeaderboardTable
+              entries={pageEntries}
+              rankMap={rankMap}
+              heroMap={heroMap}
+            />
+
+            <Pagination
+              currentPage={page}
+              hasNextPage={hasNextPage}
+              baseUrl="/leaderboard"
+              extraParams={{ region }}
+            />
+          </div>
         </div>
       </main>
 

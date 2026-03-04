@@ -31,8 +31,8 @@ export function SigilBackground({ className, intensity = "subtle" }: SigilBackgr
         stroke="var(--sigil)"
         strokeWidth="0.5"
       >
-        {/* Central radiating pattern */}
-        <g transform="translate(400, 300)">
+        {/* Central radiating pattern — slow 120s rotation */}
+        <g transform="translate(400, 300)" style={{ animation: "spin 120s linear infinite", transformOrigin: "0 0" }}>
           {/* Outer circles */}
           <circle r="250" />
           <circle r="200" strokeDasharray="8 4" />
@@ -85,6 +85,15 @@ export function SigilBackground({ className, intensity = "subtle" }: SigilBackgr
           {/* Bottom right */}
           <path d="M800,500 Q750,550 700,600" />
           <path d="M800,450 Q725,525 650,600" />
+        </g>
+
+        {/* Secondary smaller sigil — bottom-right, lower opacity, counter-rotation for depth */}
+        <g transform="translate(650, 480)" opacity="0.4" style={{ animation: "spin 90s linear infinite reverse", transformOrigin: "0 0" }}>
+          <circle r="80" />
+          <circle r="60" strokeDasharray="4 4" />
+          <circle r="40" />
+          <polygon points="0,-35 30.3,17.5 -30.3,17.5" strokeWidth="0.5" />
+          <polygon points="0,35 -30.3,-17.5 30.3,-17.5" strokeWidth="0.5" />
         </g>
       </svg>
     </div>

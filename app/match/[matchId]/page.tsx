@@ -13,6 +13,7 @@ import {
   accountIdToSteam64,
 } from "@/lib/api";
 import type { SteamPlayerSummary } from "@/lib/api";
+import { FadeIn } from "@/components/motion";
 
 interface MatchDetailPageProps {
   params: Promise<{ matchId: string }>;
@@ -73,26 +74,32 @@ export default async function MatchDetailPage({ params }: MatchDetailPageProps) 
         <SigilBackground intensity="subtle" />
 
         <div className="relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-          <MatchHeader match={match} />
+          <FadeIn>
+            <MatchHeader match={match} />
+          </FadeIn>
 
           <ArtDecoDivider className="my-8" />
 
           <section className="space-y-6">
-            <TeamScoreboard
-              teamLabel="Amber Hand"
-              players={team0}
-              heroMap={heroMap}
-              playerNameMap={playerNameMap}
-              isWinner={match.winning_team === "Team0"}
-            />
+            <FadeIn delay={0.2}>
+              <TeamScoreboard
+                teamLabel="Amber Hand"
+                players={team0}
+                heroMap={heroMap}
+                playerNameMap={playerNameMap}
+                isWinner={match.winning_team === "Team0"}
+              />
+            </FadeIn>
 
-            <TeamScoreboard
-              teamLabel="Sapphire Flame"
-              players={team1}
-              heroMap={heroMap}
-              playerNameMap={playerNameMap}
-              isWinner={match.winning_team === "Team1"}
-            />
+            <FadeIn delay={0.4}>
+              <TeamScoreboard
+                teamLabel="Sapphire Flame"
+                players={team1}
+                heroMap={heroMap}
+                playerNameMap={playerNameMap}
+                isWinner={match.winning_team === "Team1"}
+              />
+            </FadeIn>
           </section>
         </div>
       </main>

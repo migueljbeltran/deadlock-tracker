@@ -1,4 +1,7 @@
-import Link from "next/link";
+"use client";
+
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import type { DeadlockRegion } from "@/lib/api";
 import { cn } from "@/lib/utils/cn";
 
@@ -15,21 +18,31 @@ interface RegionSelectorProps {
 }
 
 export function RegionSelector({ currentRegion }: RegionSelectorProps) {
+  const router = useRouter();
+
   return (
-    <nav className="flex gap-1 rounded border border-border-subtle bg-surface p-1">
+    <nav className="relative flex gap-1 rounded border border-border-subtle bg-surface p-1">
       {REGIONS.map(({ value, label }) => (
-        <Link
+        <button
           key={value}
-          href={`/leaderboard?region=${value}`}
+          onClick={() => router.push(`/leaderboard?region=${value}`)}
           className={cn(
-            "rounded px-3 py-1.5 text-sm font-medium transition-all",
+            "relative z-10 rounded px-3 py-1.5 text-sm font-medium transition-colors",
             value === currentRegion
-              ? "bg-soul text-deep"
-              : "text-text-secondary hover:bg-surface-elevated hover:text-text-primary",
+              ? "text-deep"
+              : "text-text-secondary hover:text-text-primary",
           )}
         >
+          {value === currentRegion && (
+            <motion.div
+              layoutId="region-indicator"
+              className="absolute inset-0 rounded bg-soul"
+              style={{ zIndex: -1 }}
+              transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            />
+          )}
           {label}
-        </Link>
+        </button>
       ))}
     </nav>
   );

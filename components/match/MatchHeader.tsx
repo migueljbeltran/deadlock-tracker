@@ -25,7 +25,13 @@ export function MatchHeader({ match }: MatchHeaderProps) {
         <span className="text-xs uppercase tracking-wider text-text-secondary">
           Winner:
         </span>
-        <span className="rounded border border-soul/30 bg-soul/10 px-3 py-1 font-mono text-sm text-soul">
+        <span className="rounded border border-soul/30 bg-soul/10 px-3 py-1 font-mono text-sm text-soul animate-glow-shimmer">
+          <span
+            className="mr-1.5 inline-block h-2 w-2 rounded-full"
+            style={{
+              backgroundColor: match.winning_team === "Team0" ? "var(--amber)" : "var(--sigil)",
+            }}
+          />
           {match.winning_team === "Team0" ? "Amber Hand" : "Sapphire Flame"}
         </span>
       </div>

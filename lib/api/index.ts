@@ -13,6 +13,7 @@ export type {
   DeadlockHeroAnalytics,
   DeadlockPlayerMetrics,
   DeadlockLeaderboardEntry,
+  DeadlockApiInfo,
 } from "./types";
 
 export { ApiError } from "./types";
@@ -37,6 +38,7 @@ export {
   getPlayerHeroStats,
   getMatchHistory,
   getMatchDetail,
+  getApiInfo,
   getHeroAnalytics,
   getPlayerMetrics,
   getLeaderboard,

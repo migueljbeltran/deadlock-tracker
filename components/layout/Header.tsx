@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils/cn";
 
 const navLinks = [
@@ -13,16 +14,25 @@ const navLinks = [
 export function Header() {
   const pathname = usePathname();
 
+  // Determine active link — exact match for "/" and startsWith for others
+  function isActive(href: string) {
+    if (href === "/") return pathname === "/";
+    return pathname.startsWith(href);
+  }
+
   return (
-    <header className="sticky top-0 z-40 border-b border-border-subtle bg-void/95 backdrop-blur supports-[backdrop-filter]:bg-void/80">
+    <header
+      className="sticky top-0 z-40 border-b border-border-subtle bg-void/95 backdrop-blur supports-[backdrop-filter]:bg-void/80"
+      style={{ boxShadow: "0 1px 8px rgba(61, 220, 132, 0.1)" }}
+    >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3 group">
-          {/* Wheel icon placeholder */}
+          {/* Wheel icon — slow rotation on hover */}
           <div className="relative flex h-10 w-10 items-center justify-center">
             <svg
               viewBox="0 0 40 40"
-              className="h-full w-full text-amber transition-colors group-hover:text-amber-light"
+              className="h-full w-full text-amber transition-all duration-[2s] ease-linear group-hover:text-amber-light group-hover:rotate-[360deg]"
               fill="none"
               stroke="currentColor"
               strokeWidth="1.5"
@@ -46,24 +56,28 @@ export function Header() {
           </span>
         </Link>
 
-        {/* Navigation */}
+        {/* Navigation with sliding indicator */}
         <nav className="flex items-center gap-1">
           {navLinks.map((link) => {
-            const isActive = pathname === link.href;
+            const active = isActive(link.href);
             return (
               <Link
                 key={link.href}
                 href={link.href}
                 className={cn(
                   "relative px-4 py-2 text-sm font-medium transition-colors",
-                  isActive
+                  active
                     ? "text-soul"
                     : "text-text-secondary hover:text-text-primary"
                 )}
               >
                 {link.label}
-                {isActive && (
-                  <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-soul" />
+                {active && (
+                  <motion.span
+                    layoutId="nav-indicator"
+                    className="absolute bottom-0 left-4 right-4 h-0.5 bg-soul"
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  />
                 )}
               </Link>
             );

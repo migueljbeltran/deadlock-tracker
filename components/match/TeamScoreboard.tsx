@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { Crown } from "lucide-react";
 import type { DeadlockMatchPlayer, DeadlockHero } from "@/lib/api";
 import { formatNumber } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
@@ -19,8 +20,16 @@ export function TeamScoreboard({
   playerNameMap,
   isWinner,
 }: TeamScoreboardProps) {
+  // Find top killer on this team
+  const maxKills = Math.max(...players.map((p) => p.kills));
+
   return (
-    <div className="overflow-x-auto rounded border border-border-subtle">
+    <div className={cn(
+      "overflow-x-auto rounded border",
+      isWinner
+        ? "border-soul/40 shadow-glow-soul"
+        : "border-border-subtle",
+    )}>
       <table className="w-full text-sm">
         <thead>
           <tr className={cn(
@@ -30,6 +39,7 @@ export function TeamScoreboard({
               : "border-blood bg-blood/10 text-blood",
           )}>
             <th className="px-3 py-2 sm:px-4">
+              {isWinner && <Crown className="mr-1.5 inline-block h-3.5 w-3.5 -translate-y-px" />}
               {teamLabel}
               {isWinner && <span className="ml-2 text-[10px] normal-case tracking-normal opacity-70">Winner</span>}
             </th>
@@ -43,14 +53,19 @@ export function TeamScoreboard({
           </tr>
         </thead>
         <tbody>
-          {players.map((player) => {
+          {players.map((player, idx) => {
             const hero = heroMap.get(player.hero_id);
             const playerName = playerNameMap.get(player.account_id) ?? `Player ${player.account_id}`;
+            const isTopKiller = player.kills === maxKills && maxKills > 0;
 
             return (
               <tr
                 key={player.account_id}
-                className="border-b border-border-subtle transition-colors hover:border-l-2 hover:border-l-soul hover:bg-surface"
+                className={cn(
+                  "border-b border-border-subtle transition-colors hover:border-l-2 hover:border-l-soul hover:bg-surface",
+                  idx % 2 === 1 && "bg-surface-elevated/30",
+                  !isWinner && "opacity-90",
+                )}
               >
                 <td className="px-3 py-2 sm:px-4">
                   <div className="flex items-center gap-2">
@@ -77,7 +92,12 @@ export function TeamScoreboard({
                     </Link>
                   </div>
                 </td>
-                <td className="px-2 py-2 text-center font-mono text-soul">{player.kills}</td>
+                <td className={cn(
+                  "px-2 py-2 text-center font-mono",
+                  isTopKiller ? "text-soul font-semibold" : "text-soul",
+                )}>
+                  {player.kills}
+                </td>
                 <td className="px-2 py-2 text-center font-mono text-blood">{player.deaths}</td>
                 <td className="px-2 py-2 text-center font-mono text-sigil">{player.assists}</td>
                 <td className="px-2 py-2 text-right font-mono text-amber">{formatNumber(player.net_worth)}</td>

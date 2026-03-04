@@ -10,14 +10,20 @@ interface PlayerHeaderProps {
 export function PlayerHeader({ player, accountId, estimatedRank }: PlayerHeaderProps) {
   return (
     <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
-      {/* Avatar */}
+      {/* Avatar with mystical soul-glow aura */}
       <div className="relative">
+        <div
+          className="absolute -inset-3 rounded-full opacity-40 blur-xl"
+          style={{ background: "radial-gradient(circle, var(--soul-glow) 0%, transparent 70%)" }}
+          aria-hidden="true"
+        />
         <Image
           src={player.avatarfull}
           alt={player.personaname}
           width={96}
           height={96}
-          className="rounded border-2 border-soul shadow-glow-soul"
+          className="relative rounded border-2 border-soul animate-sigil-pulse"
+          style={{ boxShadow: "0 0 20px var(--soul-glow)" }}
           priority
         />
       </div>
@@ -34,13 +40,13 @@ export function PlayerHeader({ player, accountId, estimatedRank }: PlayerHeaderP
         {/* Rank Badge */}
         {estimatedRank ? (
           <div className="mt-3 flex items-center gap-2">
-            {(estimatedRank.images.small_webp || estimatedRank.images.small) && (
+            {(estimatedRank.images.large_webp || estimatedRank.images.large) && (
               <Image
-                src={estimatedRank.images.small_webp || estimatedRank.images.small}
+                src={(estimatedRank.images.large_webp || estimatedRank.images.large)!}
                 alt={estimatedRank.name}
                 width={28}
                 height={28}
-                className="drop-shadow-lg"
+                className="drop-shadow-lg animate-float"
               />
             )}
             <span

@@ -18,6 +18,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           "disabled:pointer-events-none disabled:opacity-50",
           // Variants
           variant === "primary" && [
+            "btn-shimmer relative overflow-hidden",
             "border border-soul bg-transparent text-soul",
             "hover:bg-soul hover:text-deep",
             "active:bg-soul-dim",

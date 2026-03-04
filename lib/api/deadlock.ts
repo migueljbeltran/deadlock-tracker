@@ -9,6 +9,7 @@ import type {
   DeadlockHeroAnalytics,
   DeadlockPlayerMetrics,
   DeadlockLeaderboardEntry,
+  DeadlockApiInfo,
 } from "./types";
 import { ApiError } from "./types";
 
@@ -94,6 +95,13 @@ export async function getMatchDetail(
     throw new ApiError("Match not found", 404, `matches/${matchId}`);
   }
   return results[0];
+}
+
+export async function getApiInfo(): Promise<DeadlockApiInfo> {
+  return deadlockFetch<DeadlockApiInfo>(
+    `${GAME_API}/v1/info`,
+    1800,
+  );
 }
 
 export async function getHeroAnalytics(): Promise<DeadlockHeroAnalytics[]> {

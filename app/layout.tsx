@@ -47,11 +47,14 @@ export default function RootLayout({
         className={`${cinzelDecorative.variable} ${cinzel.variable} ${inter.variable} ${jetbrainsMono.variable} antialiased`}
       >
         {children}
-        {/* Vignette overlay */}
+        {/* Vignette overlay — deeper edges + warm amber candlelight from above */}
         <div
           className="pointer-events-none fixed inset-0 z-50"
           style={{
-            background: "radial-gradient(ellipse at center, transparent 0%, transparent 50%, rgba(8, 11, 16, 0.4) 100%)"
+            background: [
+              "radial-gradient(ellipse at center, transparent 0%, transparent 40%, rgba(8, 11, 16, 0.6) 100%)",
+              "radial-gradient(ellipse at 50% 0%, rgba(212, 168, 83, 0.03) 0%, transparent 60%)",
+            ].join(", "),
           }}
           aria-hidden="true"
         />

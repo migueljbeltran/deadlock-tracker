@@ -49,8 +49,11 @@ export interface DeadlockHeroImages {
   minimap_image_webp?: string;
   top_bar_image?: string;
   top_bar_image_webp?: string;
-  selection_image?: string;
-  selection_image_webp?: string;
+  top_bar_vertical_image?: string;
+  top_bar_vertical_image_webp?: string;
+  background_image?: string;
+  background_image_webp?: string;
+  [key: string]: string | undefined;
 }
 
 export interface DeadlockHero {
@@ -75,11 +78,9 @@ export interface DeadlockItem {
 }
 
 export interface DeadlockRankImages {
-  large: string;
-  large_webp: string;
-  small: string;
-  small_webp: string;
-  [key: string]: string; // subrank variants
+  large?: string;
+  large_webp?: string;
+  [key: string]: string | undefined; // subrank variants (small_subrank1_webp, etc.)
 }
 
 export interface DeadlockRank {
@@ -192,6 +193,23 @@ export interface DeadlockLeaderboardEntry {
   badge_level: number;
   ranked_rank: number;
   ranked_subrank: number;
+}
+
+// ============================================================
+// Deadlock API Info
+// ============================================================
+
+export interface DeadlockApiInfo {
+  fetched_matches_per_day: number;
+  user_ingested_matches_last24h: number;
+  table_sizes: {
+    [table: string]: {
+      is_view: boolean;
+      rows: number;
+      data_compressed_bytes: number;
+      data_uncompressed_bytes: number;
+    };
+  };
 }
 
 // ============================================================
