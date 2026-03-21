@@ -73,7 +73,7 @@ export default async function MatchDetailPage({ params }: MatchDetailPageProps) 
       <main className="relative flex-1">
         <SigilBackground intensity="subtle" />
 
-        <div className="relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="atmosphere-amber relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
           <FadeIn>
             <MatchHeader match={match} />
           </FadeIn>
@@ -90,6 +90,12 @@ export default async function MatchDetailPage({ params }: MatchDetailPageProps) 
                 isWinner={match.winning_team === "Team0"}
               />
             </FadeIn>
+
+            <div className="flex items-center justify-center gap-4 py-6">
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent to-border-subtle" />
+              <span className="font-display text-xl text-amber/60 tracking-widest">VS</span>
+              <div className="h-px flex-1 bg-gradient-to-l from-transparent to-border-subtle" />
+            </div>
 
             <FadeIn delay={0.4}>
               <TeamScoreboard

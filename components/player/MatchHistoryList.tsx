@@ -34,8 +34,8 @@ export function MatchHistoryList({ matches, accountId, heroMap }: MatchHistoryLi
             <Link
               href={`/match/${match.match_id}`}
               className={cn(
-                "flex items-center gap-3 rounded border border-border-subtle p-3 transition-all hover:border-soul hover:bg-surface-elevated sm:gap-4",
-                "border-l-2",
+                "flex items-center gap-3 rounded-lg bg-[rgba(22,27,34,0.3)] backdrop-blur-sm border border-[rgba(48,54,61,0.6)] p-3 transition-all hover:border-soul hover:bg-surface-elevated hover:translate-x-1 sm:gap-4",
+                "border-l-[3px]",
                 isVictory
                   ? "border-l-soul bg-soul/[0.03]"
                   : "border-l-blood bg-blood/[0.03]",
@@ -46,8 +46,8 @@ export function MatchHistoryList({ matches, accountId, heroMap }: MatchHistoryLi
                 <span
                   className={`inline-block rounded px-2 py-0.5 text-center font-mono text-xs border ${
                     isVictory
-                      ? "border-soul/30 bg-soul/10 text-soul"
-                      : "border-blood/30 bg-blood/10 text-blood"
+                      ? "border-soul/30 bg-soul/10 text-soul shadow-[0_0_8px_rgba(61,220,132,0.3)]"
+                      : "border-blood/30 bg-blood/10 text-blood shadow-[0_0_8px_rgba(231,76,60,0.3)]"
                   }`}
                 >
                   {isVictory ? "VICTORY" : "DEFEAT"}
@@ -81,7 +81,7 @@ export function MatchHistoryList({ matches, accountId, heroMap }: MatchHistoryLi
 
               {/* K/D/A */}
               {playerData && (
-                <div className="hidden items-center gap-1 text-xs sm:flex">
+                <div className="flex items-center gap-1 text-xs">
                   <span className="font-mono text-soul">{playerData.kills}</span>
                   <span className="text-text-muted">/</span>
                   <span className="font-mono text-blood">{playerData.deaths}</span>

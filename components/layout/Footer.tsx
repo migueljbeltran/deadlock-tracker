@@ -2,7 +2,8 @@ import { ScrollReveal } from "@/components/motion";
 
 export function Footer() {
   return (
-    <footer className="relative mt-auto border-t border-border-subtle bg-void">
+    <footer className="relative mt-auto bg-void">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber/20 to-transparent" aria-hidden="true" />
       {/* NYC Skyline silhouette */}
       <div className="absolute inset-x-0 bottom-full h-16 overflow-hidden pointer-events-none">
         <svg
@@ -20,8 +21,13 @@ export function Footer() {
           <rect x="475" y="12" width="2" height="3" fill="var(--amber)" className="animate-flicker-medium" style={{ animationDelay: "0.3s" }} />
           <rect x="483" y="15" width="2" height="3" fill="var(--amber)" className="animate-flicker-slow" style={{ animationDelay: "2.1s" }} />
           <rect x="488" y="10" width="2" height="3" fill="var(--amber)" className="animate-flicker-medium" style={{ animationDelay: "1.5s" }} />
+          <rect x="605" y="30" width="2" height="3" fill="var(--amber)" className="animate-flicker-slow" style={{ animationDelay: "0.5s" }} />
+          <rect x="712" y="24" width="2" height="3" fill="var(--amber)" className="animate-flicker-medium" style={{ animationDelay: "1.8s" }} />
+          <rect x="913" y="28" width="2" height="3" fill="var(--amber)" className="animate-flicker-slow" style={{ animationDelay: "2.5s" }} />
         </svg>
       </div>
+
+      <div className="absolute inset-x-0 bottom-full h-24 bg-gradient-to-t from-amber/[0.03] to-transparent pointer-events-none" aria-hidden="true" />
 
       <ScrollReveal>
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

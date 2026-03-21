@@ -36,10 +36,10 @@ export function LeaderboardTable({
   }
 
   return (
-    <div className="overflow-x-auto rounded border border-border-subtle">
+    <div className="overflow-x-auto rounded-lg glass-panel">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b-2 border-amber bg-surface-elevated text-left uppercase tracking-[0.05em] text-xs text-amber">
+          <tr className="border-b-2 border-amber bg-gradient-to-r from-amber/15 via-amber/5 to-transparent text-left uppercase tracking-[0.05em] text-xs text-amber">
             <th className="px-3 py-2 w-16 text-center">#</th>
             <th className="px-3 py-2">Player</th>
             <th className="px-3 py-2 text-center">Rank</th>
@@ -66,10 +66,10 @@ export function LeaderboardTable({
                 key={idx}
                 variants={rowVariants}
                 className={cn(
-                  "border-b border-border-subtle transition-colors hover:bg-surface",
-                  isTop1 && "border-l-2 border-l-amber bg-amber/[0.05]",
-                  isTop2 && "border-l-2 border-l-silver",
-                  isTop3 && "border-l-2 border-l-bronze",
+                  "border-b border-border-subtle hover:bg-[rgba(31,41,55,0.4)] hover:translate-x-0.5 transition-all",
+                  isTop1 && "border-l-2 border-l-amber bg-gradient-to-r from-amber/10 to-transparent",
+                  isTop2 && "border-l-2 border-l-silver bg-gradient-to-r from-silver/[0.07] to-transparent",
+                  isTop3 && "border-l-2 border-l-bronze bg-gradient-to-r from-bronze/[0.07] to-transparent",
                 )}
               >
                 <td className={cn(
@@ -77,18 +77,29 @@ export function LeaderboardTable({
                   isTop1 ? "font-display text-amber text-lg" : "text-amber",
                 )}>
                   {isTop1 && <Medal className="inline-block mr-1 h-4 w-4 -translate-y-px text-amber" />}
+                  {isTop2 && <Medal className="inline-block mr-1 h-4 w-4 -translate-y-px text-silver" />}
+                  {isTop3 && <Medal className="inline-block mr-1 h-4 w-4 -translate-y-px text-bronze" />}
                   {entry.rank}
                 </td>
                 <td className="px-3 py-2">
                   {playerAccountId ? (
                     <Link
                       href={`/player/${playerAccountId}`}
-                      className="text-text-primary hover:text-soul transition-colors"
+                      className={cn(
+                        "hover:text-soul transition-colors",
+                        isTop1
+                          ? "bg-clip-text text-transparent bg-gradient-to-b from-amber-light to-amber"
+                          : "text-text-primary",
+                      )}
                     >
                       {entry.account_name || `Player #${entry.rank}`}
                     </Link>
                   ) : (
-                    <span className="text-text-primary">
+                    <span className={cn(
+                      isTop1
+                        ? "bg-clip-text text-transparent bg-gradient-to-b from-amber-light to-amber"
+                        : "text-text-primary",
+                    )}>
                       {entry.account_name || `Player #${entry.rank}`}
                     </span>
                   )}
@@ -116,8 +127,8 @@ export function LeaderboardTable({
                           <Image
                             src={hero.images.icon_image_small_webp}
                             alt={hero.name}
-                            width={24}
-                            height={24}
+                            width={28}
+                            height={28}
                             className="rounded"
                             title={hero.name}
                           />
@@ -125,7 +136,7 @@ export function LeaderboardTable({
                       ) : (
                         <div
                           key={heroId}
-                          className="flex h-6 w-6 items-center justify-center rounded bg-surface-elevated text-[10px] text-text-muted"
+                          className="flex h-7 w-7 items-center justify-center rounded bg-surface-elevated text-[10px] text-text-muted"
                         >
                           ?
                         </div>

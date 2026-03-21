@@ -36,6 +36,22 @@
   --bronze: #CD7F32;
   --silver: #C0C0C0;
 
+  /* Layered depth shadows for premium dark UI feel */
+  --shadow-depth-sm: 0 1px 2px rgba(0,0,0,0.3), 0 2px 6px rgba(0,0,0,0.2);
+  --shadow-depth-md: 0 2px 4px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.2);
+
+  /* Inner highlight — simulates subtle top-light on cards */
+  --shadow-inner-highlight: inset 0 1px 0 rgba(255,255,255,0.04);
+
+  /* Glassmorphism */
+  --glass-bg: rgba(22, 27, 34, 0.6);
+  --glass-bg-elevated: rgba(31, 41, 55, 0.5);
+  --glass-border: rgba(48, 54, 61, 0.6);
+
+  /* Ambient glows */
+  --glow-soul-ambient: 0 0 60px rgba(61, 220, 132, 0.08), 0 0 120px rgba(61, 220, 132, 0.04);
+  --glow-amber-ambient: 0 0 60px rgba(212, 168, 83, 0.08), 0 0 120px rgba(212, 168, 83, 0.04);
+
   /* Text */
   --text-primary: #E6EDF3;
   --text-secondary: #8B949E;
@@ -89,6 +105,10 @@
   --shadow-glow-soul-lg: 0 0 40px rgba(61, 220, 132, 0.5);
   --shadow-glow-amber: 0 0 15px var(--amber-glow);
   --shadow-inner-dark: inset 0 0 10px rgba(0, 0, 0, 0.5);
+  --shadow-depth-sm: var(--shadow-depth-sm);
+  --shadow-depth-md: var(--shadow-depth-md);
+  --shadow-inner-highlight: var(--shadow-inner-highlight);
+  --shadow-glass: 0 4px 30px rgba(0, 0, 0, 0.3);
 
   /* Animations */
   --animate-ink-spread: ink-spread 800ms ease-out forwards;
@@ -101,7 +121,29 @@
   --animate-flicker-medium: flicker-medium 2.5s ease-in-out infinite;
 }
 
+/* CSS @property for animated gradient angle */
+@property --gradient-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
 /* Keyframes */
+@keyframes gradient-rotate {
+  0% { --gradient-angle: 0deg; }
+  100% { --gradient-angle: 360deg; }
+}
+
+@keyframes shimmer-line {
+  0% { transform: translateX(-100%) skewX(-15deg); }
+  100% { transform: translateX(200%) skewX(-15deg); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
 @keyframes ink-spread {
   0% {
     clip-path: circle(0% at 50% 50%);
@@ -239,6 +281,99 @@ body::before {
 }
 .btn-shimmer:hover::after {
   animation: shimmer-sweep 0.5s ease-out;
+}
+
+/* Section fade border — gradient divider between sections */
+.section-fade-border {
+  position: relative;
+}
+.section-fade-border::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(80%, 900px);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-subtle), rgba(212,168,83,0.4), var(--border-subtle), transparent);
+}
+
+/* ========== Glassmorphism & Modern Utilities ========== */
+
+/* Frosted glass panel base */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+}
+
+/* Animated conic gradient border on hover */
+.animated-border {
+  position: relative;
+  z-index: 0;
+}
+.animated-border::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: conic-gradient(from var(--gradient-angle, 0deg), var(--soul), var(--sigil), var(--amber), var(--soul));
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.animated-border:hover::before {
+  opacity: 1;
+  animation: gradient-rotate 3s linear infinite;
+}
+
+/* Card shimmer sweep on hover */
+.card-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.card-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.03) 45%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.03) 55%, transparent 70%);
+  transform: translateX(-100%) skewX(-15deg);
+  pointer-events: none;
+}
+.card-shimmer:hover::after {
+  animation: shimmer-line 0.8s ease-out;
+}
+
+/* Page atmosphere backgrounds */
+.atmosphere-soul {
+  background:
+    radial-gradient(ellipse at 20% 20%, rgba(61,220,132,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(26,188,156,0.04) 0%, transparent 50%);
+}
+.atmosphere-amber {
+  background:
+    radial-gradient(ellipse at 50% 10%, rgba(212,168,83,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 60%, rgba(212,168,83,0.03) 0%, transparent 50%);
+}
+.atmosphere-blood {
+  background:
+    radial-gradient(ellipse at 30% 30%, rgba(231,76,60,0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 70%, rgba(212,168,83,0.03) 0%, transparent 50%);
+}
+
+/* Win rate bar — thick, glowing fill */
+.winrate-bar {
+  height: 6px;
+  border-radius: 9999px;
+  background: rgba(231, 76, 60, 0.2);
+  overflow: hidden;
+}
+.winrate-bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, var(--soul-dim), var(--soul));
+  box-shadow: 0 0 8px var(--soul-glow);
 }
 
 /* Focus outline */

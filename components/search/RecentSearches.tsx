@@ -22,14 +22,14 @@ export function RecentSearches({ searches, onSelect }: RecentSearchesProps) {
             key={search.accountId}
             type="button"
             onClick={() => onSelect(search)}
-            className="flex items-center gap-2 rounded-full border border-border-subtle bg-surface px-3 py-1.5 text-sm text-text-secondary transition-all hover:border-soul hover:text-soul"
+            className="group flex items-center gap-2 rounded-full border border-border-subtle bg-[rgba(22,27,34,0.5)] backdrop-blur-sm px-3 py-1.5 text-sm text-text-secondary transition-all hover:border-soul hover:text-soul"
           >
             <Image
               src={search.avatar}
               alt={search.name}
               width={20}
               height={20}
-              className="rounded-full"
+              className="rounded-full transition-shadow group-hover:shadow-[0_0_8px_rgba(61,220,132,0.3)]"
             />
             <span className="truncate max-w-[120px]">{search.name}</span>
           </button>

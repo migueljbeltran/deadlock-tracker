@@ -9,15 +9,19 @@ export function MatchHeader({ match }: MatchHeaderProps) {
   return (
     <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
       <div className="text-center sm:text-left">
-        <h1 className="font-display text-3xl text-amber tracking-wide sm:text-4xl">
+        <h1 className="font-display text-4xl tracking-wide sm:text-5xl bg-clip-text text-transparent bg-gradient-to-b from-amber-light via-amber to-amber/70">
           Match #{match.match_id}
         </h1>
-        <div className="mt-2 flex flex-wrap items-center justify-center gap-3 text-sm text-text-secondary sm:justify-start">
-          <span>{match.game_mode}</span>
-          <span className="text-text-muted">|</span>
-          <span className="font-mono">{formatDuration(match.duration_s)}</span>
-          <span className="text-text-muted">|</span>
-          <span>{formatTimeAgo(match.start_time)}</span>
+        <div className="mt-2 flex flex-wrap items-center justify-center gap-2 text-sm text-text-secondary sm:justify-start">
+          <span className="inline-flex items-center rounded-full bg-[rgba(22,27,34,0.5)] backdrop-blur-sm border border-border-subtle px-3 py-1 text-xs font-mono text-text-secondary">
+            {match.game_mode}
+          </span>
+          <span className="inline-flex items-center rounded-full bg-[rgba(22,27,34,0.5)] backdrop-blur-sm border border-border-subtle px-3 py-1 text-xs font-mono text-text-secondary">
+            {formatDuration(match.duration_s)}
+          </span>
+          <span className="inline-flex items-center rounded-full bg-[rgba(22,27,34,0.5)] backdrop-blur-sm border border-border-subtle px-3 py-1 text-xs font-mono text-text-secondary">
+            {formatTimeAgo(match.start_time)}
+          </span>
         </div>
       </div>
 
@@ -25,7 +29,10 @@ export function MatchHeader({ match }: MatchHeaderProps) {
         <span className="text-xs uppercase tracking-wider text-text-secondary">
           Winner:
         </span>
-        <span className="rounded border border-soul/30 bg-soul/10 px-3 py-1 font-mono text-sm text-soul animate-glow-shimmer">
+        <span
+          className="glass-panel rounded-full px-4 py-2 font-mono text-sm text-soul animate-glow-shimmer"
+          style={{ animation: "pulse-glow 2s ease-in-out infinite" }}
+        >
           <span
             className="mr-1.5 inline-block h-2 w-2 rounded-full"
             style={{

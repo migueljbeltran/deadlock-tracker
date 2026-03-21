@@ -31,15 +31,15 @@ function buildUrl(
 
 const linkStyles = cn(
   "inline-flex items-center justify-center gap-2 font-medium transition-all duration-150",
-  "h-8 px-3 text-sm rounded",
-  "border border-border-subtle bg-transparent text-text-secondary",
+  "h-8 px-3 text-sm rounded-md",
+  "border border-border-subtle bg-[rgba(22,27,34,0.5)] backdrop-blur-sm text-text-secondary",
   "hover:border-amber hover:text-amber",
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-soul focus-visible:ring-offset-2 focus-visible:ring-offset-deep",
 );
 
 const disabledStyles = cn(
   "inline-flex items-center justify-center gap-2 font-medium",
-  "h-8 px-3 text-sm rounded",
+  "h-8 px-3 text-sm rounded-md",
   "border border-border-subtle bg-transparent text-text-secondary",
   "opacity-50 pointer-events-none",
 );
@@ -71,7 +71,7 @@ export function Pagination({
         </span>
       )}
 
-      <span className="font-mono text-sm text-text-secondary">
+      <span className="font-mono text-sm text-soul bg-[rgba(22,27,34,0.5)] backdrop-blur-sm border border-border-subtle rounded-full px-3 py-1">
         Page {currentPage}
       </span>
 

@@ -95,6 +95,22 @@ export function SigilBackground({ className, intensity = "subtle" }: SigilBackgr
           <polygon points="0,-35 30.3,17.5 -30.3,17.5" strokeWidth="0.5" />
           <polygon points="0,35 -30.3,-17.5 30.3,-17.5" strokeWidth="0.5" />
         </g>
+
+        {/* Tertiary sigil — top-left, amber, different rotation */}
+        <g transform="translate(150, 120)" opacity="0.3" style={{ animation: "spin 100s linear infinite", transformOrigin: "0 0" }}>
+          <circle r="70" stroke="var(--amber)" />
+          <circle r="50" strokeDasharray="3 5" stroke="var(--amber)" />
+          <circle r="30" stroke="var(--amber)" />
+          <polygon points="0,-25 21.7,12.5 -21.7,12.5" strokeWidth="0.5" stroke="var(--amber)" />
+          <polygon points="0,25 -21.7,-12.5 21.7,-12.5" strokeWidth="0.5" stroke="var(--amber)" />
+        </g>
+
+        {/* Scattered star dots */}
+        <circle cx="100" cy="80" r="1" fill="var(--sigil)" className="animate-flicker-slow" style={{ animationDelay: "0s" }} />
+        <circle cx="700" cy="120" r="1" fill="var(--amber)" className="animate-flicker-slow" style={{ animationDelay: "1.2s" }} />
+        <circle cx="300" cy="500" r="0.8" fill="var(--sigil)" className="animate-flicker-medium" style={{ animationDelay: "0.6s" }} />
+        <circle cx="550" cy="200" r="1" fill="var(--amber)" className="animate-flicker-slow" style={{ animationDelay: "2.3s" }} />
+        <circle cx="180" cy="420" r="0.8" fill="var(--sigil)" className="animate-flicker-medium" style={{ animationDelay: "1.7s" }} />
       </svg>
     </div>
   );

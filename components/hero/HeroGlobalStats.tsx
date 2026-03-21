@@ -33,10 +33,10 @@ function StatCard({
   accent?: string;
 }) {
   return (
-    <div className="flex flex-col items-center rounded border border-border-subtle bg-surface p-4 text-center relative overflow-hidden">
+    <div className="flex flex-col items-center rounded-md bg-[rgba(22,27,34,0.6)] backdrop-blur-md border border-[rgba(48,54,61,0.6)] p-4 text-center relative overflow-hidden">
       {/* Accent bar at top */}
-      <div className={cn("absolute inset-x-0 top-0 h-0.5", accentColors[accent] ?? accentColors.default)} aria-hidden="true" />
-      <span className={cn("font-mono text-2xl", colorClass ?? "text-text-primary")}>
+      <div className={cn("absolute inset-x-0 top-0 h-1", accentColors[accent] ?? accentColors.default)} aria-hidden="true" />
+      <span className={cn("font-mono text-3xl", colorClass ?? "text-text-primary")}>
         <CountUp value={value} />
       </span>
       <span className="mt-1 text-xs uppercase tracking-wider text-text-secondary">
@@ -60,8 +60,8 @@ export function HeroGlobalStats({
     <StaggerList className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {/* Win Rate — special circular progress */}
       <StaggerItem>
-        <div className="flex flex-col items-center rounded border border-border-subtle bg-surface p-4 text-center relative overflow-hidden">
-          <div className={cn("absolute inset-x-0 top-0 h-0.5", winRate >= 50 ? "bg-soul" : "bg-blood")} aria-hidden="true" />
+        <div className="flex flex-col items-center rounded-md bg-[rgba(22,27,34,0.6)] backdrop-blur-md border border-[rgba(48,54,61,0.6)] p-4 text-center relative overflow-hidden">
+          <div className={cn("absolute inset-x-0 top-0 h-1", winRate >= 50 ? "bg-soul" : "bg-blood")} aria-hidden="true" />
           <WinRateCircle winRate={winRate} />
           <span className="mt-1 text-xs uppercase tracking-wider text-text-secondary">
             Win Rate
@@ -70,9 +70,9 @@ export function HeroGlobalStats({
       </StaggerItem>
 
       <StaggerItem>
-        <div className="flex flex-col items-center rounded border border-border-subtle bg-surface p-4 text-center relative overflow-hidden">
-          <div className="absolute inset-x-0 top-0 h-0.5 bg-sigil" aria-hidden="true" />
-          <span className="font-mono text-2xl text-sigil">{pickRate.toFixed(1)}%</span>
+        <div className="flex flex-col items-center rounded-md bg-[rgba(22,27,34,0.6)] backdrop-blur-md border border-[rgba(48,54,61,0.6)] p-4 text-center relative overflow-hidden">
+          <div className="absolute inset-x-0 top-0 h-1 bg-sigil" aria-hidden="true" />
+          <span className="font-mono text-3xl text-sigil">{pickRate.toFixed(1)}%</span>
           <span className="mt-1 text-xs uppercase tracking-wider text-text-secondary">Pick Rate</span>
         </div>
       </StaggerItem>

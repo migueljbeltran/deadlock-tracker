@@ -18,9 +18,11 @@ export function HeroSearchSection() {
   };
 
   return (
-    <div className="w-full max-w-md">
-      <SearchBar onPlayerFound={handlePlayerFound} />
-      <RecentSearches searches={searches} onSelect={handleRecentSelect} />
+    <div className="w-full max-w-lg">
+      <div className="glass-panel animated-border rounded-xl p-8 shadow-[var(--shadow-depth-md)]">
+        <SearchBar onPlayerFound={handlePlayerFound} />
+        <RecentSearches searches={searches} onSelect={handleRecentSelect} />
+      </div>
     </div>
   );
 }

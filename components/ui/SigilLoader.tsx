@@ -17,13 +17,31 @@ export function SigilLoader({ size = "md", className }: SigilLoaderProps) {
   return (
     <div
       className={cn(
-        "relative flex items-center justify-center",
+        "relative flex items-center justify-center animate-sigil-pulse",
         sizeClasses[size],
         className
       )}
       role="status"
       aria-label="Loading"
+      style={{ boxShadow: "0 0 30px rgba(61,220,132,0.1)" }}
     >
+      {/* Outermost amber ring (counter-rotating) */}
+      <svg
+        className="absolute inset-0 animate-spin-slow"
+        style={{ animationDirection: "reverse" }}
+        viewBox="0 0 50 50"
+        fill="none"
+      >
+        <circle
+          cx="25"
+          cy="25"
+          r="24"
+          stroke="var(--amber)"
+          strokeWidth="0.5"
+          opacity="0.4"
+          strokeDasharray="6 6"
+        />
+      </svg>
       {/* Outer ring */}
       <svg
         className="absolute inset-0 animate-sigil-pulse"

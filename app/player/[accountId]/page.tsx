@@ -119,7 +119,7 @@ export default async function PlayerPage({ params, searchParams }: PlayerPagePro
     <div className="flex min-h-screen flex-col">
       <Header />
 
-      <main className="relative flex-1">
+      <main className="atmosphere-soul relative flex-1">
         <SigilBackground intensity="subtle" />
 
         <div className="relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
@@ -141,10 +141,12 @@ export default async function PlayerPage({ params, searchParams }: PlayerPagePro
                 Top Heroes
               </h2>
             </FadeIn>
-            <TopHeroes
-              heroStats={heroStats}
-              heroMap={heroMap}
-            />
+            <div className="glass-panel rounded-xl p-6">
+              <TopHeroes
+                heroStats={heroStats}
+                heroMap={heroMap}
+              />
+            </div>
           </section>
 
           <ArtDecoDivider variant="simple" className="my-8" />
@@ -156,16 +158,18 @@ export default async function PlayerPage({ params, searchParams }: PlayerPagePro
                 Match History
               </h2>
             </FadeIn>
-            <MatchHistoryList
-              matches={pageMatches}
-              accountId={accountId}
-              heroMap={heroMap}
-            />
-            <Pagination
-              currentPage={page}
-              hasNextPage={hasNextPage}
-              baseUrl={`/player/${accountId}`}
-            />
+            <div className="glass-panel rounded-xl p-6">
+              <MatchHistoryList
+                matches={pageMatches}
+                accountId={accountId}
+                heroMap={heroMap}
+              />
+              <Pagination
+                currentPage={page}
+                hasNextPage={hasNextPage}
+                baseUrl={`/player/${accountId}`}
+              />
+            </div>
           </section>
         </div>
       </main>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Shield } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { SigilBackground } from "@/components/layout/SigilBackground";
@@ -68,17 +69,21 @@ export default async function HeroesPage() {
     <div className="flex min-h-screen flex-col">
       <Header />
 
-      <main className="relative flex-1">
+      <main className="relative flex-1 atmosphere-soul">
         <SigilBackground intensity="subtle" />
 
         <div className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="mb-8">
-            <h1 className="font-display text-3xl text-amber sm:text-4xl">
+            <h1 className="font-display text-3xl sm:text-4xl bg-clip-text text-transparent bg-gradient-to-b from-amber-light via-amber to-amber/70">
               Heroes
             </h1>
             <p className="mt-2 text-text-secondary">
               Global stats across all rank brackets.
             </p>
+            <div className="mt-3 inline-flex items-center gap-2 rounded-full glass-panel px-4 py-1.5 text-xs text-text-secondary">
+              <Shield className="h-3.5 w-3.5 text-sigil" />
+              <span className="font-mono">{playableHeroes.length}</span> playable heroes
+            </div>
           </div>
 
           <HeroGrid heroes={heroesWithStats} />

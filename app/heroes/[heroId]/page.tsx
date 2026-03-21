@@ -89,7 +89,7 @@ export default async function HeroDetailPage({ params }: HeroDetailPageProps) {
     <div className="flex min-h-screen flex-col">
       <Header />
 
-      <main className="relative flex-1">
+      <main className="relative flex-1 atmosphere-amber">
         <SigilBackground intensity="subtle" />
 
         <div className="relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">

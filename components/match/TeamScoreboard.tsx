@@ -25,18 +25,18 @@ export function TeamScoreboard({
 
   return (
     <div className={cn(
-      "overflow-x-auto rounded border",
+      "overflow-x-auto rounded-lg glass-panel",
       isWinner
         ? "border-soul/40 shadow-glow-soul"
-        : "border-border-subtle",
+        : "",
     )}>
       <table className="w-full text-sm">
         <thead>
           <tr className={cn(
             "border-b-2 text-left uppercase tracking-[0.05em] text-xs",
             isWinner
-              ? "border-soul bg-soul/10 text-soul"
-              : "border-blood bg-blood/10 text-blood",
+              ? "border-soul bg-gradient-to-r from-soul/20 via-soul/10 to-transparent text-soul"
+              : "border-blood bg-gradient-to-r from-blood/15 via-blood/5 to-transparent text-blood",
           )}>
             <th className="px-3 py-2 sm:px-4">
               {isWinner && <Crown className="mr-1.5 inline-block h-3.5 w-3.5 -translate-y-px" />}
@@ -62,8 +62,9 @@ export function TeamScoreboard({
               <tr
                 key={player.account_id}
                 className={cn(
-                  "border-b border-border-subtle transition-colors hover:border-l-2 hover:border-l-soul hover:bg-surface",
-                  idx % 2 === 1 && "bg-surface-elevated/30",
+                  "border-b border-border-subtle transition-colors hover:border-l-2 hover:border-l-soul hover:bg-[rgba(31,41,55,0.5)]",
+                  idx % 2 === 1 && "bg-[rgba(31,41,55,0.3)]",
+                  isTopKiller && "bg-soul/[0.05]",
                   !isWinner && "opacity-90",
                 )}
               >
@@ -92,15 +93,18 @@ export function TeamScoreboard({
                     </Link>
                   </div>
                 </td>
-                <td className={cn(
-                  "px-2 py-2 text-center font-mono",
-                  isTopKiller ? "text-soul font-semibold" : "text-soul",
-                )}>
+                <td
+                  className={cn(
+                    "px-2 py-2 text-center font-mono",
+                    isTopKiller ? "text-soul font-semibold" : "text-soul",
+                  )}
+                  style={{ textShadow: "0 0 8px rgba(61,220,132,0.3)" }}
+                >
                   {player.kills}
                 </td>
-                <td className="px-2 py-2 text-center font-mono text-blood">{player.deaths}</td>
-                <td className="px-2 py-2 text-center font-mono text-sigil">{player.assists}</td>
-                <td className="px-2 py-2 text-right font-mono text-amber">{formatNumber(player.net_worth)}</td>
+                <td className="px-2 py-2 text-center font-mono text-blood" style={{ textShadow: "0 0 8px rgba(231,76,60,0.3)" }}>{player.deaths}</td>
+                <td className="px-2 py-2 text-center font-mono text-sigil" style={{ textShadow: "0 0 8px rgba(26,188,156,0.3)" }}>{player.assists}</td>
+                <td className="px-2 py-2 text-right font-mono text-amber" style={{ textShadow: "0 0 8px rgba(212,168,83,0.3)" }}>{formatNumber(player.net_worth)}</td>
                 <td className="hidden px-2 py-2 text-right font-mono text-text-secondary sm:table-cell">{player.last_hits}</td>
                 <td className="hidden px-2 py-2 text-right font-mono text-text-secondary sm:table-cell">{player.denies}</td>
                 <td className="px-2 py-2 text-center font-mono text-text-secondary">{player.player_level ?? "—"}</td>

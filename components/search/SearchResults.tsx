@@ -40,7 +40,7 @@ export function SearchResults({ isLoading, player, error, onSelect }: SearchResu
     <button
       type="button"
       onClick={() => onSelect(player)}
-      className="flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-surface-elevated"
+      className="group flex w-full items-center gap-3 p-3 text-left transition-all hover:bg-surface-elevated/50 hover:border-l-2 hover:border-l-soul hover:pl-4"
     >
       <Image
         src={player.avatar}
@@ -57,7 +57,7 @@ export function SearchResults({ isLoading, player, error, onSelect }: SearchResu
           {player.accountId}
         </p>
       </div>
-      <span className="text-xs text-soul">View Profile →</span>
+      <span className="text-xs text-soul transition-transform group-hover:translate-x-1">View Profile →</span>
     </button>
   );
 }

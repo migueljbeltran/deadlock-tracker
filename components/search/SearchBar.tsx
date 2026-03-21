@@ -96,7 +96,7 @@ export function SearchBar({ onPlayerFound }: SearchBarProps) {
 
       {/* Dropdown Results */}
       {showDropdown && (isLoading || player || error) && (
-        <div className="absolute left-0 right-0 top-12 z-20 mt-1 overflow-hidden rounded border border-border-subtle bg-surface shadow-lg">
+        <div className="absolute left-0 right-0 top-12 z-20 mt-1 overflow-hidden rounded-md glass-panel shadow-[var(--shadow-depth-md)]">
           <SearchResults
             isLoading={isLoading}
             player={player}

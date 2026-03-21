@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Trophy } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { SigilBackground } from "@/components/layout/SigilBackground";
@@ -60,10 +61,11 @@ export default async function LeaderboardPage({ searchParams }: LeaderboardPageP
       <main className="relative flex-1">
         <SigilBackground intensity="subtle" />
 
-        <div className="relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="atmosphere-amber relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="font-display text-3xl text-amber sm:text-4xl">
+              <h1 className="font-display text-3xl text-amber sm:text-4xl flex items-center gap-3">
+                <Trophy className="h-7 w-7 text-amber" />
                 Leaderboard
               </h1>
               <p className="mt-2 text-text-secondary">

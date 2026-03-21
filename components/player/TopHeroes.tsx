@@ -23,7 +23,7 @@ export function TopHeroes({ heroStats, heroMap }: TopHeroesProps) {
 
   return (
     <StaggerList className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {topHeroes.map((stat) => {
+      {topHeroes.map((stat, index) => {
         const hero = heroMap.get(stat.hero_id);
         const winRate = stat.matches_played > 0
           ? (stat.wins / stat.matches_played) * 100
@@ -41,7 +41,10 @@ export function TopHeroes({ heroStats, heroMap }: TopHeroesProps) {
         return (
           <StaggerItem key={stat.hero_id}>
             <GlowCard>
-              <div className="p-4">
+              <div className="relative p-4">
+                <div className="absolute top-2 left-2 z-20 flex h-5 w-5 items-center justify-center rounded-full bg-surface/80 backdrop-blur-sm text-[10px] font-mono text-text-secondary border border-border-subtle">
+                  {index + 1}
+                </div>
                 <div className="flex items-center gap-3">
                   {hero?.images?.icon_hero_card_webp ? (
                     <Image
@@ -87,11 +90,8 @@ export function TopHeroes({ heroStats, heroMap }: TopHeroesProps) {
                 </div>
 
                 {/* Win rate bar */}
-                <div className="mt-2 h-1 w-full rounded-full bg-blood/30 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-soul"
-                    style={{ width: `${winRate}%` }}
-                  />
+                <div className="winrate-bar mt-2 w-full">
+                  <div className="winrate-bar-fill" style={{ width: `${winRate}%` }} />
                 </div>
               </div>
             </GlowCard>

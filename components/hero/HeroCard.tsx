@@ -21,20 +21,20 @@ export function HeroCard({ hero }: HeroCardProps) {
   return (
     <Link href={`/heroes/${hero.id}`} className="block">
       <GlowCard>
-        <div className="p-4">
+        <div className={cn("p-4 border-l-2", hero.winRate >= 50 ? "border-l-soul" : "border-l-blood")}>
           <div className="flex items-center gap-3">
             {hero.imageUrl ? (
               <div className="overflow-hidden rounded">
                 <Image
                   src={hero.imageUrl}
                   alt={hero.name}
-                  width={48}
-                  height={48}
+                  width={56}
+                  height={56}
                   className="rounded transition-transform duration-300 hover:scale-110"
                 />
               </div>
             ) : (
-              <div className="flex h-12 w-12 items-center justify-center rounded bg-surface-elevated text-text-muted">
+              <div className="flex h-14 w-14 items-center justify-center rounded bg-surface-elevated text-text-muted">
                 ?
               </div>
             )}
@@ -51,7 +51,7 @@ export function HeroCard({ hero }: HeroCardProps) {
           <div className="mt-3 flex items-center justify-between text-xs">
             <span
               className={cn(
-                "font-mono",
+                "font-mono text-sm font-semibold",
                 hero.winRate >= 50 ? "text-soul" : "text-blood",
               )}
             >
@@ -66,9 +66,9 @@ export function HeroCard({ hero }: HeroCardProps) {
           </div>
 
           {/* Win rate bar */}
-          <div className="mt-2 h-1 w-full rounded-full bg-blood/30 overflow-hidden">
+          <div className="winrate-bar mt-2 w-full">
             <div
-              className="h-full rounded-full bg-soul"
+              className="winrate-bar-fill"
               style={{ width: `${hero.winRate}%` }}
             />
           </div>

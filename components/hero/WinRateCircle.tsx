@@ -12,7 +12,7 @@ interface WinRateCircleProps {
 const RADIUS = 26;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
-export function WinRateCircle({ winRate, size = 60 }: WinRateCircleProps) {
+export function WinRateCircle({ winRate, size = 80 }: WinRateCircleProps) {
   const ref = useRef<SVGSVGElement>(null);
   const isInView = useInView(ref, { once: true });
 
@@ -27,6 +27,15 @@ export function WinRateCircle({ winRate, size = 60 }: WinRateCircleProps) {
         viewBox="0 0 60 60"
         className="-rotate-90"
       >
+        <defs>
+          <filter id="glow-filter">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
         {/* Background track */}
         <circle
           cx="30"
@@ -34,7 +43,7 @@ export function WinRateCircle({ winRate, size = 60 }: WinRateCircleProps) {
           r={RADIUS}
           fill="none"
           stroke="var(--border-subtle)"
-          strokeWidth="4"
+          strokeWidth="6"
         />
         {/* Animated arc */}
         <motion.circle
@@ -43,7 +52,8 @@ export function WinRateCircle({ winRate, size = 60 }: WinRateCircleProps) {
           r={RADIUS}
           fill="none"
           stroke={winRate >= 50 ? "var(--soul)" : "var(--blood)"}
-          strokeWidth="4"
+          strokeWidth="6"
+          filter="url(#glow-filter)"
           strokeLinecap="round"
           strokeDasharray={CIRCUMFERENCE}
           initial={{ strokeDashoffset: CIRCUMFERENCE }}

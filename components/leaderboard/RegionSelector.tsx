@@ -21,7 +21,7 @@ export function RegionSelector({ currentRegion }: RegionSelectorProps) {
   const router = useRouter();
 
   return (
-    <nav className="relative flex gap-1 rounded border border-border-subtle bg-surface p-1">
+    <nav className="relative flex gap-1 glass-panel rounded-lg p-1">
       {REGIONS.map(({ value, label }) => (
         <button
           key={value}
@@ -36,7 +36,7 @@ export function RegionSelector({ currentRegion }: RegionSelectorProps) {
           {value === currentRegion && (
             <motion.div
               layoutId="region-indicator"
-              className="absolute inset-0 rounded bg-soul"
+              className="absolute inset-0 rounded bg-soul shadow-[0_0_12px_rgba(61,220,132,0.3)]"
               style={{ zIndex: -1 }}
               transition={{ type: "spring", stiffness: 400, damping: 30 }}
             />
