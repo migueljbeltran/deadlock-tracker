@@ -1,11 +1,22 @@
+import Image from "next/image";
 import { formatDuration, formatTimeAgo } from "@/lib/utils/format";
-import type { DeadlockMatchMetadata } from "@/lib/api";
+import type { DeadlockMatchMetadata, DeadlockRank } from "@/lib/api";
 
 interface MatchHeaderProps {
   match: DeadlockMatchMetadata;
+  ranks?: DeadlockRank[];
 }
 
-export function MatchHeader({ match }: MatchHeaderProps) {
+function getRankForBadge(badgeValue: number | null | undefined, ranks: DeadlockRank[]): DeadlockRank | null {
+  if (badgeValue == null) return null;
+  const tier = Math.floor(badgeValue / 10);
+  return ranks.find((r) => r.tier === tier) ?? null;
+}
+
+export function MatchHeader({ match, ranks }: MatchHeaderProps) {
+  const team0Rank = ranks ? getRankForBadge(match.average_badge_team0, ranks) : null;
+  const team1Rank = ranks ? getRankForBadge(match.average_badge_team1, ranks) : null;
+
   return (
     <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
       <div className="text-center sm:text-left">
@@ -23,6 +34,44 @@ export function MatchHeader({ match }: MatchHeaderProps) {
             {formatTimeAgo(match.start_time)}
           </span>
         </div>
+
+        {/* Team Average Ranks */}
+        {(team0Rank || team1Rank) && (
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            {team0Rank && (
+              <div className="flex items-center gap-1.5 glass-panel rounded-full px-3 py-1">
+                {(team0Rank.images.large_webp || team0Rank.images.large) && (
+                  <Image
+                    src={(team0Rank.images.large_webp || team0Rank.images.large)!}
+                    alt={team0Rank.name}
+                    width={18}
+                    height={18}
+                  />
+                )}
+                <span className="text-[10px] text-text-muted">Archmother</span>
+                <span className="text-xs font-heading" style={{ color: team0Rank.color }}>
+                  {team0Rank.name}
+                </span>
+              </div>
+            )}
+            {team1Rank && (
+              <div className="flex items-center gap-1.5 glass-panel rounded-full px-3 py-1">
+                {(team1Rank.images.large_webp || team1Rank.images.large) && (
+                  <Image
+                    src={(team1Rank.images.large_webp || team1Rank.images.large)!}
+                    alt={team1Rank.name}
+                    width={18}
+                    height={18}
+                  />
+                )}
+                <span className="text-[10px] text-text-muted">Hidden King</span>
+                <span className="text-xs font-heading" style={{ color: team1Rank.color }}>
+                  {team1Rank.name}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-2">
@@ -39,7 +88,7 @@ export function MatchHeader({ match }: MatchHeaderProps) {
               backgroundColor: match.winning_team === "Team0" ? "var(--amber)" : "var(--sigil)",
             }}
           />
-          {match.winning_team === "Team0" ? "Amber Hand" : "Sapphire Flame"}
+          {match.winning_team === "Team0" ? "Archmother" : "Hidden King"}
         </span>
       </div>
     </div>

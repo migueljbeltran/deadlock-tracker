@@ -71,10 +71,32 @@ export interface DeadlockItem {
   id: number;
   class_name: string;
   name: string;
+  type?: string;
   image?: string;
   image_webp?: string;
+  shop_image?: string;
+  shop_image_webp?: string;
+  cost?: number;
+  item_tier?: number;
+  item_slot_type?: string;
+  shopable?: boolean;
+  activation?: string;
+  description?: Record<string, string>;
   heroes?: number[];
   properties?: Record<string, unknown>;
+}
+
+export interface DeadlockItemStats {
+  item_id: number;
+  bucket: number;
+  wins: number;
+  losses: number;
+  matches: number;
+  players: number;
+  avg_buy_time_s: number;
+  avg_sell_time_s: number;
+  avg_buy_time_relative: number;
+  avg_sell_time_relative: number;
 }
 
 export interface DeadlockRankImages {
@@ -131,6 +153,13 @@ export interface DeadlockMatchPlayer {
   assigned_lane?: number;
   party?: number;
   abandon_match_time_s?: number;
+}
+
+export interface DeadlockMatchItemPurchase {
+  game_time_s: number;
+  item_id: number;
+  upgrade_id: number;
+  sold_time_s: number;
 }
 
 export interface DeadlockMatchMetadata {

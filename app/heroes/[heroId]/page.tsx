@@ -7,7 +7,10 @@ import { ArtDecoDivider } from "@/components/layout/ArtDecoDivider";
 import { HeroDetailHeader } from "@/components/hero/HeroDetailHeader";
 import { HeroDescription } from "@/components/hero/HeroDescription";
 import { HeroGlobalStats } from "@/components/hero/HeroGlobalStats";
-import { getHero, getHeroAnalytics } from "@/lib/api";
+import { getHero, getHeroAnalytics, getRanks } from "@/lib/api";
+import type { DeadlockHeroAnalytics } from "@/lib/api";
+import { HeroRankBreakdown } from "@/components/hero/HeroRankBreakdown";
+import { FadeIn } from "@/components/motion";
 
 interface HeroDetailPageProps {
   params: Promise<{ heroId: string }>;
@@ -43,8 +46,11 @@ export default async function HeroDetailPage({ params }: HeroDetailPageProps) {
     notFound();
   }
 
-  // Fetch analytics in parallel (non-blocking — page still renders without stats)
-  const analytics = await getHeroAnalytics().catch(() => []);
+  // Fetch analytics + ranks in parallel
+  const [analytics, ranks] = await Promise.all([
+    getHeroAnalytics().catch(() => []),
+    getRanks(),
+  ]);
 
   // Aggregate stats across rank buckets for this hero
   let totalWins = 0;
@@ -54,6 +60,16 @@ export default async function HeroDetailPage({ params }: HeroDetailPageProps) {
   let totalAssists = 0;
   let totalDamage = 0;
   let totalNetWorth = 0;
+  let totalShotsHit = 0;
+  let totalShotsMissed = 0;
+  let totalBossDamage = 0;
+  let totalCreepDamage = 0;
+  let totalNeutralDamage = 0;
+  let totalDamageTaken = 0;
+
+  // Aggregate per-subrank entries into per-tier for rank breakdown
+  // API returns composite bucket values (tier*10 + subrank, e.g. 53 = tier 5 subrank 3)
+  const tierMap = new Map<number, DeadlockHeroAnalytics>();
 
   for (const entry of analytics) {
     if (entry.hero_id !== id) continue;
@@ -64,7 +80,40 @@ export default async function HeroDetailPage({ params }: HeroDetailPageProps) {
     totalAssists += entry.total_assists;
     totalDamage += entry.total_player_damage;
     totalNetWorth += entry.total_net_worth;
+    totalShotsHit += entry.total_shots_hit;
+    totalShotsMissed += entry.total_shots_missed;
+    totalBossDamage += entry.total_boss_damage;
+    totalCreepDamage += entry.total_creep_damage;
+    totalNeutralDamage += entry.total_neutral_damage;
+    totalDamageTaken += entry.total_player_damage_taken;
+
+    const tier = Math.floor(entry.bucket / 10);
+    const existing = tierMap.get(tier);
+    if (existing) {
+      existing.wins += entry.wins;
+      existing.losses += entry.losses;
+      existing.matches += entry.matches;
+      existing.players += entry.players;
+      existing.total_kills += entry.total_kills;
+      existing.total_deaths += entry.total_deaths;
+      existing.total_assists += entry.total_assists;
+      existing.total_net_worth += entry.total_net_worth;
+      existing.total_last_hits += entry.total_last_hits;
+      existing.total_denies += entry.total_denies;
+      existing.total_player_damage += entry.total_player_damage;
+      existing.total_player_damage_taken += entry.total_player_damage_taken;
+      existing.total_boss_damage += entry.total_boss_damage;
+      existing.total_creep_damage += entry.total_creep_damage;
+      existing.total_neutral_damage += entry.total_neutral_damage;
+      existing.total_shots_hit += entry.total_shots_hit;
+      existing.total_shots_missed += entry.total_shots_missed;
+      existing.total_max_health += entry.total_max_health;
+    } else {
+      tierMap.set(tier, { ...entry, bucket: tier });
+    }
   }
+
+  const heroRankAnalytics = Array.from(tierMap.values());
 
   // Compute global pick rate denominator
   const analyticsMap = new Map<number, number>();
@@ -84,6 +133,13 @@ export default async function HeroDetailPage({ params }: HeroDetailPageProps) {
   const avgAssists = totalMatches > 0 ? totalAssists / totalMatches : 0;
   const avgDamage = totalMatches > 0 ? totalDamage / totalMatches : 0;
   const avgNetWorth = totalMatches > 0 ? totalNetWorth / totalMatches : 0;
+  const accuracy = (totalShotsHit + totalShotsMissed) > 0
+    ? (totalShotsHit / (totalShotsHit + totalShotsMissed)) * 100
+    : 0;
+  const avgBossDamage = totalMatches > 0 ? totalBossDamage / totalMatches : 0;
+  const avgCreepDamage = totalMatches > 0 ? totalCreepDamage / totalMatches : 0;
+  const avgNeutralDamage = totalMatches > 0 ? totalNeutralDamage / totalMatches : 0;
+  const avgDamageTaken = totalMatches > 0 ? totalDamageTaken / totalMatches : 0;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -118,6 +174,11 @@ export default async function HeroDetailPage({ params }: HeroDetailPageProps) {
                 avgAssists={avgAssists}
                 avgDamage={avgDamage}
                 avgNetWorth={avgNetWorth}
+                accuracy={accuracy}
+                avgBossDamage={avgBossDamage}
+                avgCreepDamage={avgCreepDamage}
+                avgNeutralDamage={avgNeutralDamage}
+                avgDamageTaken={avgDamageTaken}
               />
             ) : (
               <p className="text-sm text-text-muted">
@@ -125,6 +186,23 @@ export default async function HeroDetailPage({ params }: HeroDetailPageProps) {
               </p>
             )}
           </section>
+
+          {/* Rank Breakdown */}
+          {heroRankAnalytics.length > 0 && (
+            <>
+              <ArtDecoDivider variant="simple" className="my-8" />
+              <section>
+                <FadeIn>
+                  <h2 className="font-heading text-xl text-amber mb-4">
+                    Performance by Rank
+                  </h2>
+                </FadeIn>
+                <FadeIn delay={0.1}>
+                  <HeroRankBreakdown analytics={heroRankAnalytics} ranks={ranks} />
+                </FadeIn>
+              </section>
+            </>
+          )}
         </div>
       </main>
 

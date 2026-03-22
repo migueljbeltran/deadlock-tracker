@@ -9,6 +9,8 @@ import type {
   DeadlockHeroAnalytics,
   DeadlockPlayerMetrics,
   DeadlockLeaderboardEntry,
+  DeadlockItemStats,
+  DeadlockMatchItemPurchase,
   DeadlockApiInfo,
 } from "./types";
 import { ApiError } from "./types";
@@ -48,8 +50,16 @@ export async function getHero(heroId: number): Promise<DeadlockHero> {
 
 export async function getItems(): Promise<DeadlockItem[]> {
   return deadlockFetch<DeadlockItem[]>(
-    `${ASSETS_API}/v2/items`,
+    `${ASSETS_API}/v2/items/by-type/upgrade`,
     3600,
+  );
+}
+
+export async function getItemStats(minBadge?: number): Promise<DeadlockItemStats[]> {
+  const params = minBadge != null ? `?min_average_badge=${minBadge}` : "";
+  return deadlockFetch<DeadlockItemStats[]>(
+    `${GAME_API}/v1/analytics/item-stats${params}`,
+    1800,
   );
 }
 
@@ -97,6 +107,41 @@ export async function getMatchDetail(
   return results[0];
 }
 
+/**
+ * Fetch per-player item purchases from the single match endpoint.
+ * Returns a map of account_id → unsold item_ids.
+ */
+export async function getMatchPlayerItems(
+  matchId: number,
+): Promise<Map<number, number[]>> {
+  interface RawMatchDetail {
+    match_info: {
+      players: {
+        account_id: number;
+        items?: DeadlockMatchItemPurchase[];
+      }[];
+    };
+  }
+
+  const data = await deadlockFetch<RawMatchDetail>(
+    `${GAME_API}/v1/matches/${matchId}/metadata`,
+    86400,
+  );
+
+  const result = new Map<number, number[]>();
+  for (const player of data.match_info.players) {
+    const items = player.items ?? [];
+    // Get unique unsold item_ids (sold_time_s === 0)
+    const unsoldIds = [...new Set(
+      items
+        .filter((i) => i.sold_time_s === 0)
+        .map((i) => i.item_id),
+    )];
+    result.set(player.account_id, unsoldIds);
+  }
+  return result;
+}
+
 export async function getApiInfo(): Promise<DeadlockApiInfo> {
   return deadlockFetch<DeadlockApiInfo>(
     `${GAME_API}/v1/info`,
@@ -106,7 +151,7 @@ export async function getApiInfo(): Promise<DeadlockApiInfo> {
 
 export async function getHeroAnalytics(): Promise<DeadlockHeroAnalytics[]> {
   return deadlockFetch<DeadlockHeroAnalytics[]>(
-    `${GAME_API}/v1/analytics/hero-stats`,
+    `${GAME_API}/v1/analytics/hero-stats?bucket=avg_badge`,
     1800,
   );
 }

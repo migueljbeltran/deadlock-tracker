@@ -28,6 +28,10 @@
   --amber-light: #F4D58D;
   --amber-glow: rgba(212, 168, 83, 0.3);
 
+  /* Spirit Purple */
+  --spirit: #9B59B6;
+  --spirit-glow: rgba(155, 89, 182, 0.3);
+
   /* Blood Red (Danger/Loss) */
   --blood: #E74C3C;
   --blood-dim: #922B21;
@@ -83,6 +87,9 @@
   --color-amber: var(--amber);
   --color-amber-light: var(--amber-light);
   --color-amber-glow: var(--amber-glow);
+
+  --color-spirit: var(--spirit);
+  --color-spirit-glow: var(--spirit-glow);
 
   --color-blood: var(--blood);
   --color-blood-dim: var(--blood-dim);

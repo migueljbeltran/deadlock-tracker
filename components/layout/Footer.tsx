@@ -36,6 +36,12 @@ export function Footer() {
               dltracker is not affiliated with Valve Corporation.
             </p>
             <div className="flex gap-6">
+              <a href="/about" className="text-sm text-text-secondary hover:text-text-primary transition-colors">
+                About
+              </a>
+              <a href="/privacy" className="text-sm text-text-secondary hover:text-text-primary transition-colors">
+                Privacy
+              </a>
               <a
                 href="https://github.com/migueljbeltran/deadlock-tracker"
                 target="_blank"

@@ -34,6 +34,17 @@ export const metadata: Metadata = {
   title: "dltracker | Deadlock Stats Tracker",
   description: "A living record of souls and matches from the Cursed Apple. Track your Deadlock statistics, hero performance, and match history.",
   keywords: ["Deadlock", "stats", "tracker", "Valve", "match history", "heroes", "dltracker"],
+  openGraph: {
+    title: "dltracker | Deadlock Stats Tracker",
+    description: "Track your Deadlock statistics, hero performance, match history, and leaderboards.",
+    siteName: "dltracker",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "dltracker | Deadlock Stats Tracker",
+    description: "Track your Deadlock statistics, hero performance, match history, and leaderboards.",
+  },
 };
 
 export default function RootLayout({

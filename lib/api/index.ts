@@ -13,6 +13,7 @@ export type {
   DeadlockHeroAnalytics,
   DeadlockPlayerMetrics,
   DeadlockLeaderboardEntry,
+  DeadlockItemStats,
   DeadlockApiInfo,
 } from "./types";
 
@@ -34,10 +35,12 @@ export {
   getHeroes,
   getHero,
   getItems,
+  getItemStats,
   getRanks,
   getPlayerHeroStats,
   getMatchHistory,
   getMatchDetail,
+  getMatchPlayerItems,
   getApiInfo,
   getHeroAnalytics,
   getPlayerMetrics,

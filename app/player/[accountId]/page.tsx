@@ -7,6 +7,7 @@ import { ArtDecoDivider } from "@/components/layout/ArtDecoDivider";
 import { PlayerHeader } from "@/components/player/PlayerHeader";
 import { TopHeroes } from "@/components/player/TopHeroes";
 import { MatchHistoryList } from "@/components/player/MatchHistoryList";
+import type { DeadlockPlayerMetrics } from "@/lib/api";
 import {
   accountIdToSteam64,
   getPlayerSummary,
@@ -14,9 +15,14 @@ import {
   getMatchHistory,
   getHeroes,
   getRanks,
+  getPlayerMetrics,
 } from "@/lib/api";
+import { CareerStats } from "@/components/player/CareerStats";
+import { RecentForm } from "@/components/player/RecentForm";
+import { PlayerPercentiles } from "@/components/player/PlayerPercentiles";
 import { FadeIn } from "@/components/motion";
 import { Pagination } from "@/components/ui/Pagination";
+import { RefreshButton } from "@/components/player/RefreshButton";
 
 const MATCH_PAGE_SIZE = 20;
 
@@ -54,11 +60,12 @@ export async function generateMetadata(
 
 /**
  * Estimate the player's rank from recent match badge data.
- * Returns the badge level (tier index) or null if no data.
+ * Badge values are composite: rank_tier * 10 + subrank (e.g. 53 = tier 5, subrank 3).
+ * Returns { tier, subrank } or null if no data.
  */
 function estimateRankBadge(
   matches: { average_badge_team0?: number | null; average_badge_team1?: number | null }[],
-): number | null {
+): { tier: number; subrank: number } | null {
   const badges: number[] = [];
 
   for (const match of matches) {
@@ -68,10 +75,10 @@ function estimateRankBadge(
 
   if (badges.length === 0) return null;
 
-  // Badge values are composite: rank_tier * 10 + subrank (e.g. 43 = tier 4, subrank 3).
-  // Divide by 10 and floor to extract the tier index.
   const avg = badges.reduce((sum, b) => sum + b, 0) / badges.length;
-  return Math.floor(avg / 10);
+  const tier = Math.floor(avg / 10);
+  const subrank = Math.min(6, Math.max(1, Math.round(avg % 10)));
+  return { tier, subrank };
 }
 
 export default async function PlayerPage({ params, searchParams }: PlayerPageProps) {
@@ -91,12 +98,13 @@ export default async function PlayerPage({ params, searchParams }: PlayerPagePro
   const fetchLimit = offset + MATCH_PAGE_SIZE + 1;
 
   // Fetch all data in parallel
-  const [player, heroStats, allMatches, heroes, ranks] = await Promise.all([
+  const [player, heroStats, allMatches, heroes, ranks, playerMetrics] = await Promise.all([
     getPlayerSummary(steam64),
     getPlayerHeroStats(accountId).catch(() => [] as Awaited<ReturnType<typeof getPlayerHeroStats>>),
     getMatchHistory(accountId, fetchLimit).catch(() => [] as Awaited<ReturnType<typeof getMatchHistory>>),
     getHeroes(),
     getRanks(),
+    getPlayerMetrics(accountId).catch(() => null as DeadlockPlayerMetrics | null),
   ]);
 
   const pageMatches = allMatches.slice(offset, offset + MATCH_PAGE_SIZE);
@@ -110,10 +118,11 @@ export default async function PlayerPage({ params, searchParams }: PlayerPagePro
   const heroMap = new Map(heroes.map((h) => [h.id, h]));
 
   // Estimate rank from all fetched matches
-  const badgeLevel = estimateRankBadge(allMatches);
-  const estimatedRank = badgeLevel != null
-    ? ranks.find((r) => r.tier === badgeLevel) ?? null
+  const badgeEstimate = estimateRankBadge(allMatches);
+  const estimatedRank = badgeEstimate != null
+    ? ranks.find((r) => r.tier === badgeEstimate.tier) ?? null
     : null;
+  const estimatedSubrank = badgeEstimate?.subrank ?? null;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -129,14 +138,49 @@ export default async function PlayerPage({ params, searchParams }: PlayerPagePro
               player={player}
               accountId={accountId}
               estimatedRank={estimatedRank}
+              estimatedSubrank={estimatedSubrank}
             />
           </FadeIn>
+
+          {/* Career Stats */}
+          {heroStats.length > 0 && (
+            <>
+              <ArtDecoDivider className="my-8" />
+              <section className="mb-8">
+                <FadeIn delay={0.15}>
+                  <h2 className="font-heading text-xl text-amber mb-4">
+                    Career Overview
+                  </h2>
+                </FadeIn>
+                <FadeIn delay={0.2}>
+                  <CareerStats heroStats={heroStats} />
+                </FadeIn>
+              </section>
+            </>
+          )}
+
+          {/* Performance Percentiles */}
+          {playerMetrics && Object.keys(playerMetrics).length > 0 && (
+            <>
+              <ArtDecoDivider variant="simple" className="my-8" />
+              <section className="mb-8">
+                <FadeIn delay={0.25}>
+                  <h2 className="font-heading text-xl text-amber mb-4">
+                    Performance Ranking
+                  </h2>
+                </FadeIn>
+                <FadeIn delay={0.3}>
+                  <PlayerPercentiles metrics={playerMetrics} />
+                </FadeIn>
+              </section>
+            </>
+          )}
 
           <ArtDecoDivider className="my-8" />
 
           {/* Top Heroes */}
           <section className="mb-8">
-            <FadeIn delay={0.2}>
+            <FadeIn delay={0.35}>
               <h2 className="font-heading text-xl text-amber mb-4">
                 Top Heroes
               </h2>
@@ -153,10 +197,16 @@ export default async function PlayerPage({ params, searchParams }: PlayerPagePro
 
           {/* Match History */}
           <section key={`matches-page-${page}`}>
-            <FadeIn delay={0.3}>
-              <h2 className="font-heading text-xl text-amber mb-4">
-                Match History
-              </h2>
+            <FadeIn delay={0.4}>
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+                <div className="flex items-center gap-3">
+                  <h2 className="font-heading text-xl text-amber">
+                    Match History
+                  </h2>
+                  <RefreshButton />
+                </div>
+                <RecentForm matches={allMatches.slice(0, 20)} accountId={accountId} />
+              </div>
             </FadeIn>
             <div className="glass-panel rounded-xl p-6">
               <MatchHistoryList

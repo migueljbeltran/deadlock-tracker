@@ -41,9 +41,12 @@ Open [http://localhost:3000](http://localhost:3000).
 | 0 - Foundation (design system, components) | Done |
 | 1 - Search & Player Profile | Done |
 | 2 - Heroes Grid | Done |
-| 3 - Hero Detail Page | Next |
-| 4 - Polish & Launch | Planned |
+| 3 - Hero Detail Page | Done |
+| 4 - Match Detail | Done |
+| 5 - Leaderboard | Done |
+| 6 - Homepage Polish | Done |
+| 7 - Visual Redesign ("Occult Noir Ascended") | Done |
 
 ## Design
 
-The "Occult Noir" theme uses a dark palette with soul-green (#3DDC84) accents, amber/gold highlights, and Art Deco geometric patterns. Fonts include Cinzel Decorative for display text and JetBrains Mono for stats.
+The "Occult Noir Ascended" theme uses a dark palette with soul-green (#3DDC84) accents, amber/gold highlights, and Art Deco geometric patterns. The visual layer features glassmorphism panels with backdrop blur, animated conic-gradient borders on hover, per-page atmospheric radial gradients, and glowing win-rate bars. Fonts include Cinzel Decorative for display text and JetBrains Mono for stats.

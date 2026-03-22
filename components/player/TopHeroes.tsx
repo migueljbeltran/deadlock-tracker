@@ -93,6 +93,19 @@ export function TopHeroes({ heroStats, heroMap }: TopHeroesProps) {
                 <div className="winrate-bar mt-2 w-full">
                   <div className="winrate-bar-fill" style={{ width: `${winRate}%` }} />
                 </div>
+
+                {/* Per-minute stats */}
+                <div className="mt-2 grid grid-cols-3 gap-x-2 gap-y-0.5 text-[10px] text-text-muted border-t border-border-subtle/30 pt-2">
+                  <span title="Damage per minute">
+                    DPM <span className="font-mono text-amber">{stat.damage_per_min.toFixed(0)}</span>
+                  </span>
+                  <span title="Net worth per minute">
+                    GPM <span className="font-mono text-amber">{stat.networth_per_min.toFixed(0)}</span>
+                  </span>
+                  <span title="Last hits per minute">
+                    LH/m <span className="font-mono text-text-secondary">{stat.last_hits_per_min.toFixed(1)}</span>
+                  </span>
+                </div>
               </div>
             </GlowCard>
           </StaggerItem>

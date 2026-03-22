@@ -8,11 +8,14 @@ import { MatchHeader } from "@/components/match/MatchHeader";
 import { TeamScoreboard } from "@/components/match/TeamScoreboard";
 import {
   getMatchDetail,
+  getMatchPlayerItems,
   getHeroes,
+  getItems,
+  getRanks,
   getPlayerSummaries,
   accountIdToSteam64,
 } from "@/lib/api";
-import type { SteamPlayerSummary } from "@/lib/api";
+import type { SteamPlayerSummary, DeadlockItem } from "@/lib/api";
 import { FadeIn } from "@/components/motion";
 
 interface MatchDetailPageProps {
@@ -46,18 +49,28 @@ export default async function MatchDetailPage({ params }: MatchDetailPageProps) 
 
   // Convert account IDs → Steam64 for the Steam API name lookup
   const steam64Ids = players.map((p) => accountIdToSteam64(p.account_id));
-  const [heroes, steamPlayers] = await Promise.all([
+  const [heroes, ranks, steamPlayers, allItems, playerItemsMap] = await Promise.all([
     getHeroes(),
+    getRanks(),
     getPlayerSummaries(steam64Ids).catch(() => [] as SteamPlayerSummary[]),
+    getItems().catch(() => [] as DeadlockItem[]),
+    getMatchPlayerItems(id).catch(() => new Map<number, number[]>()),
   ]);
 
   const heroMap = new Map(heroes.map((h) => [h.id, h]));
+
+  // Build item lookup (only shopable upgrades)
+  const itemMap = new Map<number, DeadlockItem>();
+  for (const item of allItems) {
+    if (item.shopable) {
+      itemMap.set(item.id, item);
+    }
+  }
 
   // Map account_id → player name (bridge Steam names to Deadlock IDs)
   const playerNameMap = new Map<number, string>();
   for (const sp of steamPlayers) {
     const steam64 = sp.steamid;
-    // Reverse: steam64 → accountId to key by account_id
     const accountId = Number(BigInt(steam64) - BigInt("76561197960265728"));
     playerNameMap.set(accountId, sp.personaname);
   }
@@ -75,7 +88,7 @@ export default async function MatchDetailPage({ params }: MatchDetailPageProps) 
 
         <div className="atmosphere-amber relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
           <FadeIn>
-            <MatchHeader match={match} />
+            <MatchHeader match={match} ranks={ranks} />
           </FadeIn>
 
           <ArtDecoDivider className="my-8" />
@@ -83,11 +96,13 @@ export default async function MatchDetailPage({ params }: MatchDetailPageProps) 
           <section className="space-y-6">
             <FadeIn delay={0.2}>
               <TeamScoreboard
-                teamLabel="Amber Hand"
+                teamLabel="Archmother"
                 players={team0}
                 heroMap={heroMap}
                 playerNameMap={playerNameMap}
                 isWinner={match.winning_team === "Team0"}
+                playerItemsMap={playerItemsMap}
+                itemMap={itemMap}
               />
             </FadeIn>
 
@@ -99,11 +114,13 @@ export default async function MatchDetailPage({ params }: MatchDetailPageProps) 
 
             <FadeIn delay={0.4}>
               <TeamScoreboard
-                teamLabel="Sapphire Flame"
+                teamLabel="Hidden King"
                 players={team1}
                 heroMap={heroMap}
                 playerNameMap={playerNameMap}
                 isWinner={match.winning_team === "Team1"}
+                playerItemsMap={playerItemsMap}
+                itemMap={itemMap}
               />
             </FadeIn>
           </section>

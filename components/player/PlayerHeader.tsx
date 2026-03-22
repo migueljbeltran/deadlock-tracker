@@ -5,9 +5,10 @@ interface PlayerHeaderProps {
   player: SteamPlayerSummary;
   accountId: number;
   estimatedRank: DeadlockRank | null;
+  estimatedSubrank?: number | null;
 }
 
-export function PlayerHeader({ player, accountId, estimatedRank }: PlayerHeaderProps) {
+export function PlayerHeader({ player, accountId, estimatedRank, estimatedSubrank }: PlayerHeaderProps) {
   return (
     <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
       {/* Avatar with triple-ring effect */}
@@ -45,20 +46,26 @@ export function PlayerHeader({ player, accountId, estimatedRank }: PlayerHeaderP
         {/* Rank Badge */}
         {estimatedRank ? (
           <div className="mt-3 flex items-center gap-2 glass-panel rounded-lg px-3 py-2">
-            {(estimatedRank.images.large_webp || estimatedRank.images.large) && (
-              <Image
-                src={(estimatedRank.images.large_webp || estimatedRank.images.large)!}
-                alt={estimatedRank.name}
-                width={28}
-                height={28}
-                className="drop-shadow-lg animate-float"
-              />
-            )}
+            {(() => {
+              const subrankImg = estimatedSubrank
+                ? estimatedRank.images[`small_subrank${estimatedSubrank}_webp`]
+                : null;
+              const imgSrc = subrankImg || estimatedRank.images.large_webp || estimatedRank.images.large;
+              return imgSrc ? (
+                <Image
+                  src={imgSrc}
+                  alt={`${estimatedRank.name} ${estimatedSubrank ?? ""}`}
+                  width={28}
+                  height={28}
+                  className="drop-shadow-lg animate-float"
+                />
+              ) : null;
+            })()}
             <span
               className="font-heading text-sm"
               style={{ color: estimatedRank.color }}
             >
-              {estimatedRank.name}
+              {estimatedRank.name}{estimatedSubrank ? ` ${estimatedSubrank}` : ""}
             </span>
             <span className="text-xs text-text-muted">(Estimated)</span>
           </div>
