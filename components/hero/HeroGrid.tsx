@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search } from "lucide-react";
+import { Search, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/Input";
 import { HeroCard, type HeroWithStats } from "@/components/hero/HeroCard";
@@ -9,10 +9,10 @@ import { HeroCard, type HeroWithStats } from "@/components/hero/HeroCard";
 type SortOption = "name" | "winRate" | "pickRate" | "matches";
 
 const sortLabels: Record<SortOption, string> = {
-  name: "Name (A-Z)",
-  winRate: "Win Rate (High - Low)",
-  pickRate: "Pick Rate (High - Low)",
-  matches: "Matches (High - Low)",
+  name: "Name",
+  winRate: "Win Rate",
+  pickRate: "Pick Rate",
+  matches: "Matches",
 };
 
 interface HeroGridProps {
@@ -22,6 +22,7 @@ interface HeroGridProps {
 export function HeroGrid({ heroes }: HeroGridProps) {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortOption>("name");
+  const [sortAsc, setSortAsc] = useState(true);
 
   const filtered = useMemo(() => {
     let result = heroes;
@@ -33,21 +34,22 @@ export function HeroGrid({ heroes }: HeroGridProps) {
     }
 
     // Sort
+    const dir = sortAsc ? 1 : -1;
     result = [...result].sort((a, b) => {
       switch (sort) {
         case "name":
-          return a.name.localeCompare(b.name);
+          return a.name.localeCompare(b.name) * dir;
         case "winRate":
-          return b.winRate - a.winRate;
+          return (a.winRate - b.winRate) * dir;
         case "pickRate":
-          return b.pickRate - a.pickRate;
+          return (a.pickRate - b.pickRate) * dir;
         case "matches":
-          return b.matches - a.matches;
+          return (a.matches - b.matches) * dir;
       }
     });
 
     return result;
-  }, [heroes, search, sort]);
+  }, [heroes, search, sort, sortAsc]);
 
   return (
     <div>
@@ -63,19 +65,28 @@ export function HeroGrid({ heroes }: HeroGridProps) {
           />
         </div>
 
-        <select
-          value={sort}
-          onChange={(e) => setSort(e.target.value as SortOption)}
-          className="h-10 rounded border border-border-subtle bg-[rgba(22,27,34,0.5)] backdrop-blur-md px-3 text-sm text-text-primary transition-all duration-200 focus:border-soul focus:outline-none focus:ring-2 focus:ring-soul-glow"
-        >
-          {(Object.entries(sortLabels) as [SortOption, string][]).map(
-            ([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ),
-          )}
-        </select>
+        <div className="flex items-center gap-2">
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value as SortOption)}
+            className="h-10 rounded border border-border-subtle bg-[rgba(22,27,34,0.5)] backdrop-blur-md px-3 text-sm text-text-primary transition-all duration-200 focus:border-soul focus:outline-none focus:ring-2 focus:ring-soul-glow"
+          >
+            {(Object.entries(sortLabels) as [SortOption, string][]).map(
+              ([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ),
+            )}
+          </select>
+          <button
+            onClick={() => setSortAsc((prev) => !prev)}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded border border-border-subtle bg-[rgba(22,27,34,0.5)] backdrop-blur-md text-text-secondary transition-all duration-200 hover:border-soul hover:text-soul focus:outline-none focus:ring-2 focus:ring-soul-glow"
+            title={sortAsc ? "Ascending — click to reverse" : "Descending — click to reverse"}
+          >
+            {sortAsc ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
 
       <p className="text-xs text-text-muted mb-4">

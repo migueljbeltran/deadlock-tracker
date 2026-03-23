@@ -81,6 +81,16 @@ export async function getPlayerHeroStats(
   );
 }
 
+export async function getBatchPlayerHeroStats(
+  accountIds: number[],
+): Promise<DeadlockPlayerHeroStat[]> {
+  if (accountIds.length === 0) return [];
+  return deadlockFetch<DeadlockPlayerHeroStat[]>(
+    `${GAME_API}/v1/players/hero-stats?account_ids=${accountIds.join(",")}`,
+    300,
+  );
+}
+
 export async function getMatchHistory(
   accountId: number,
   limit: number = 20,

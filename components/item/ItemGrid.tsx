@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search, Swords, Heart, Sparkles } from "lucide-react";
+import { Search, Swords, Heart, Sparkles, ArrowUp, ArrowDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/Input";
 import { ItemCard, type ItemWithStats } from "@/components/item/ItemCard";
@@ -12,10 +12,10 @@ type SlotFilter = "all" | "weapon" | "vitality" | "spirit";
 type TierFilter = 0 | 1 | 2 | 3 | 4 | 5;
 
 const sortLabels: Record<SortOption, string> = {
-  name: "Name (A-Z)",
-  winRate: "Win Rate (High - Low)",
-  cost: "Cost (Low - High)",
-  matches: "Matches (High - Low)",
+  name: "Name",
+  winRate: "Win Rate",
+  cost: "Cost",
+  matches: "Matches",
 };
 
 const slotOptions: { value: SlotFilter; label: string; icon: React.ReactNode }[] = [
@@ -39,6 +39,7 @@ interface ItemGridProps {
 export function ItemGrid({ items }: ItemGridProps) {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortOption>("winRate");
+  const [sortAsc, setSortAsc] = useState(true);
   const [slotFilter, setSlotFilter] = useState<SlotFilter>("all");
   const [tierFilter, setTierFilter] = useState<TierFilter>(0);
 
@@ -58,21 +59,22 @@ export function ItemGrid({ items }: ItemGridProps) {
       result = result.filter((i) => i.tier === tierFilter);
     }
 
+    const dir = sortAsc ? 1 : -1;
     result = [...result].sort((a, b) => {
       switch (sort) {
         case "name":
-          return a.name.localeCompare(b.name);
+          return a.name.localeCompare(b.name) * dir;
         case "winRate":
-          return b.winRate - a.winRate;
+          return (a.winRate - b.winRate) * dir;
         case "cost":
-          return a.cost - b.cost;
+          return (a.cost - b.cost) * dir;
         case "matches":
-          return b.matches - a.matches;
+          return (a.matches - b.matches) * dir;
       }
     });
 
     return result;
-  }, [items, search, sort, slotFilter, tierFilter]);
+  }, [items, search, sort, sortAsc, slotFilter, tierFilter]);
 
   return (
     <div>
@@ -89,19 +91,28 @@ export function ItemGrid({ items }: ItemGridProps) {
               className="pl-9"
             />
           </div>
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value as SortOption)}
-            className="h-10 rounded border border-border-subtle bg-[rgba(22,27,34,0.5)] backdrop-blur-md px-3 text-sm text-text-primary transition-all duration-200 focus:border-soul focus:outline-none focus:ring-2 focus:ring-soul-glow"
-          >
-            {(Object.entries(sortLabels) as [SortOption, string][]).map(
-              ([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ),
-            )}
-          </select>
+          <div className="flex items-center gap-2">
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortOption)}
+              className="h-10 rounded border border-border-subtle bg-[rgba(22,27,34,0.5)] backdrop-blur-md px-3 text-sm text-text-primary transition-all duration-200 focus:border-soul focus:outline-none focus:ring-2 focus:ring-soul-glow"
+            >
+              {(Object.entries(sortLabels) as [SortOption, string][]).map(
+                ([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ),
+              )}
+            </select>
+            <button
+              onClick={() => setSortAsc((prev) => !prev)}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded border border-border-subtle bg-[rgba(22,27,34,0.5)] backdrop-blur-md text-text-secondary transition-all duration-200 hover:border-soul hover:text-soul focus:outline-none focus:ring-2 focus:ring-soul-glow"
+              title={sortAsc ? "Ascending — click to reverse" : "Descending — click to reverse"}
+            >
+              {sortAsc ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+            </button>
+          </div>
         </div>
 
         {/* Slot filter tabs + Tier filter */}

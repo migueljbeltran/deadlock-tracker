@@ -26,11 +26,11 @@ const PRIORITY_ORDER = [
 
 // Interpolate which percentile the player's avg falls at
 function computePercentile(data: {
-  percentile1: number; percentile5: number; percentile10: number;
-  percentile25: number; percentile50: number; percentile75: number;
-  percentile90: number; percentile95: number; percentile99: number;
+  percentile1: number | null; percentile5: number | null; percentile10: number | null;
+  percentile25: number | null; percentile50: number | null; percentile75: number | null;
+  percentile90: number | null; percentile95: number | null; percentile99: number | null;
 }, avg: number): number {
-  const thresholds = [
+  const allThresholds = [
     { p: 1, v: data.percentile1 },
     { p: 5, v: data.percentile5 },
     { p: 10, v: data.percentile10 },
@@ -41,6 +41,11 @@ function computePercentile(data: {
     { p: 95, v: data.percentile95 },
     { p: 99, v: data.percentile99 },
   ];
+
+  // Filter out null thresholds
+  const thresholds = allThresholds.filter((t): t is { p: number; v: number } => t.v != null);
+
+  if (thresholds.length === 0) return 50;
 
   // Below the lowest threshold
   if (avg <= thresholds[0].v) return 1;
@@ -87,8 +92,16 @@ export function PlayerPercentiles({ metrics }: PlayerPercentilesProps) {
 
   if (metricKeys.length === 0) return null;
 
+  // Filter out metrics with null/undefined avg values
+  const validKeys = metricKeys.filter((key) => {
+    const data = metrics[key];
+    return data != null && data.avg != null;
+  });
+
+  if (validKeys.length === 0) return null;
+
   // Sort by priority, then alphabetically for unknowns
-  const sortedKeys = metricKeys.sort((a, b) => {
+  const sortedKeys = validKeys.sort((a, b) => {
     const ai = PRIORITY_ORDER.indexOf(a);
     const bi = PRIORITY_ORDER.indexOf(b);
     if (ai !== -1 && bi !== -1) return ai - bi;
@@ -106,6 +119,9 @@ export function PlayerPercentiles({ metrics }: PlayerPercentilesProps) {
         const data = metrics[key];
         const config = METRIC_CONFIG[key];
         const label = config?.label ?? key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
+        // Skip if any critical value is null/undefined
+        if (data.avg == null || data.percentile50 == null || data.percentile95 == null) return null;
 
         const pct = computePercentile(data, data.avg);
         const { label: percentileLabel, tier } = getPercentileInfo(pct);
@@ -150,10 +166,10 @@ export function PlayerPercentiles({ metrics }: PlayerPercentilesProps) {
 
             <div className="flex justify-between mt-1">
               <span className="text-[9px] text-text-muted font-mono">
-                Avg: {config?.format ? config.format(data.percentile50) : data.percentile50.toFixed(1)}
+                Avg: {data.percentile50 != null ? (config?.format ? config.format(data.percentile50) : data.percentile50.toFixed(1)) : "—"}
               </span>
               <span className="text-[9px] text-text-muted font-mono">
-                Top 5%: {config?.format ? config.format(data.percentile95) : data.percentile95.toFixed(1)}
+                Top 5%: {data.percentile95 != null ? (config?.format ? config.format(data.percentile95) : data.percentile95.toFixed(1)) : "—"}
               </span>
             </div>
           </div>

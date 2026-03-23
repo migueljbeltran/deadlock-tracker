@@ -61,16 +61,49 @@ export async function generateMetadata(
 /**
  * Estimate the player's rank from recent match badge data.
  * Badge values are composite: rank_tier * 10 + subrank (e.g. 53 = tier 5, subrank 3).
- * Returns { tier, subrank } or null if no data.
+ *
+ * Uses only the player's OWN team badge from ranked matches,
+ * capped at the 10 most recent for accuracy.
  */
 function estimateRankBadge(
-  matches: { average_badge_team0?: number | null; average_badge_team1?: number | null }[],
+  matches: {
+    match_mode?: string;
+    average_badge_team0?: number | null;
+    average_badge_team1?: number | null;
+    players?: { account_id: number; team: string }[];
+  }[],
+  accountId: number,
 ): { tier: number; subrank: number } | null {
   const badges: number[] = [];
 
-  for (const match of matches) {
-    if (match.average_badge_team0 != null) badges.push(match.average_badge_team0);
-    if (match.average_badge_team1 != null) badges.push(match.average_badge_team1);
+  // Only use recent matches (max 10) for a more current estimate
+  const recentMatches = matches.slice(0, 10);
+
+  for (const match of recentMatches) {
+    // Skip private lobbies (not representative of rank)
+    if (match.match_mode === "PrivateLobby") continue;
+
+    // Find which team the player is on
+    const playerEntry = match.players?.find((p) => p.account_id === accountId);
+
+    if (playerEntry) {
+      // Use only the player's own team badge
+      const badge = playerEntry.team === "Team0"
+        ? match.average_badge_team0
+        : match.average_badge_team1;
+      if (badge != null && badge > 0) badges.push(badge);
+    } else {
+      // Fallback: if player info missing, use the higher badge (closer to the player's likely rank)
+      const b0 = match.average_badge_team0;
+      const b1 = match.average_badge_team1;
+      if (b0 != null && b0 > 0 && b1 != null && b1 > 0) {
+        badges.push(Math.max(b0, b1));
+      } else if (b0 != null && b0 > 0) {
+        badges.push(b0);
+      } else if (b1 != null && b1 > 0) {
+        badges.push(b1);
+      }
+    }
   }
 
   if (badges.length === 0) return null;
@@ -117,8 +150,8 @@ export default async function PlayerPage({ params, searchParams }: PlayerPagePro
   // Build hero lookup map
   const heroMap = new Map(heroes.map((h) => [h.id, h]));
 
-  // Estimate rank from all fetched matches
-  const badgeEstimate = estimateRankBadge(allMatches);
+  // Estimate rank from recent ranked matches on the player's own team
+  const badgeEstimate = estimateRankBadge(allMatches, accountId);
   const estimatedRank = badgeEstimate != null
     ? ranks.find((r) => r.tier === badgeEstimate.tier) ?? null
     : null;

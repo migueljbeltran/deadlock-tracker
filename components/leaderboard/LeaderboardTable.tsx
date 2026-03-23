@@ -7,10 +7,16 @@ import { motion } from "framer-motion";
 import type { DeadlockLeaderboardEntry, DeadlockRank, DeadlockHero } from "@/lib/api";
 import { cn } from "@/lib/utils/cn";
 
+interface ResolvedAccount {
+  accountId: number;
+  confident: boolean;
+}
+
 interface LeaderboardTableProps {
   entries: DeadlockLeaderboardEntry[];
   rankMap: Map<number, DeadlockRank>;
   heroMap: Map<number, DeadlockHero>;
+  resolvedAccountIds?: Map<number, ResolvedAccount>;
 }
 
 const rowVariants = {
@@ -26,6 +32,7 @@ export function LeaderboardTable({
   entries,
   rankMap,
   heroMap,
+  resolvedAccountIds,
 }: LeaderboardTableProps) {
   if (entries.length === 0) {
     return (
@@ -53,9 +60,10 @@ export function LeaderboardTable({
         >
           {entries.map((entry, idx) => {
             const rank = rankMap.get(entry.ranked_rank);
-            const playerAccountId = entry.possible_account_ids.length > 0
-              ? entry.possible_account_ids[0]
-              : null;
+            const resolved = resolvedAccountIds?.get(idx);
+            const playerAccountId = resolved?.accountId
+              ?? (entry.possible_account_ids.length > 0 ? entry.possible_account_ids[0] : null);
+            const isConfident = resolved?.confident ?? (entry.possible_account_ids.length === 1);
 
             const isTop1 = entry.rank === 1;
             const isTop2 = entry.rank === 2;
@@ -82,27 +90,25 @@ export function LeaderboardTable({
                   {entry.rank}
                 </td>
                 <td className="px-3 py-2">
-                  {playerAccountId ? (
-                    <Link
-                      href={`/player/${playerAccountId}`}
-                      className={cn(
-                        "hover:text-soul transition-colors",
-                        isTop1
-                          ? "bg-clip-text text-transparent bg-gradient-to-b from-amber-light to-amber"
-                          : "text-text-primary",
-                      )}
-                    >
-                      {entry.account_name || `Player #${entry.rank}`}
-                    </Link>
-                  ) : (
-                    <span className={cn(
-                      isTop1
-                        ? "bg-clip-text text-transparent bg-gradient-to-b from-amber-light to-amber"
-                        : "text-text-primary",
-                    )}>
-                      {entry.account_name || `Player #${entry.rank}`}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-1.5">
+                    {playerAccountId && isConfident ? (
+                      <Link
+                        href={`/player/${playerAccountId}`}
+                        className={cn(
+                          "hover:text-soul transition-colors",
+                          isTop1
+                            ? "bg-clip-text text-transparent bg-gradient-to-b from-amber-light to-amber"
+                            : "text-text-primary",
+                        )}
+                      >
+                        {entry.account_name || `Player #${entry.rank}`}
+                      </Link>
+                    ) : (
+                      <span className="text-text-muted">
+                        {entry.account_name || `Player #${entry.rank}`}
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-3 py-2 text-center">
                   {rank?.images ? (

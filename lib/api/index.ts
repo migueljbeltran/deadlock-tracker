@@ -38,6 +38,7 @@ export {
   getItemStats,
   getRanks,
   getPlayerHeroStats,
+  getBatchPlayerHeroStats,
   getMatchHistory,
   getMatchDetail,
   getMatchPlayerItems,

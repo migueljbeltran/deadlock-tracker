@@ -200,17 +200,17 @@ export interface DeadlockHeroAnalytics {
 
 export interface DeadlockPlayerMetrics {
   [metric: string]: {
-    avg: number;
-    std: number;
-    percentile1: number;
-    percentile5: number;
-    percentile10: number;
-    percentile25: number;
-    percentile50: number;
-    percentile75: number;
-    percentile90: number;
-    percentile95: number;
-    percentile99: number;
+    avg: number | null;
+    std: number | null;
+    percentile1: number | null;
+    percentile5: number | null;
+    percentile10: number | null;
+    percentile25: number | null;
+    percentile50: number | null;
+    percentile75: number | null;
+    percentile90: number | null;
+    percentile95: number | null;
+    percentile99: number | null;
   };
 }
 
