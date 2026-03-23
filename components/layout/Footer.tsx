@@ -1,4 +1,5 @@
 import { ScrollReveal } from "@/components/motion";
+import { Twitch } from "lucide-react";
 
 export function Footer() {
   return (
@@ -49,6 +50,15 @@ export function Footer() {
                 className="text-sm text-text-secondary hover:text-text-primary transition-colors"
               >
                 GitHub
+              </a>
+              <a
+                href="https://twitch.tv/trazenmb"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-[#9146FF] transition-colors"
+              >
+                <Twitch className="h-3.5 w-3.5" />
+                Support my Stream!
               </a>
             </div>
           </div>
