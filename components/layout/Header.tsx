@@ -26,7 +26,7 @@ export function Header() {
 
   return (
     <header
-      className="sticky top-0 z-40 bg-[rgba(8,11,16,0.7)] backdrop-blur-xl"
+      className="sticky top-0 z-40 bg-[rgba(8,11,16,0.85)] backdrop-blur-md"
       style={{ boxShadow: "0 1px 0 rgba(61,220,132,0.1), 0 4px 30px rgba(0,0,0,0.3)" }}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -103,7 +103,7 @@ export function Header() {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2 }}
-            className="md:hidden overflow-hidden border-t border-border-subtle/30 bg-[rgba(8,11,16,0.95)] backdrop-blur-xl"
+            className="md:hidden overflow-hidden border-t border-border-subtle/30 bg-[rgba(8,11,16,0.95)]"
           >
             <div className="px-4 py-3 space-y-1">
               {navLinks.map((link) => {

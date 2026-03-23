@@ -42,7 +42,7 @@ export function TopHeroes({ heroStats, heroMap }: TopHeroesProps) {
           <StaggerItem key={stat.hero_id}>
             <GlowCard>
               <div className="relative p-4">
-                <div className="absolute top-2 left-2 z-20 flex h-5 w-5 items-center justify-center rounded-full bg-surface/80 backdrop-blur-sm text-[10px] font-mono text-text-secondary border border-border-subtle">
+                <div className="absolute top-2 left-2 z-20 flex h-5 w-5 items-center justify-center rounded-full bg-surface text-[10px] font-mono text-text-secondary border border-border-subtle">
                   {index + 1}
                 </div>
                 <div className="flex items-center gap-3">

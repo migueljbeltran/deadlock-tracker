@@ -4,6 +4,7 @@
    THE PATRON'S LEDGER - Occult Noir Theme
    ======================================== */
 
+
 :root {
   /* Backgrounds */
   --bg-void: #080B10;
@@ -48,8 +49,8 @@
   --shadow-inner-highlight: inset 0 1px 0 rgba(255,255,255,0.04);
 
   /* Glassmorphism */
-  --glass-bg: rgba(22, 27, 34, 0.6);
-  --glass-bg-elevated: rgba(31, 41, 55, 0.5);
+  --glass-bg: rgba(22, 27, 34, 0.92);
+  --glass-bg-elevated: rgba(31, 41, 55, 0.85);
   --glass-border: rgba(48, 54, 61, 0.6);
 
   /* Ambient glows */
@@ -228,23 +229,16 @@
 }
 
 /* Base Styles */
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background-color: var(--bg-deep);
   color: var(--text-primary);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-/* Film grain overlay — subtle noise texture */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  pointer-events: none;
-  opacity: 0.035;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
 }
 
 /* Selection */
@@ -307,11 +301,9 @@ body::before {
 
 /* ========== Glassmorphism & Modern Utilities ========== */
 
-/* Frosted glass panel base */
+/* Glass panel base — high-opacity background for scroll performance */
 .glass-panel {
   background: var(--glass-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--glass-border);
 }
 
@@ -387,4 +379,21 @@ body::before {
 *:focus-visible {
   outline: 2px solid var(--soul);
   outline-offset: 2px;
+}
+
+/* ========== SigilBackground GPU-composited animations ========== */
+.sigil-spin-slow {
+  animation: spin 120s linear infinite;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+.sigil-spin-reverse {
+  animation: spin 90s linear infinite reverse;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+.sigil-spin-medium {
+  animation: spin 100s linear infinite;
+  transform-origin: 0 0;
+  will-change: transform;
 }

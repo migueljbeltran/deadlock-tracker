@@ -1,5 +1,3 @@
-"use client";
-
 import { cn } from "@/lib/utils/cn";
 
 interface SigilBackgroundProps {
@@ -22,6 +20,7 @@ export function SigilBackground({ className, intensity = "subtle" }: SigilBackgr
         className
       )}
       aria-hidden="true"
+      style={{ contain: "strict" }}
     >
       <svg
         className="absolute h-full w-full"
@@ -31,8 +30,8 @@ export function SigilBackground({ className, intensity = "subtle" }: SigilBackgr
         stroke="var(--sigil)"
         strokeWidth="0.5"
       >
-        {/* Central radiating pattern — slow 120s rotation */}
-        <g transform="translate(400, 300)" style={{ animation: "spin 120s linear infinite", transformOrigin: "0 0" }}>
+        {/* Central radiating pattern — GPU-composited via CSS class */}
+        <g transform="translate(400, 300)" className="sigil-spin-slow">
           {/* Outer circles */}
           <circle r="250" />
           <circle r="200" strokeDasharray="8 4" />
@@ -87,8 +86,8 @@ export function SigilBackground({ className, intensity = "subtle" }: SigilBackgr
           <path d="M800,450 Q725,525 650,600" />
         </g>
 
-        {/* Secondary smaller sigil — bottom-right, lower opacity, counter-rotation for depth */}
-        <g transform="translate(650, 480)" opacity="0.4" style={{ animation: "spin 90s linear infinite reverse", transformOrigin: "0 0" }}>
+        {/* Secondary smaller sigil — counter-rotation for depth */}
+        <g transform="translate(650, 480)" opacity="0.4" className="sigil-spin-reverse">
           <circle r="80" />
           <circle r="60" strokeDasharray="4 4" />
           <circle r="40" />
@@ -96,8 +95,8 @@ export function SigilBackground({ className, intensity = "subtle" }: SigilBackgr
           <polygon points="0,35 -30.3,-17.5 30.3,-17.5" strokeWidth="0.5" />
         </g>
 
-        {/* Tertiary sigil — top-left, amber, different rotation */}
-        <g transform="translate(150, 120)" opacity="0.3" style={{ animation: "spin 100s linear infinite", transformOrigin: "0 0" }}>
+        {/* Tertiary sigil — amber, different rotation */}
+        <g transform="translate(150, 120)" opacity="0.3" className="sigil-spin-medium">
           <circle r="70" stroke="var(--amber)" />
           <circle r="50" strokeDasharray="3 5" stroke="var(--amber)" />
           <circle r="30" stroke="var(--amber)" />
@@ -106,11 +105,11 @@ export function SigilBackground({ className, intensity = "subtle" }: SigilBackgr
         </g>
 
         {/* Scattered star dots */}
-        <circle cx="100" cy="80" r="1" fill="var(--sigil)" className="animate-flicker-slow" style={{ animationDelay: "0s" }} />
-        <circle cx="700" cy="120" r="1" fill="var(--amber)" className="animate-flicker-slow" style={{ animationDelay: "1.2s" }} />
-        <circle cx="300" cy="500" r="0.8" fill="var(--sigil)" className="animate-flicker-medium" style={{ animationDelay: "0.6s" }} />
-        <circle cx="550" cy="200" r="1" fill="var(--amber)" className="animate-flicker-slow" style={{ animationDelay: "2.3s" }} />
-        <circle cx="180" cy="420" r="0.8" fill="var(--sigil)" className="animate-flicker-medium" style={{ animationDelay: "1.7s" }} />
+        <circle cx="100" cy="80" r="1" fill="var(--sigil)" className="animate-flicker-slow" />
+        <circle cx="700" cy="120" r="1" fill="var(--amber)" className="animate-flicker-slow" />
+        <circle cx="300" cy="500" r="0.8" fill="var(--sigil)" className="animate-flicker-medium" />
+        <circle cx="550" cy="200" r="1" fill="var(--amber)" className="animate-flicker-slow" />
+        <circle cx="180" cy="420" r="0.8" fill="var(--sigil)" className="animate-flicker-medium" />
       </svg>
     </div>
   );

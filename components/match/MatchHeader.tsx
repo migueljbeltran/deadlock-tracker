@@ -24,13 +24,13 @@ export function MatchHeader({ match, ranks }: MatchHeaderProps) {
           Match #{match.match_id}
         </h1>
         <div className="mt-2 flex flex-wrap items-center justify-center gap-2 text-sm text-text-secondary sm:justify-start">
-          <span className="inline-flex items-center rounded-full bg-[rgba(22,27,34,0.5)] backdrop-blur-sm border border-border-subtle px-3 py-1 text-xs font-mono text-text-secondary">
+          <span className="inline-flex items-center rounded-full bg-[rgba(22,27,34,0.92)] border border-border-subtle px-3 py-1 text-xs font-mono text-text-secondary">
             {match.game_mode}
           </span>
-          <span className="inline-flex items-center rounded-full bg-[rgba(22,27,34,0.5)] backdrop-blur-sm border border-border-subtle px-3 py-1 text-xs font-mono text-text-secondary">
+          <span className="inline-flex items-center rounded-full bg-[rgba(22,27,34,0.92)] border border-border-subtle px-3 py-1 text-xs font-mono text-text-secondary">
             {formatDuration(match.duration_s)}
           </span>
-          <span className="inline-flex items-center rounded-full bg-[rgba(22,27,34,0.5)] backdrop-blur-sm border border-border-subtle px-3 py-1 text-xs font-mono text-text-secondary">
+          <span className="inline-flex items-center rounded-full bg-[rgba(22,27,34,0.92)] border border-border-subtle px-3 py-1 text-xs font-mono text-text-secondary">
             {formatTimeAgo(match.start_time)}
           </span>
         </div>

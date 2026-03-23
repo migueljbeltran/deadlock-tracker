@@ -39,7 +39,7 @@ export function PlayerHeader({ player, accountId, estimatedRank, estimatedSubran
         <h1 className="font-display text-3xl text-text-primary">
           {player.personaname}
         </h1>
-        <p className="font-mono text-xs text-text-muted mt-2 bg-[rgba(22,27,34,0.5)] backdrop-blur-sm border border-border-subtle rounded-full px-3 py-1 inline-block">
+        <p className="font-mono text-xs text-text-muted mt-2 bg-[rgba(22,27,34,0.92)] border border-border-subtle rounded-full px-3 py-1 inline-block">
           ID: {accountId}
         </p>
 

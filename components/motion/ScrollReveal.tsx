@@ -12,12 +12,12 @@ interface ScrollRevealProps {
 export function ScrollReveal({ children, className, delay = 0 }: ScrollRevealProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 32 }}
+      initial={{ opacity: 0, y: 10 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-60px" }}
+      viewport={{ once: true, margin: "-40px" }}
       transition={{
-        duration: 0.6,
-        delay,
+        duration: 0.4,
+        delay: Math.min(delay, 0.15),
         ease: [0.25, 0.46, 0.45, 0.94],
       }}
       className={className}

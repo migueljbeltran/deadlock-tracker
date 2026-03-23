@@ -64,7 +64,7 @@ export function RankFilter({ ranks, currentMinTier, baseUrl }: RankFilterProps) 
         <button
           onClick={() => setOpen((o) => !o)}
           className={cn(
-            "flex items-center gap-2 h-9 rounded border bg-[rgba(22,27,34,0.5)] backdrop-blur-md px-3 text-sm transition-all duration-200",
+            "flex items-center gap-2 h-9 rounded border bg-[rgba(22,27,34,0.92)] px-3 text-sm transition-all duration-200",
             open
               ? "border-soul ring-2 ring-soul-glow text-text-primary"
               : "border-border-subtle text-text-primary hover:border-soul/50",
@@ -84,7 +84,7 @@ export function RankFilter({ ranks, currentMinTier, baseUrl }: RankFilterProps) 
 
         {/* Dropdown */}
         {open && (
-          <div className="absolute right-0 top-full mt-1 z-50 min-w-[180px] rounded-lg border border-border-subtle bg-[rgba(8,11,16,0.95)] backdrop-blur-xl shadow-lg overflow-hidden">
+          <div className="absolute right-0 top-full mt-1 z-50 min-w-[180px] rounded-lg border border-border-subtle bg-[rgba(8,11,16,0.97)] shadow-lg overflow-hidden">
             <button
               onClick={() => selectTier(null)}
               className={cn(

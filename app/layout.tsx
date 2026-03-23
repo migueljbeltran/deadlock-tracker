@@ -66,6 +66,9 @@ export default function RootLayout({
               "radial-gradient(ellipse at center, transparent 0%, transparent 40%, rgba(8, 11, 16, 0.6) 100%)",
               "radial-gradient(ellipse at 50% 0%, rgba(212, 168, 83, 0.03) 0%, transparent 60%)",
             ].join(", "),
+            willChange: "auto",
+            contain: "strict",
+            transform: "translateZ(0)",
           }}
           aria-hidden="true"
         />

@@ -19,11 +19,11 @@ const container = {
 };
 
 const item = {
-  hidden: { opacity: 0, y: 16 },
+  hidden: { opacity: 0, y: 6 },
   show: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] as const },
+    transition: { duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] as const },
   },
 };
 
@@ -36,7 +36,8 @@ export function StaggerList({
     <motion.div
       variants={container}
       initial="hidden"
-      animate="show"
+      whileInView="show"
+      viewport={{ once: true, margin: "-40px" }}
       custom={staggerDelay}
       className={className}
     >

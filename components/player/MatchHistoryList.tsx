@@ -34,7 +34,7 @@ export function MatchHistoryList({ matches, accountId, heroMap }: MatchHistoryLi
             <Link
               href={`/match/${match.match_id}`}
               className={cn(
-                "flex items-center gap-3 rounded-lg bg-[rgba(22,27,34,0.3)] backdrop-blur-sm border border-[rgba(48,54,61,0.6)] p-3 transition-all hover:border-soul hover:bg-surface-elevated hover:translate-x-1 sm:gap-4",
+                "flex items-center gap-3 rounded-lg bg-[rgba(22,27,34,0.85)] border border-[rgba(48,54,61,0.6)] p-3 transition-all hover:border-soul hover:bg-surface-elevated hover:translate-x-1 sm:gap-4",
                 "border-l-[3px]",
                 isVictory
                   ? "border-l-soul bg-soul/[0.03]"

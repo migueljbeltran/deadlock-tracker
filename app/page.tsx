@@ -69,7 +69,7 @@ export default async function Home() {
 
           <div className="relative z-10 flex flex-col items-center text-center">
             {/* Title — Option A: Gradient text */}
-            <FadeIn direction="none" duration={0.8}>
+            <FadeIn direction="none" duration={0.8} triggerOnScroll={false}>
               <div className="relative">
                 {/* Glow layer behind */}
                 <span
@@ -102,18 +102,18 @@ export default async function Home() {
             </FadeIn> */}
 
             {/* Tagline */}
-            <FadeIn delay={0.3}>
+            <FadeIn delay={0.3} triggerOnScroll={false}>
               <p className="mt-4 max-w-md text-lg text-text-secondary">
                 A living record of souls and matches from the Cursed Apple
               </p>
             </FadeIn>
 
-            <FadeIn delay={0.5}>
+            <FadeIn delay={0.5} triggerOnScroll={false}>
               <ArtDecoDivider className="my-8 w-full max-w-sm" />
             </FadeIn>
 
             {/* Search */}
-            <FadeIn delay={0.7}>
+            <FadeIn delay={0.7} triggerOnScroll={false}>
               <HeroSearchSection />
             </FadeIn>
           </div>

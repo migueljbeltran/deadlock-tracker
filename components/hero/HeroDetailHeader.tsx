@@ -8,7 +8,7 @@ interface HeroDetailHeaderProps {
 
 export function HeroDetailHeader({ hero }: HeroDetailHeaderProps) {
   return (
-    <FadeIn>
+    <FadeIn triggerOnScroll={false}>
       <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
         {/* Art Deco picture frame */}
         <div className="relative">
@@ -48,7 +48,7 @@ export function HeroDetailHeader({ hero }: HeroDetailHeaderProps) {
             {hero.name}
           </h1>
           {hero.description?.role && (
-            <span className="mt-2 inline-block rounded-md border border-sigil/30 bg-sigil/10 backdrop-blur-sm px-3 py-1 text-sm text-sigil">
+            <span className="mt-2 inline-block rounded-md border border-sigil/30 bg-sigil/10 px-3 py-1 text-sm text-sigil">
               {hero.description.role}
             </span>
           )}

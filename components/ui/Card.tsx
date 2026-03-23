@@ -11,7 +11,7 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
       <div
         ref={ref}
         className={cn(
-          "rounded-md bg-[rgba(22,27,34,0.6)] backdrop-blur-xl border border-[rgba(48,54,61,0.6)] shadow-[var(--shadow-inner-highlight),var(--shadow-depth-sm)] card-shimmer",
+          "rounded-md bg-[rgba(22,27,34,0.92)] border border-[rgba(48,54,61,0.6)] shadow-[var(--shadow-inner-highlight),var(--shadow-depth-sm)] card-shimmer",
           hoverable && [
             "transition-all duration-200",
             "hover:border-soul hover:bg-surface-elevated",

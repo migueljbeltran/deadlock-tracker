@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ReactNode, type MouseEvent } from "react";
+import { useRef, useState, useEffect, useCallback, type ReactNode, type MouseEvent } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils/cn";
 
@@ -11,18 +11,32 @@ interface GlowCardProps {
 
 export function GlowCard({ children, className }: GlowCardProps) {
   const ref = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number>(0);
   const [pos, setPos] = useState({ x: 50, y: 50 });
   const [hovering, setHovering] = useState(false);
 
-  function handleMouseMove(e: MouseEvent<HTMLDivElement>) {
-    const el = ref.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    setPos({
-      x: ((e.clientX - rect.left) / rect.width) * 100,
-      y: ((e.clientY - rect.top) / rect.height) * 100,
+  const handleMouseMove = useCallback((e: MouseEvent<HTMLDivElement>) => {
+    if (rafRef.current) return;
+    const clientX = e.clientX;
+    const clientY = e.clientY;
+    rafRef.current = requestAnimationFrame(() => {
+      const el = ref.current;
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        setPos({
+          x: ((clientX - rect.left) / rect.width) * 100,
+          y: ((clientY - rect.top) / rect.height) * 100,
+        });
+      }
+      rafRef.current = 0;
     });
-  }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
 
   return (
     <motion.div
@@ -36,7 +50,7 @@ export function GlowCard({ children, className }: GlowCardProps) {
       whileHover={{ scale: 1.03 }}
       transition={{ scale: { duration: 0.2 } }}
       className={cn(
-        "relative rounded-md border border-[rgba(48,54,61,0.6)] bg-[rgba(22,27,34,0.6)] backdrop-blur-xl overflow-hidden shadow-[var(--shadow-inner-highlight),var(--shadow-depth-sm)] card-shimmer",
+        "relative rounded-md border border-[rgba(48,54,61,0.6)] bg-[rgba(22,27,34,0.92)] overflow-hidden shadow-[var(--shadow-inner-highlight),var(--shadow-depth-sm)] card-shimmer",
         "transition-[border-color,box-shadow] duration-200 hover:border-soul hover:shadow-[0_0_40px_rgba(61,220,132,0.12)]",
         className
       )}

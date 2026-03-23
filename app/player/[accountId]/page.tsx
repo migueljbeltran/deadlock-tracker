@@ -166,7 +166,7 @@ export default async function PlayerPage({ params, searchParams }: PlayerPagePro
 
         <div className="relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
           {/* Player Header */}
-          <FadeIn>
+          <FadeIn triggerOnScroll={false}>
             <PlayerHeader
               player={player}
               accountId={accountId}

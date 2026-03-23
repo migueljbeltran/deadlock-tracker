@@ -69,7 +69,7 @@ export function HeroGrid({ heroes }: HeroGridProps) {
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value as SortOption)}
-            className="h-10 rounded border border-border-subtle bg-[rgba(22,27,34,0.5)] backdrop-blur-md px-3 text-sm text-text-primary transition-all duration-200 focus:border-soul focus:outline-none focus:ring-2 focus:ring-soul-glow"
+            className="h-10 rounded border border-border-subtle bg-[rgba(22,27,34,0.92)] px-3 text-sm text-text-primary transition-all duration-200 focus:border-soul focus:outline-none focus:ring-2 focus:ring-soul-glow"
           >
             {(Object.entries(sortLabels) as [SortOption, string][]).map(
               ([value, label]) => (
@@ -81,7 +81,7 @@ export function HeroGrid({ heroes }: HeroGridProps) {
           </select>
           <button
             onClick={() => setSortAsc((prev) => !prev)}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded border border-border-subtle bg-[rgba(22,27,34,0.5)] backdrop-blur-md text-text-secondary transition-all duration-200 hover:border-soul hover:text-soul focus:outline-none focus:ring-2 focus:ring-soul-glow"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded border border-border-subtle bg-[rgba(22,27,34,0.92)] text-text-secondary transition-all duration-200 hover:border-soul hover:text-soul focus:outline-none focus:ring-2 focus:ring-soul-glow"
             title={sortAsc ? "Ascending — click to reverse" : "Descending — click to reverse"}
           >
             {sortAsc ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
