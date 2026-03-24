@@ -21,6 +21,11 @@ import {
 import type { SteamPlayerSummary, DeadlockItem } from "@/lib/api";
 import { FadeIn } from "@/components/motion";
 
+// Return empty array — matches are generated on-demand and then cached via ISR
+export async function generateStaticParams() {
+  return [];
+}
+
 interface MatchDetailPageProps {
   params: Promise<{ matchId: string }>;
 }

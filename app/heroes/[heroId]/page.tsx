@@ -9,13 +9,20 @@ import { ArtDecoDivider } from "@/components/layout/ArtDecoDivider";
 import { HeroDetailHeader } from "@/components/hero/HeroDetailHeader";
 import { HeroDescription } from "@/components/hero/HeroDescription";
 import { HeroGlobalStats } from "@/components/hero/HeroGlobalStats";
-import { getHero, getHeroAnalytics, getRanks } from "@/lib/api";
+import { getHero, getHeroes, getHeroAnalytics, getRanks } from "@/lib/api";
 import type { DeadlockHeroAnalytics } from "@/lib/api";
 import { HeroRankBreakdown } from "@/components/hero/HeroRankBreakdown";
 import { FadeIn } from "@/components/motion";
 
 interface HeroDetailPageProps {
   params: Promise<{ heroId: string }>;
+}
+
+export async function generateStaticParams() {
+  const heroes = await getHeroes();
+  return heroes
+    .filter((h) => h.player_selectable !== false && !h.disabled && !h.in_development)
+    .map((h) => ({ heroId: String(h.id) }));
 }
 
 export async function generateMetadata(
