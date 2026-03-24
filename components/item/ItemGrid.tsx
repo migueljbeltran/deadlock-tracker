@@ -39,7 +39,7 @@ interface ItemGridProps {
 export function ItemGrid({ items }: ItemGridProps) {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortOption>("winRate");
-  const [sortAsc, setSortAsc] = useState(true);
+  const [sortAsc, setSortAsc] = useState(false);
   const [slotFilter, setSlotFilter] = useState<SlotFilter>("all");
   const [tierFilter, setTierFilter] = useState<TierFilter>(0);
 

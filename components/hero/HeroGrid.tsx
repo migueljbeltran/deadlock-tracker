@@ -21,8 +21,8 @@ interface HeroGridProps {
 
 export function HeroGrid({ heroes }: HeroGridProps) {
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState<SortOption>("name");
-  const [sortAsc, setSortAsc] = useState(true);
+  const [sort, setSort] = useState<SortOption>("winRate");
+  const [sortAsc, setSortAsc] = useState(false);
 
   const filtered = useMemo(() => {
     let result = heroes;
