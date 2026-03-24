@@ -9,4 +9,13 @@ Sentry.init({
   // Disable replay — not needed for a stats tracker
   replaysSessionSampleRate: 0,
   replaysOnErrorSampleRate: 0,
+
+  beforeSend(event) {
+    // Strip sensitive headers from request data
+    if (event.request?.headers) {
+      delete event.request.headers["authorization"];
+      delete event.request.headers["cookie"];
+    }
+    return event;
+  },
 });

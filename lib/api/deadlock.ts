@@ -20,7 +20,7 @@ const ASSETS_API = "https://assets.deadlock-api.com";
 const GAME_API = "https://api.deadlock-api.com";
 
 async function deadlockFetch<T>(url: string, revalidate: number): Promise<T> {
-  const res = await fetch(url, { next: { revalidate } });
+  const res = await fetch(url, { next: { revalidate }, signal: AbortSignal.timeout(10_000) });
 
   if (!res.ok) {
     logger.warn({ url, status: res.status }, "Deadlock API error");

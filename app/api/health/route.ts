@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 
 interface HealthCheck {
@@ -15,12 +16,12 @@ export async function GET() {
   // Database check
   try {
     const start = Date.now();
-    await prisma.$queryRawUnsafe("SELECT 1");
+    await prisma.$queryRaw(Prisma.sql`SELECT 1`);
     checks.database = { status: "ok", latency_ms: Date.now() - start };
-  } catch (err) {
+  } catch {
     checks.database = {
       status: "error",
-      error: err instanceof Error ? err.message : "Unknown error",
+      error: "Service unavailable",
     };
   }
 
@@ -36,10 +37,10 @@ export async function GET() {
       latency_ms: Date.now() - start,
       ...(res.ok ? {} : { error: `HTTP ${res.status}` }),
     };
-  } catch (err) {
+  } catch {
     checks.deadlock_api = {
       status: "error",
-      error: err instanceof Error ? err.message : "Unknown error",
+      error: "Service unavailable",
     };
   }
 

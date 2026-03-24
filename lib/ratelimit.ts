@@ -13,6 +13,7 @@ function createRatelimit() {
 
   return new Ratelimit({
     redis: new Redis({ url, token }),
+    // 10 requests per 60s per IP — prevents search API abuse while allowing normal usage
     limiter: Ratelimit.slidingWindow(10, "60 s"),
     analytics: true,
     prefix: "dltracker:ratelimit",
