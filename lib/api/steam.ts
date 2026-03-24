@@ -6,6 +6,7 @@ import type {
   SteamPlayerSummary,
 } from "./types";
 import { ApiError } from "./types";
+import logger from "@/lib/logger";
 
 const STEAM_API_BASE = "https://api.steampowered.com";
 const STEAM64_OFFSET = BigInt("76561197960265728");
@@ -43,6 +44,7 @@ export async function resolveVanityURL(
   const res = await fetch(url, { next: { revalidate: 3600 } });
 
   if (!res.ok) {
+    logger.error({ endpoint: "ResolveVanityURL", status: res.status, vanityName }, "Steam API error");
     throw new ApiError(
       `Steam API error: ${res.statusText}`,
       res.status,
@@ -53,9 +55,11 @@ export async function resolveVanityURL(
   const data: SteamResolveVanityResponse = await res.json();
 
   if (data.response.success !== 1) {
+    logger.info({ vanityName }, "Vanity URL not found");
     return null;
   }
 
+  logger.info({ vanityName, steamId: data.response.steamid }, "Vanity URL resolved");
   return data.response.steamid ?? null;
 }
 
@@ -74,6 +78,7 @@ export async function getPlayerSummaries(
   const res = await fetch(url, { next: { revalidate: 300 } });
 
   if (!res.ok) {
+    logger.error({ endpoint: "GetPlayerSummaries", status: res.status }, "Steam API error");
     throw new ApiError(
       `Steam API error: ${res.statusText}`,
       res.status,

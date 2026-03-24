@@ -5,6 +5,9 @@ import {
   getPlayerSummary,
   steam64ToAccountId,
 } from "@/lib/api";
+import { searchQuerySchema } from "@/lib/validations";
+import { checkRateLimit } from "@/lib/ratelimit";
+import logger from "@/lib/logger";
 
 /**
  * Strip common Steam profile URL patterns to extract the identifier.
@@ -29,16 +32,33 @@ function extractQuery(raw: string): string {
 }
 
 export async function GET(request: NextRequest) {
-  const rawQuery = request.nextUrl.searchParams.get("q");
+  // Rate limiting
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "127.0.0.1";
+  const { success: allowed, reset } = await checkRateLimit(ip);
 
-  if (!rawQuery || rawQuery.trim().length === 0) {
+  if (!allowed) {
+    logger.warn({ ip }, "Rate limit exceeded");
     return NextResponse.json(
-      { success: false, error: "Search query is required" },
+      { success: false, error: "Too many requests. Please try again later." },
+      {
+        status: 429,
+        headers: reset ? { "Retry-After": String(Math.ceil((reset - Date.now()) / 1000)) } : {},
+      },
+    );
+  }
+
+  // Input validation
+  const parsed = searchQuerySchema.safeParse({ q: request.nextUrl.searchParams.get("q") });
+
+  if (!parsed.success) {
+    const message = parsed.error.issues[0]?.message ?? "Invalid search query";
+    return NextResponse.json(
+      { success: false, error: message },
       { status: 400 },
     );
   }
 
-  const query = extractQuery(rawQuery);
+  const query = extractQuery(parsed.data.q);
 
   if (query.length === 0) {
     return NextResponse.json(
@@ -74,15 +94,19 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const accountId = steam64ToAccountId(player.steamid);
+    logger.info({ query, accountId }, "Search success");
+
     return NextResponse.json({
       success: true,
       player: {
-        accountId: steam64ToAccountId(player.steamid),
+        accountId,
         name: player.personaname,
         avatar: player.avatarfull,
       },
     });
-  } catch {
+  } catch (err) {
+    logger.error({ query, error: err instanceof Error ? err.message : "Unknown" }, "Search failed");
     return NextResponse.json(
       { success: false, error: "Failed to search. Please try again." },
       { status: 500 },

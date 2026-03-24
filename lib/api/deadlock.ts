@@ -14,6 +14,7 @@ import type {
   DeadlockApiInfo,
 } from "./types";
 import { ApiError } from "./types";
+import logger from "@/lib/logger";
 
 const ASSETS_API = "https://assets.deadlock-api.com";
 const GAME_API = "https://api.deadlock-api.com";
@@ -22,6 +23,7 @@ async function deadlockFetch<T>(url: string, revalidate: number): Promise<T> {
   const res = await fetch(url, { next: { revalidate } });
 
   if (!res.ok) {
+    logger.warn({ url, status: res.status }, "Deadlock API error");
     throw new ApiError(
       `Deadlock API error: ${res.statusText}`,
       res.status,

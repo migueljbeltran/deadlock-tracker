@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Heart } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { SigilBackground } from "@/components/layout/SigilBackground";
@@ -78,6 +78,22 @@ export default function AboutPage() {
                   className="mt-4 inline-flex items-center gap-2 text-soul hover:text-soul/80 transition-colors text-sm"
                 >
                   View on GitHub <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+              </section>
+
+              <section className="glass-panel rounded-lg p-6">
+                <h2 className="font-heading text-xl text-text-primary mb-3">Support</h2>
+                <p className="text-text-secondary leading-relaxed">
+                  If you find dltracker useful, consider supporting development. Every
+                  contribution helps keep the servers running and fuels new features.
+                </p>
+                <a
+                  href="https://ko-fi.com/trazen"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 inline-flex items-center gap-2 text-[#FF5E5B] hover:text-[#FF5E5B]/80 transition-colors text-sm"
+                >
+                  <Heart className="h-3.5 w-3.5" /> Support on Ko-fi <ExternalLink className="h-3.5 w-3.5" />
                 </a>
               </section>
 

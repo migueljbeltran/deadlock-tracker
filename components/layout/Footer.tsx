@@ -1,5 +1,5 @@
 import { ScrollReveal } from "@/components/motion";
-import { Twitch } from "lucide-react";
+import { Heart, Twitch } from "lucide-react";
 
 export function Footer() {
   return (
@@ -58,7 +58,16 @@ export function Footer() {
                 className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-[#9146FF] transition-colors"
               >
                 <Twitch className="h-3.5 w-3.5" />
-                Support my Stream!
+                Stream
+              </a>
+              <a
+                href="https://ko-fi.com/trazen"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-[#FF5E5B] transition-colors"
+              >
+                <Heart className="h-3.5 w-3.5" />
+                Support
               </a>
             </div>
           </div>
