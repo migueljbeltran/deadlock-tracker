@@ -1,3 +1,5 @@
+export const revalidate = 300; // ISR: cache hero detail for 5 minutes
+
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Header } from "@/components/layout/Header";

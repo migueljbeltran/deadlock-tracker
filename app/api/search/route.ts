@@ -33,7 +33,10 @@ function extractQuery(raw: string): string {
 
 export async function GET(request: NextRequest) {
   // Rate limiting
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "127.0.0.1";
+  const ip =
+    request.headers.get("x-real-ip") ??
+    request.headers.get("x-forwarded-for")?.split(",").pop()?.trim() ??
+    "127.0.0.1";
   const { success: allowed, reset } = await checkRateLimit(ip);
 
   if (!allowed) {

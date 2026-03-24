@@ -1,3 +1,5 @@
+export const revalidate = 300; // ISR: cache homepage for 5 minutes
+
 import Link from "next/link";
 import { Users, Swords, Shield } from "lucide-react";
 import { Header } from "@/components/layout/Header";

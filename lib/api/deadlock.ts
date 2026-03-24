@@ -50,17 +50,36 @@ export async function getHero(heroId: number): Promise<DeadlockHero> {
   );
 }
 
+// In-memory cache for items (2.5MB response exceeds Next.js 2MB fetch cache limit).
+// Stores the in-flight promise to prevent thundering herd on concurrent requests.
+let itemsPromise: Promise<DeadlockItem[]> | null = null;
+let itemsExpiry = 0;
+const ITEMS_CACHE_TTL = 3600_000; // 1 hour
+
 export async function getItems(): Promise<DeadlockItem[]> {
-  // Items response exceeds Next.js 2MB fetch cache limit — skip cache
-  const res = await fetch(`${ASSETS_API}/v2/items/by-type/upgrade`, {
-    cache: "no-store",
-    signal: AbortSignal.timeout(10_000),
-  });
-  if (!res.ok) {
-    logger.warn({ url: res.url, status: res.status }, "Deadlock API error");
-    throw new ApiError(`Deadlock API error: ${res.statusText}`, res.status, res.url);
+  if (itemsPromise && Date.now() < itemsExpiry) {
+    return itemsPromise;
   }
-  return res.json();
+
+  itemsExpiry = Date.now() + ITEMS_CACHE_TTL;
+  itemsPromise = (async () => {
+    const res = await fetch(`${ASSETS_API}/v2/items/by-type/upgrade`, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) {
+      logger.warn({ url: res.url, status: res.status }, "Deadlock API error");
+      throw new ApiError(`Deadlock API error: ${res.statusText}`, res.status, res.url);
+    }
+    return res.json() as Promise<DeadlockItem[]>;
+  })().catch((err) => {
+    // Reset cache on failure so next request retries
+    itemsPromise = null;
+    itemsExpiry = 0;
+    throw err;
+  });
+
+  return itemsPromise;
 }
 
 export async function getItemStats(minBadge?: number): Promise<DeadlockItemStats[]> {

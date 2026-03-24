@@ -1,3 +1,5 @@
+export const revalidate = 86400; // ISR: cache privacy page for 24 hours
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Header } from "@/components/layout/Header";

@@ -1,4 +1,5 @@
 import { LeaderboardTable } from "@/components/leaderboard/LeaderboardTable";
+import { RegionSelector } from "@/components/leaderboard/RegionSelector";
 import { Pagination } from "@/components/ui/Pagination";
 import {
   getLeaderboard,
@@ -183,7 +184,7 @@ async function resolveAccountIds(
 
   const candidateIds = [...new Set(
     ambiguous.map(({ idx }) => resolved.get(idx)!.accountId),
-  )];
+  )].slice(0, MAX_CANDIDATES_FOR_STEAM);
 
   type MatchEntry = Awaited<ReturnType<typeof getMatchHistory>>;
   const matchResults = await Promise.all(
@@ -234,12 +235,22 @@ async function resolveAccountIds(
   return resolved;
 }
 
+const VALID_REGIONS: DeadlockRegion[] = ["NAmerica", "SAmerica", "Europe", "Asia", "Oceania"];
+
 interface LeaderboardContentProps {
-  region: DeadlockRegion;
-  page: number;
+  searchParams: Promise<{ region?: string; page?: string }>;
 }
 
-export default async function LeaderboardContent({ region, page }: LeaderboardContentProps) {
+export default async function LeaderboardContent({ searchParams }: LeaderboardContentProps) {
+  const { region: regionParam, page: pageParam } = await searchParams;
+
+  const region: DeadlockRegion = VALID_REGIONS.includes(regionParam as DeadlockRegion)
+    ? (regionParam as DeadlockRegion)
+    : "NAmerica";
+
+  const rawPage = Number(pageParam);
+  const page = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
+
   const [entries, ranks, heroes] = await Promise.all([
     getLeaderboard(region),
     getRanks(),
@@ -258,6 +269,20 @@ export default async function LeaderboardContent({ region, page }: LeaderboardCo
 
   return (
     <>
+      <div className="mb-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="font-display text-3xl sm:text-4xl bg-clip-text text-transparent bg-gradient-to-b from-amber-light via-amber to-amber/70">
+              Leaderboard
+            </h1>
+            <p className="mt-2 text-text-secondary">
+              Top ranked players in Deadlock across all regions.
+            </p>
+          </div>
+          <RegionSelector currentRegion={region} />
+        </div>
+      </div>
+
       <LeaderboardTable
         entries={pageEntries}
         rankMap={rankMap}

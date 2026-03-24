@@ -1,3 +1,5 @@
+export const revalidate = 3600; // ISR: cache match detail for 1 hour (immutable after completion)
+
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Header } from "@/components/layout/Header";
@@ -14,6 +16,7 @@ import {
   getRanks,
   getPlayerSummaries,
   accountIdToSteam64,
+  steam64ToAccountId,
 } from "@/lib/api";
 import type { SteamPlayerSummary, DeadlockItem } from "@/lib/api";
 import { FadeIn } from "@/components/motion";
@@ -35,7 +38,7 @@ export async function generateMetadata(
 export default async function MatchDetailPage({ params }: MatchDetailPageProps) {
   const { matchId } = await params;
   const id = Number(matchId);
-  if (isNaN(id)) notFound();
+  if (!Number.isInteger(id) || id <= 0) notFound();
 
   let match;
   try {
@@ -71,7 +74,7 @@ export default async function MatchDetailPage({ params }: MatchDetailPageProps) 
   const playerNameMap = new Map<number, string>();
   for (const sp of steamPlayers) {
     const steam64 = sp.steamid;
-    const accountId = Number(BigInt(steam64) - BigInt("76561197960265728"));
+    const accountId = steam64ToAccountId(steam64);
     playerNameMap.set(accountId, sp.personaname);
   }
 
