@@ -44,6 +44,9 @@ const nextConfig: NextConfig = {
         hostname: "avatars.akamai.steamstatic.com",
       },
     ],
+    // Deadlock assets are already optimized WebP from their CDN.
+    // Skip Vercel Image Optimization to save transformation quota.
+    unoptimized: true,
   },
   async headers() {
     return [
