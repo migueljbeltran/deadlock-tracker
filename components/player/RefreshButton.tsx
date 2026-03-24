@@ -1,26 +1,27 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState, useTransition, useCallback } from "react";
 import { RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+
+const COOLDOWN_MS = 10_000;
 
 export function RefreshButton() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [lastRefresh, setLastRefresh] = useState<number | null>(null);
+  const [onCooldown, setOnCooldown] = useState(false);
 
-  function handleRefresh() {
-    // Cooldown: prevent spamming (10 seconds)
-    if (lastRefresh && Date.now() - lastRefresh < 10_000) return;
+  const handleRefresh = useCallback(() => {
+    if (onCooldown) return;
 
-    setLastRefresh(Date.now());
+    setOnCooldown(true);
+    setTimeout(() => setOnCooldown(false), COOLDOWN_MS);
+
     startTransition(() => {
       router.refresh();
     });
-  }
-
-  const onCooldown = lastRefresh != null && Date.now() - lastRefresh < 10_000;
+  }, [onCooldown, router, startTransition]);
 
   return (
     <button
