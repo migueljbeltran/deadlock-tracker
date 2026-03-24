@@ -229,10 +229,6 @@
 }
 
 /* Base Styles */
-html {
-  scroll-behavior: smooth;
-}
-
 body {
   background-color: var(--bg-deep);
   color: var(--text-primary);

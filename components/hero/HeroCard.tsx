@@ -24,17 +24,17 @@ export function HeroCard({ hero }: HeroCardProps) {
         <div className={cn("p-4 border-l-2", hero.winRate >= 50 ? "border-l-soul" : "border-l-blood")}>
           <div className="flex items-center gap-3">
             {hero.imageUrl ? (
-              <div className="overflow-hidden rounded">
+              <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded">
                 <Image
                   src={hero.imageUrl}
                   alt={hero.name}
-                  width={56}
-                  height={56}
-                  className="rounded transition-transform duration-300 hover:scale-110"
+                  fill
+                  sizes="56px"
+                  className="object-cover transition-transform duration-300 hover:scale-110"
                 />
               </div>
             ) : (
-              <div className="flex h-14 w-14 items-center justify-center rounded bg-surface-elevated text-text-muted">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded bg-surface-elevated text-text-muted">
                 ?
               </div>
             )}

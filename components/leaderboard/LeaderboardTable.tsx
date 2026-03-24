@@ -112,14 +112,16 @@ export function LeaderboardTable({
                 </td>
                 <td className="px-3 py-2 text-center">
                   {rank?.images ? (
-                    <Image
-                      src={rank.images[`small_subrank${entry.ranked_subrank}_webp`] ?? rank.images.large_webp ?? rank.images.large ?? ""}
-                      alt={rank.name}
-                      width={28}
-                      height={28}
-                      className="mx-auto"
-                      title={`${rank.name} ${entry.ranked_subrank}`}
-                    />
+                    <div className="relative mx-auto h-7 w-7">
+                      <Image
+                        src={rank.images[`small_subrank${entry.ranked_subrank}_webp`] ?? rank.images.large_webp ?? rank.images.large ?? ""}
+                        alt={rank.name}
+                        fill
+                        sizes="28px"
+                        className="object-contain"
+                        title={`${rank.name} ${entry.ranked_subrank}`}
+                      />
+                    </div>
                   ) : (
                     <span className="text-xs text-text-muted">{rank?.name ?? "—"}</span>
                   )}

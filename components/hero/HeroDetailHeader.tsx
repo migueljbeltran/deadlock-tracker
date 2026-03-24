@@ -20,13 +20,13 @@ export function HeroDetailHeader({ hero }: HeroDetailHeaderProps) {
 
           <div className="absolute -inset-4 rounded bg-gradient-to-br from-amber/10 to-sigil/10 blur-2xl" aria-hidden="true" />
           {(hero.images?.icon_hero_card_webp || hero.images?.icon_hero_card) ? (
-            <div className="relative overflow-hidden rounded">
+            <div className="relative h-60 w-60 overflow-hidden rounded">
               <Image
                 src={(hero.images.icon_hero_card_webp || hero.images.icon_hero_card)!}
                 alt={hero.name}
-                width={240}
-                height={240}
-                className="rounded border border-border-subtle"
+                fill
+                sizes="240px"
+                className="rounded border border-border-subtle object-cover"
                 priority
               />
               {/* Gradient overlay — emerging from darkness */}

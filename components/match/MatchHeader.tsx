@@ -41,12 +41,15 @@ export function MatchHeader({ match, ranks }: MatchHeaderProps) {
             {team0Rank && (
               <div className="flex items-center gap-1.5 glass-panel rounded-full px-3 py-1">
                 {(team0Rank.images.large_webp || team0Rank.images.large) && (
-                  <Image
-                    src={(team0Rank.images.large_webp || team0Rank.images.large)!}
-                    alt={team0Rank.name}
-                    width={18}
-                    height={18}
-                  />
+                  <div className="relative h-[18px] w-[18px] shrink-0">
+                    <Image
+                      src={(team0Rank.images.large_webp || team0Rank.images.large)!}
+                      alt={team0Rank.name}
+                      fill
+                      sizes="18px"
+                      className="object-contain"
+                    />
+                  </div>
                 )}
                 <span className="text-[10px] text-text-muted">Archmother</span>
                 <span className="text-xs font-heading" style={{ color: team0Rank.color }}>
@@ -57,12 +60,15 @@ export function MatchHeader({ match, ranks }: MatchHeaderProps) {
             {team1Rank && (
               <div className="flex items-center gap-1.5 glass-panel rounded-full px-3 py-1">
                 {(team1Rank.images.large_webp || team1Rank.images.large) && (
-                  <Image
-                    src={(team1Rank.images.large_webp || team1Rank.images.large)!}
-                    alt={team1Rank.name}
-                    width={18}
-                    height={18}
-                  />
+                  <div className="relative h-[18px] w-[18px] shrink-0">
+                    <Image
+                      src={(team1Rank.images.large_webp || team1Rank.images.large)!}
+                      alt={team1Rank.name}
+                      fill
+                      sizes="18px"
+                      className="object-contain"
+                    />
+                  </div>
                 )}
                 <span className="text-[10px] text-text-muted">Hidden King</span>
                 <span className="text-xs font-heading" style={{ color: team1Rank.color }}>

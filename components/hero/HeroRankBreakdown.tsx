@@ -51,12 +51,15 @@ export function HeroRankBreakdown({ analytics, ranks }: HeroRankBreakdownProps) 
                 <td className="px-3 py-2 sm:px-4">
                   <div className="flex items-center gap-2">
                     {rank && (rank.images.large_webp || rank.images.large) && (
-                      <Image
-                        src={(rank.images.large_webp || rank.images.large)!}
-                        alt={rank?.name ?? `Tier ${entry.bucket}`}
-                        width={20}
-                        height={20}
-                      />
+                      <div className="relative h-5 w-5 shrink-0">
+                        <Image
+                          src={(rank.images.large_webp || rank.images.large)!}
+                          alt={rank?.name ?? `Tier ${entry.bucket}`}
+                          fill
+                          sizes="20px"
+                          className="object-contain"
+                        />
+                      </div>
                     )}
                     <span
                       className="font-heading text-xs"

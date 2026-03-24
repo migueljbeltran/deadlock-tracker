@@ -71,12 +71,15 @@ export function RankFilter({ ranks, currentMinTier, baseUrl }: RankFilterProps) 
           )}
         >
           {selectedRank?.imageUrl && (
-            <Image
-              src={selectedRank.imageUrl}
-              alt={selectedRank.name}
-              width={18}
-              height={18}
-            />
+            <div className="relative h-[18px] w-[18px] shrink-0">
+              <Image
+                src={selectedRank.imageUrl}
+                alt={selectedRank.name}
+                fill
+                sizes="18px"
+                className="object-contain"
+              />
+            </div>
           )}
           <span>{selectedRank ? `${selectedRank.name}+` : "All Ranks"}</span>
           <ChevronDown className={cn("h-3.5 w-3.5 text-text-muted transition-transform", open && "rotate-180")} />
@@ -104,12 +107,15 @@ export function RankFilter({ ranks, currentMinTier, baseUrl }: RankFilterProps) 
                 )}
               >
                 {r.imageUrl && (
-                  <Image
-                    src={r.imageUrl}
-                    alt={r.name}
-                    width={18}
-                    height={18}
-                  />
+                  <div className="relative h-[18px] w-[18px] shrink-0">
+                    <Image
+                      src={r.imageUrl}
+                      alt={r.name}
+                      fill
+                      sizes="18px"
+                      className="object-contain"
+                    />
+                  </div>
                 )}
                 <span style={{ color: currentMinTier === r.tier ? r.color : undefined }}>
                   {r.name}+

@@ -51,10 +51,16 @@ export async function getHero(heroId: number): Promise<DeadlockHero> {
 }
 
 export async function getItems(): Promise<DeadlockItem[]> {
-  return deadlockFetch<DeadlockItem[]>(
-    `${ASSETS_API}/v2/items/by-type/upgrade`,
-    3600,
-  );
+  // Items response exceeds Next.js 2MB fetch cache limit — skip cache
+  const res = await fetch(`${ASSETS_API}/v2/items/by-type/upgrade`, {
+    cache: "no-store",
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!res.ok) {
+    logger.warn({ url: res.url, status: res.status }, "Deadlock API error");
+    throw new ApiError(`Deadlock API error: ${res.statusText}`, res.status, res.url);
+  }
+  return res.json();
 }
 
 export async function getItemStats(minBadge?: number): Promise<DeadlockItemStats[]> {

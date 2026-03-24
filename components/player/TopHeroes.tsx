@@ -47,15 +47,17 @@ export function TopHeroes({ heroStats, heroMap }: TopHeroesProps) {
                 </div>
                 <div className="flex items-center gap-3">
                   {hero?.images?.icon_hero_card_webp ? (
-                    <Image
-                      src={hero.images.icon_hero_card_webp}
-                      alt={hero.name}
-                      width={48}
-                      height={48}
-                      className="rounded"
-                    />
+                    <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded">
+                      <Image
+                        src={hero.images.icon_hero_card_webp}
+                        alt={hero.name}
+                        fill
+                        sizes="48px"
+                        className="object-cover"
+                      />
+                    </div>
                   ) : (
-                    <div className="flex h-12 w-12 items-center justify-center rounded bg-surface-elevated text-text-muted">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded bg-surface-elevated text-text-muted">
                       ?
                     </div>
                   )}

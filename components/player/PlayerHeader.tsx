@@ -52,13 +52,15 @@ export function PlayerHeader({ player, accountId, estimatedRank, estimatedSubran
                 : null;
               const imgSrc = subrankImg || estimatedRank.images.large_webp || estimatedRank.images.large;
               return imgSrc ? (
-                <Image
-                  src={imgSrc}
-                  alt={`${estimatedRank.name} ${estimatedSubrank ?? ""}`}
-                  width={28}
-                  height={28}
-                  className="drop-shadow-lg animate-float"
-                />
+                <div className="relative h-7 w-7">
+                  <Image
+                    src={imgSrc}
+                    alt={`${estimatedRank.name} ${estimatedSubrank ?? ""}`}
+                    fill
+                    sizes="28px"
+                    className="object-contain drop-shadow-lg animate-float"
+                  />
+                </div>
               ) : null;
             })()}
             <span

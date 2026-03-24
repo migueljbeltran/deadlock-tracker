@@ -187,13 +187,15 @@ export default async function TierListPage({ searchParams }: TierListPageProps) 
                           title={`${hero.name} — ${hero.winRate.toFixed(1)}% WR, ${hero.pickRate.toFixed(1)}% PR`}
                         >
                           {hero.imageUrl ? (
-                            <Image
-                              src={hero.imageUrl}
-                              alt={hero.name}
-                              width={28}
-                              height={28}
-                              className="rounded"
-                            />
+                            <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded">
+                              <Image
+                                src={hero.imageUrl}
+                                alt={hero.name}
+                                fill
+                                sizes="28px"
+                                className="object-cover"
+                              />
+                            </div>
                           ) : (
                             <div className="h-7 w-7 rounded bg-surface-elevated" />
                           )}
