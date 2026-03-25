@@ -7,7 +7,6 @@ import {
   getHeroes,
   getPlayerSummaries,
   getBatchPlayerHeroStats,
-  getMatchHistory,
   accountIdToSteam64,
 } from "@/lib/api";
 import type { DeadlockRegion, DeadlockLeaderboardEntry } from "@/lib/api";
@@ -40,7 +39,6 @@ const MAX_CANDIDATES_FOR_STEAM = 20;
 interface ResolvedAccount {
   accountId: number;
   confident: boolean;
-  rankedRank?: number;
 }
 
 async function resolveAccountIds(
@@ -60,23 +58,17 @@ async function resolveAccountIds(
 
   if (ambiguous.length === 0) return resolved;
 
-  // Collect ALL unique candidate account IDs (no per-entry cap for hero stats)
-  const allCandidateIds = new Set<number>();
-  // For Steam name lookups, cap at 20 per entry to limit API volume
-  const steamCandidateIds = new Set<number>();
+  // Collect candidate account IDs, capped at MAX_CANDIDATES_FOR_STEAM per entry
+  const candidateIds = new Set<number>();
 
   for (const { entry } of ambiguous) {
-    for (let i = 0; i < entry.possible_account_ids.length; i++) {
-      const id = entry.possible_account_ids[i];
-      allCandidateIds.add(id);
-      if (i < MAX_CANDIDATES_FOR_STEAM) {
-        steamCandidateIds.add(id);
-      }
+    for (let i = 0; i < Math.min(entry.possible_account_ids.length, MAX_CANDIDATES_FOR_STEAM); i++) {
+      candidateIds.add(entry.possible_account_ids[i]);
     }
   }
 
-  const heroStatsIds = [...allCandidateIds];
-  const steamIds = [...steamCandidateIds];
+  const heroStatsIds = [...candidateIds];
+  const steamIds = [...candidateIds];
 
   // ── Parallel fetch: Steam profiles + Deadlock hero stats ──
 
@@ -177,59 +169,7 @@ async function resolveAccountIds(
       }
     }
 
-    resolved.set(idx, { accountId: bestId, confident: false, rankedRank: entry.ranked_rank });
-  }
-
-  // ── Rank verification: fetch recent matches for resolved candidates ──
-
-  const candidateIds = [...new Set(
-    ambiguous.map(({ idx }) => resolved.get(idx)!.accountId),
-  )].slice(0, MAX_CANDIDATES_FOR_STEAM);
-
-  type MatchEntry = Awaited<ReturnType<typeof getMatchHistory>>;
-  const matchResults = await Promise.all(
-    candidateIds.map((id) =>
-      getMatchHistory(id, 5).then(
-        (matches): [number, MatchEntry] => [id, matches],
-        (): [number, MatchEntry] => [id, []],
-      ),
-    ),
-  );
-
-  const matchMap = new Map<number, MatchEntry>(matchResults);
-
-  for (const { idx } of ambiguous) {
-    const entry = resolved.get(idx)!;
-    const matches = matchMap.get(entry.accountId) ?? [];
-
-    // Estimate rank from recent match badges (same logic as player page)
-    const badges: number[] = [];
-    for (const match of matches) {
-      if (match.match_mode === "PrivateLobby") continue;
-      const player = match.players?.find((p) => p.account_id === entry.accountId);
-      if (player) {
-        const badge = player.team === "Team0"
-          ? match.average_badge_team0
-          : match.average_badge_team1;
-        if (badge != null && badge > 0) badges.push(badge);
-      } else {
-        const b0 = match.average_badge_team0;
-        const b1 = match.average_badge_team1;
-        if (b0 != null && b0 > 0) badges.push(b0);
-        if (b1 != null && b1 > 0) badges.push(b1);
-      }
-    }
-
-    if (badges.length === 0) {
-      // No badge data — can't verify, not confident
-      continue;
-    }
-
-    const avgBadge = badges.reduce((s, b) => s + b, 0) / badges.length;
-    const estimatedTier = Math.floor(avgBadge / 10);
-
-    // Confident if estimated rank tier is within 1 of the leaderboard rank
-    entry.confident = entry.rankedRank != null && Math.abs(estimatedTier - entry.rankedRank) <= 1;
+    resolved.set(idx, { accountId: bestId, confident: bestScore >= 10 });
   }
 
   return resolved;

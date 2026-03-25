@@ -6,17 +6,17 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "Googlebot",
         allow: "/",
-        disallow: "/api/",
+        disallow: ["/api/", "/leaderboard", "/player/"],
       },
       {
         userAgent: "Bingbot",
         allow: "/",
-        disallow: "/api/",
+        disallow: ["/api/", "/leaderboard", "/player/"],
       },
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/api/", "/player/*/page=*"],
+        disallow: ["/api/", "/leaderboard", "/player/"],
         crawlDelay: 10,
       },
     ],

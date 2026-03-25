@@ -21,6 +21,7 @@ import {
 } from "@/lib/api";
 
 const MATCH_PAGE_SIZE = 20;
+const MAX_MATCH_PAGES = 5; // Cap at 100 matches to limit API payload size
 
 /**
  * Estimate the player's rank from recent match badge data.
@@ -78,7 +79,9 @@ export default async function PlayerContent({ accountId, searchParams }: PlayerC
 
   const steam64 = accountIdToSteam64(accountId);
   const rawPage = Number(pageParam);
-  const page = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
+  const page = Number.isInteger(rawPage) && rawPage > 0
+    ? Math.min(rawPage, MAX_MATCH_PAGES)
+    : 1;
 
   const offset = (page - 1) * MATCH_PAGE_SIZE;
   const fetchLimit = offset + MATCH_PAGE_SIZE + 1;
