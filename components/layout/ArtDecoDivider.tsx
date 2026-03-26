@@ -51,8 +51,8 @@ export function ArtDecoDivider({ className, variant = "simple" }: ArtDecoDivider
   return (
     <div className={cn("flex items-center justify-center py-6", className)}>
       <motion.svg
-        viewBox="0 0 500 40"
-        className="w-full max-w-lg h-10"
+        viewBox="0 0 500 56"
+        className="w-full max-w-lg h-14"
         fill="none"
         initial="hidden"
         whileInView="visible"
@@ -60,13 +60,14 @@ export function ArtDecoDivider({ className, variant = "simple" }: ArtDecoDivider
       >
         {/* Left decorative element */}
         <g stroke="var(--amber)" strokeWidth="1">
-          <motion.line x1="0" y1="20" x2="150" y2="20" variants={draw} />
-          <motion.line x1="150" y1="20" x2="170" y2="10" variants={draw} />
-          <motion.line x1="150" y1="20" x2="170" y2="30" variants={draw} />
+          <motion.line x1="0" y1="28" x2="150" y2="28" variants={draw} />
+          <motion.line x1="150" y1="28" x2="170" y2="18" variants={draw} />
+          <motion.line x1="150" y1="28" x2="170" y2="38" variants={draw} />
         </g>
 
-        {/* Center ornament */}
-        <motion.g transform="translate(250, 20)" variants={scaleIn}>
+        {/* Center ornament — plain <g> for position, motion.g for animation */}
+        <g transform="translate(250, 28)">
+        <motion.g variants={scaleIn}>
           <circle r="8" fill="none" stroke="var(--amber)" strokeWidth="1.5" />
           <circle r="3" fill="var(--amber)" />
           {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => {
@@ -88,12 +89,13 @@ export function ArtDecoDivider({ className, variant = "simple" }: ArtDecoDivider
             );
           })}
         </motion.g>
+        </g>
 
         {/* Right decorative element */}
         <g stroke="var(--amber)" strokeWidth="1">
-          <motion.line x1="350" y1="20" x2="500" y2="20" variants={draw} />
-          <motion.line x1="330" y1="10" x2="350" y2="20" variants={draw} />
-          <motion.line x1="330" y1="30" x2="350" y2="20" variants={draw} />
+          <motion.line x1="350" y1="28" x2="500" y2="28" variants={draw} />
+          <motion.line x1="330" y1="18" x2="350" y2="28" variants={draw} />
+          <motion.line x1="330" y1="38" x2="350" y2="28" variants={draw} />
         </g>
       </motion.svg>
     </div>

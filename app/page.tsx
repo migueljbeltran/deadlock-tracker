@@ -2,7 +2,7 @@ export const revalidate = 300; // ISR: cache homepage for 5 minutes
 
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Users, Swords, Shield } from "lucide-react";
+import { Crosshair, BarChart3, Trophy, ArrowRight, Github, Twitch, Heart } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { SigilBackground } from "@/components/layout/SigilBackground";
@@ -42,6 +42,7 @@ export default async function Home() {
 
   const totalMatches = apiInfo?.table_sizes?.match_info?.rows ?? 0;
   const totalPlayers = apiInfo?.table_sizes?.steam_profiles?.rows ?? 0;
+
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
@@ -49,8 +50,8 @@ export default async function Home() {
       <main className="relative flex-1">
         <SigilBackground intensity="subtle" />
 
-        {/* Hero Section — cascading curtain-rise reveal */}
-        <section className="relative flex flex-col items-center justify-center px-4 py-32 sm:py-40">
+        {/* ===== HERO SECTION ===== */}
+        <section className="relative flex flex-col items-center justify-center px-4 pt-24 pb-16 sm:pt-32 sm:pb-20 lg:pt-40 lg:pb-24">
           {/* Multi-layer gradient mesh */}
           <div
             className="pointer-events-none absolute inset-0"
@@ -89,17 +90,15 @@ export default async function Home() {
           ))}
 
           <div className="relative z-10 flex flex-col items-center text-center">
-            {/* Title — Option A: Gradient text */}
+            {/* Title with glow */}
             <FadeIn direction="none" duration={0.8} triggerOnScroll={false}>
               <div className="relative">
-                {/* Glow layer behind */}
                 <span
                   className="pointer-events-none absolute inset-0 font-display text-6xl sm:text-7xl lg:text-8xl tracking-wide text-amber blur-lg opacity-40"
                   aria-hidden="true"
                 >
                   dltracker
                 </span>
-                {/* Secondary soul-green glow layer */}
                 <span
                   className="pointer-events-none absolute inset-0 font-display text-6xl sm:text-7xl lg:text-8xl tracking-wide text-soul blur-2xl opacity-20"
                   aria-hidden="true"
@@ -112,20 +111,10 @@ export default async function Home() {
               </div>
             </FadeIn>
 
-            {/* === TITLE OPTION B: Flat amber + dramatic textShadow === */}
-            {/* <FadeIn direction="none" duration={0.8}>
-              <h1
-                className="font-display text-6xl sm:text-7xl lg:text-8xl text-amber tracking-wide"
-                style={{ textShadow: "0 0 40px rgba(212,168,83,0.4), 0 0 80px rgba(212,168,83,0.15), 0 2px 4px rgba(0,0,0,0.5)" }}
-              >
-                dltracker
-              </h1>
-            </FadeIn> */}
-
             {/* Tagline */}
             <FadeIn delay={0.3} triggerOnScroll={false}>
-              <p className="mt-4 max-w-md text-lg text-text-secondary">
-                A living record of souls and matches from the Cursed Apple
+              <p className="mt-4 max-w-lg text-lg sm:text-xl text-text-secondary leading-relaxed">
+                Track every soul, every match, every victory in the Cursed Apple
               </p>
             </FadeIn>
 
@@ -133,88 +122,198 @@ export default async function Home() {
               <ArtDecoDivider className="my-8 w-full max-w-sm" />
             </FadeIn>
 
-            {/* Search */}
+            {/* Search — the primary action */}
             <FadeIn delay={0.7} triggerOnScroll={false}>
               <HeroSearchSection />
+            </FadeIn>
+
+            {/* Trust bar — inline stats below search */}
+            <FadeIn delay={0.9} triggerOnScroll={false}>
+              <div className="mt-8 flex items-center gap-6 sm:gap-10">
+                {[
+                  { value: totalPlayers || null, label: "Players" },
+                  { value: totalMatches || null, label: "Matches" },
+                  { value: playableCount > 0 ? playableCount : null, label: "Heroes" },
+                ].map((stat) => (
+                  <div key={stat.label} className="flex flex-col items-center">
+                    <span className="font-mono text-2xl sm:text-3xl text-text-primary tabular-nums">
+                      {stat.value != null ? (
+                        <CountUp value={stat.value} />
+                      ) : (
+                        "—"
+                      )}
+                    </span>
+                    <span className="text-xs tracking-[0.2em] uppercase text-text-muted mt-1">
+                      {stat.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </FadeIn>
           </div>
         </section>
 
-        {/* Quick Stats Preview */}
-        <section className="section-fade-border relative py-20">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="glass-panel rounded-xl p-8 atmosphere-soul">
+        {/* ===== FEATURE SHOWCASE ===== */}
+        <section className="section-fade-border relative py-20 sm:py-28">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <ScrollReveal>
-              <h2 className="font-heading text-3xl text-center text-text-primary tracking-wide mb-8">
-                The Archives Await
-              </h2>
+              <div className="text-center mb-14">
+                <h2 className="font-heading text-3xl sm:text-4xl text-text-primary tracking-wide">
+                  Uncover the Data Behind Every Match
+                </h2>
+                <p className="mt-3 text-text-secondary max-w-xl mx-auto">
+                  Everything you need to analyze your gameplay, study hero matchups, and climb the ranks.
+                </p>
+              </div>
             </ScrollReveal>
 
-            <ScrollReveal delay={0.15}>
-              <StaggerList className="grid grid-cols-1 gap-6 sm:grid-cols-4">
-                {/* Stat cards */}
-                {[
-                  { label: "Souls Catalogued", value: totalPlayers || null, Icon: Users, span: "sm:col-span-1" },
-                  { label: "Matches Recorded", value: totalMatches || null, Icon: Swords, span: "sm:col-span-2" },
-                  { label: "Heroes Documented", value: playableCount > 0 ? playableCount : null, Icon: Shield, span: "sm:col-span-1" },
-                ].map((stat) => (
-                  <StaggerItem key={stat.label} className={stat.span}>
-                    <GlowCard className="p-8">
-                      <div className="flex flex-col items-center text-center">
-                        <stat.Icon className="h-8 w-8 text-sigil mb-3 drop-shadow-[0_0_8px_rgba(26,188,156,0.4)]" />
-                        <span
-                          className="font-mono text-5xl bg-gradient-to-b from-text-primary to-text-secondary bg-clip-text text-transparent"
-                        >
-                          {stat.value != null ? (
-                            <CountUp value={stat.value} />
-                          ) : (
-                            "—"
-                          )}
-                        </span>
-                        {/* Accent bar */}
-                        <div className="mt-2 h-0.5 w-10 rounded-full bg-gradient-to-r from-soul/60 to-soul/0" />
-                        <span className="mt-2 text-sm tracking-wide uppercase font-heading text-text-secondary">{stat.label}</span>
+            <StaggerList className="grid grid-cols-1 gap-5 sm:gap-6 md:grid-cols-3">
+              {/* Feature 1: Heroes */}
+              <StaggerItem>
+                <Link href="/heroes" className="block h-full group">
+                  <GlowCard className="p-6 sm:p-8 h-full flex flex-col">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-soul/10 border border-soul/20 group-hover:bg-soul/20 transition-colors">
+                        <Crosshair className="h-5 w-5 text-soul" />
                       </div>
-                    </GlowCard>
-                  </StaggerItem>
-                ))}
-              </StaggerList>
-            </ScrollReveal>
-            </div>
+                      <h3 className="font-heading text-lg text-text-primary tracking-wide">
+                        Hero Analytics
+                      </h3>
+                    </div>
+                    <p className="text-sm text-text-secondary leading-relaxed flex-1">
+                      Browse all {playableCount > 0 ? playableCount : ""} heroes with real-time win rates, pick rates, and tier rankings. Filter by role, sort by performance, and find your next main.
+                    </p>
+                    <div className="mt-5 flex items-center gap-1.5 text-sm font-medium text-soul opacity-0 translate-x-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300">
+                      Browse Heroes <ArrowRight className="h-4 w-4" />
+                    </div>
+                  </GlowCard>
+                </Link>
+              </StaggerItem>
+
+              {/* Feature 2: Match History */}
+              <StaggerItem>
+                <Link href="/" className="block h-full group">
+                  <GlowCard className="p-6 sm:p-8 h-full flex flex-col">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-amber/10 border border-amber/20 group-hover:bg-amber/20 transition-colors">
+                        <BarChart3 className="h-5 w-5 text-amber" />
+                      </div>
+                      <h3 className="font-heading text-lg text-text-primary tracking-wide">
+                        Match Investigation
+                      </h3>
+                    </div>
+                    <p className="text-sm text-text-secondary leading-relaxed flex-1">
+                      Dive into detailed match breakdowns with full team scoreboards, K/D/A stats, item builds, and performance metrics for every player.
+                    </p>
+                    <div className="mt-5 flex items-center gap-1.5 text-sm font-medium text-amber opacity-0 translate-x-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300">
+                      Search a Player <ArrowRight className="h-4 w-4" />
+                    </div>
+                  </GlowCard>
+                </Link>
+              </StaggerItem>
+
+              {/* Feature 3: Leaderboard */}
+              <StaggerItem>
+                <Link href="/leaderboard" className="block h-full group">
+                  <GlowCard className="p-6 sm:p-8 h-full flex flex-col">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-sigil/10 border border-sigil/20 group-hover:bg-sigil/20 transition-colors">
+                        <Trophy className="h-5 w-5 text-sigil" />
+                      </div>
+                      <h3 className="font-heading text-lg text-text-primary tracking-wide">
+                        Ranked Leaderboards
+                      </h3>
+                    </div>
+                    <p className="text-sm text-text-secondary leading-relaxed flex-1">
+                      See who dominates each region. View top players with rank badges, win streaks, and most-played heroes across all competitive tiers.
+                    </p>
+                    <div className="mt-5 flex items-center gap-1.5 text-sm font-medium text-sigil opacity-0 translate-x-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300">
+                      View Leaderboard <ArrowRight className="h-4 w-4" />
+                    </div>
+                  </GlowCard>
+                </Link>
+              </StaggerItem>
+            </StaggerList>
           </div>
         </section>
 
-        {/* CTA Section */}
-        <ScrollReveal>
-          <section className="relative py-24">
-            <ArtDecoDivider variant="ornate" className="mb-8" />
+        {/* ===== COMMUNITY / SUPPORT ===== */}
+        <section className="section-fade-border relative py-20 sm:py-24">
+          <div className="pointer-events-none absolute inset-0 atmosphere-amber" aria-hidden="true" />
 
-            {/* Ambient glow behind CTAs */}
-            <div className="pointer-events-none absolute inset-0 atmosphere-amber" aria-hidden="true" />
-
-            <div className="relative mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
-              <h2 className="font-heading text-2xl sm:text-3xl text-amber mb-4">
-                Begin Your Investigation
-              </h2>
-              <p className="max-w-lg mx-auto text-text-secondary mb-6">
-                Explore hero statistics, track your performance, and uncover the secrets of the Cursed Apple.
-              </p>
-              <div className="flex justify-center gap-6">
-                <Link href="/heroes" className="animated-border rounded-md">
-                  <Button variant="primary" size="lg">
-                    Browse Heroes
-                  </Button>
-                </Link>
-                <Link href="/leaderboard">
-                  <Button variant="secondary" size="lg">
-                    View Leaderboard
-                  </Button>
-                </Link>
+          <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+            <ScrollReveal>
+              <div className="text-center mb-10">
+                <ArtDecoDivider variant="ornate" className="mb-10" />
+                <h2 className="font-heading text-2xl sm:text-3xl text-amber mb-3">
+                  Built for the Community
+                </h2>
+                <p className="max-w-md mx-auto text-text-secondary">
+                  Free, open-source, and made for Deadlock players. Follow the stream, contribute on GitHub, or help keep the lights on.
+                </p>
               </div>
-              <p className="text-xs text-text-muted mt-3">Free. No sign-up required.</p>
-            </div>
-          </section>
-        </ScrollReveal>
+            </ScrollReveal>
+
+            <ScrollReveal delay={0.1}>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <a
+                  href="https://twitch.tv/trazenmb"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group block"
+                >
+                  <GlowCard className="p-6 text-center h-full">
+                    <Twitch className="h-6 w-6 mx-auto mb-3 text-text-muted group-hover:text-[#9146FF] transition-colors" />
+                    <h3 className="font-heading text-sm tracking-wide text-text-primary mb-1">
+                      Watch the Stream
+                    </h3>
+                    <p className="text-xs text-text-muted">
+                      Catch live Deadlock gameplay
+                    </p>
+                  </GlowCard>
+                </a>
+
+                <a
+                  href="https://ko-fi.com/trazen"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group block"
+                >
+                  <GlowCard className="p-6 text-center h-full">
+                    <Heart className="h-6 w-6 mx-auto mb-3 text-text-muted group-hover:text-[#FF5E5B] transition-colors" />
+                    <h3 className="font-heading text-sm tracking-wide text-text-primary mb-1">
+                      Support the Project
+                    </h3>
+                    <p className="text-xs text-text-muted">
+                      Help keep dltracker running
+                    </p>
+                  </GlowCard>
+                </a>
+
+                <a
+                  href="https://github.com/migueljbeltran/deadlock-tracker"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group block"
+                >
+                  <GlowCard className="p-6 text-center h-full">
+                    <Github className="h-6 w-6 mx-auto mb-3 text-text-muted group-hover:text-text-primary transition-colors" />
+                    <h3 className="font-heading text-sm tracking-wide text-text-primary mb-1">
+                      View Source
+                    </h3>
+                    <p className="text-xs text-text-muted">
+                      Contribute or report issues
+                    </p>
+                  </GlowCard>
+                </a>
+              </div>
+            </ScrollReveal>
+
+            <ScrollReveal delay={0.15}>
+              <p className="text-xs text-text-muted mt-6 text-center">Free. No sign-up required.</p>
+            </ScrollReveal>
+          </div>
+        </section>
       </main>
 
       <Footer />

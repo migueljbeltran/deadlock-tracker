@@ -22,7 +22,7 @@ export function RecentSearches({ searches, onSelect }: RecentSearchesProps) {
             key={`${search.accountId}-${i}`}
             type="button"
             onClick={() => onSelect(search)}
-            className="group flex items-center gap-2 rounded-full border border-border-subtle bg-[rgba(22,27,34,0.92)] px-3 py-1.5 text-sm text-text-secondary transition-all hover:border-soul hover:text-soul"
+            className="group flex flex-1 min-w-0 items-center gap-2 rounded-full border border-border-subtle bg-[rgba(22,27,34,0.92)] px-3 py-1.5 text-sm text-text-secondary transition-all hover:border-soul hover:text-soul"
           >
             <Image
               src={search.avatar}

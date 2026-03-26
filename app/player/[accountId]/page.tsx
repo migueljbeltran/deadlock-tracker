@@ -7,6 +7,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { SigilBackground } from "@/components/layout/SigilBackground";
 import { SigilLoader } from "@/components/ui/SigilLoader";
+import { PlayerSearchBar } from "@/components/search/PlayerSearchBar";
 import PlayerContent from "@/components/player/PlayerContent";
 import { accountIdToSteam64, getPlayerSummary } from "@/lib/api";
 
@@ -68,6 +69,11 @@ export default async function PlayerPage({ params, searchParams }: PlayerPagePro
 
       <main className="atmosphere-soul relative flex-1">
         <SigilBackground intensity="subtle" />
+
+        {/* Inline search — find another player without going home */}
+        <div className="relative z-10 mx-auto max-w-3xl px-4 pt-6 sm:px-6 lg:px-8">
+          <PlayerSearchBar />
+        </div>
 
         <Suspense
           fallback={

@@ -168,7 +168,7 @@ export default async function PlayerContent({ accountId, searchParams }: PlayerC
         <div className="glass-panel rounded-xl p-6">
           <TopHeroes
             heroStats={heroStats}
-            heroMap={heroMap}
+            heroMap={Object.fromEntries(heroMap)}
           />
         </div>
       </section>

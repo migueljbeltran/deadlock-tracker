@@ -39,6 +39,28 @@ const SLOT_BORDER: Record<string, string> = {
 
 const SLOT_ORDER = ["weapon", "vitality", "spirit"] as const;
 
+/** Faction color tokens derived from official Deadlock art */
+const TEAM_COLORS = {
+  archmother: {
+    accent: "#5EBBF0",       // ice-blue
+    accentDim: "rgba(94,187,240,0.15)",
+    accentGlow: "rgba(94,187,240,0.25)",
+    border: "rgba(94,187,240,0.4)",
+    gradient: "from-[rgba(94,187,240,0.20)] via-[rgba(94,187,240,0.08)] to-transparent",
+    hoverBorder: "hover:border-l-[#5EBBF0]",
+    text: "text-[#5EBBF0]",
+  },
+  hiddenKing: {
+    accent: "#D4A853",       // amber/fire
+    accentDim: "rgba(212,168,83,0.15)",
+    accentGlow: "rgba(212,168,83,0.25)",
+    border: "rgba(212,168,83,0.4)",
+    gradient: "from-[rgba(212,168,83,0.20)] via-[rgba(212,168,83,0.08)] to-transparent",
+    hoverBorder: "hover:border-l-[#D4A853]",
+    text: "text-amber",
+  },
+} as const;
+
 export function TeamScoreboard({
   teamLabel,
   players,
@@ -49,6 +71,8 @@ export function TeamScoreboard({
   itemMap,
 }: TeamScoreboardProps) {
   if (players.length === 0) return null;
+
+  const team = teamLabel === "Archmother" ? TEAM_COLORS.archmother : TEAM_COLORS.hiddenKing;
 
   // Compute MVP highlights
   const maxKills = Math.max(0, ...players.map((p) => p.kills));
@@ -75,20 +99,24 @@ export function TeamScoreboard({
   const hasItems = playerItemsMap && itemMap && playerItemsMap.size > 0;
 
   return (
-    <div className={cn(
-      "overflow-x-auto rounded-lg glass-panel",
-      isWinner
-        ? "border-soul/40 shadow-glow-soul"
-        : "",
-    )}>
+    <div
+      className={cn("overflow-x-auto rounded-lg glass-panel")}
+      style={{
+        borderColor: isWinner ? team.border : undefined,
+        boxShadow: isWinner ? `0 0 20px ${team.accentGlow}` : undefined,
+      }}
+    >
       <table className="w-full text-sm">
         <thead>
-          <tr className={cn(
-            "border-b-2 text-left uppercase tracking-[0.05em] text-xs",
-            isWinner
-              ? "border-soul bg-gradient-to-r from-soul/20 via-soul/10 to-transparent text-soul"
-              : "border-blood bg-gradient-to-r from-blood/15 via-blood/5 to-transparent text-blood",
-          )}>
+          <tr
+            className={cn(
+              "border-b-2 text-left uppercase tracking-[0.05em] text-xs",
+              isWinner
+                ? `bg-gradient-to-r ${team.gradient} ${team.text}`
+                : `bg-gradient-to-r ${team.gradient} ${team.text} opacity-70`,
+            )}
+            style={{ borderColor: team.accent }}
+          >
             <th className="px-3 py-2 sm:px-4">
               {isWinner && <Crown className="mr-1.5 inline-block h-3.5 w-3.5 -translate-y-px" />}
               {teamLabel}
@@ -135,7 +163,7 @@ export function TeamScoreboard({
               <tr
                 key={player.account_id}
                 className={cn(
-                  "border-b border-border-subtle transition-colors hover:border-l-2 hover:border-l-soul hover:bg-[rgba(31,41,55,0.5)]",
+                  `border-b border-border-subtle transition-colors hover:border-l-2 ${team.hoverBorder} hover:bg-[rgba(31,41,55,0.5)]`,
                   idx % 2 === 1 && "bg-[rgba(31,41,55,0.3)]",
                   isTopKiller && "bg-soul/[0.05]",
                   !isWinner && "opacity-90",
