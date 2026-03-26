@@ -30,7 +30,7 @@ export function accountIdToSteam64(accountId: number): string {
 }
 
 export function isValidSteam64(id: string): boolean {
-  return /^\d{17}$/.test(id) && id.startsWith("7656119");
+  return /^\d{17}$/.test(id) && BigInt(id) >= STEAM64_OFFSET;
 }
 
 // ---- API Functions ----

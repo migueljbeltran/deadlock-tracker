@@ -48,10 +48,12 @@ export function TeamScoreboard({
   playerItemsMap,
   itemMap,
 }: TeamScoreboardProps) {
+  if (players.length === 0) return null;
+
   // Compute MVP highlights
-  const maxKills = Math.max(...players.map((p) => p.kills));
-  const maxAssists = Math.max(...players.map((p) => p.assists));
-  const maxNetWorth = Math.max(...players.map((p) => p.net_worth));
+  const maxKills = Math.max(0, ...players.map((p) => p.kills));
+  const maxAssists = Math.max(0, ...players.map((p) => p.assists));
+  const maxNetWorth = Math.max(0, ...players.map((p) => p.net_worth));
 
   // Detect unique party groups (filter out solo players — party value 0 or unique)
   const partyCounts = new Map<number, number>();

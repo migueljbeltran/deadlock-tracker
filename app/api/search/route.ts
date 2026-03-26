@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
   // Rate limiting
   const ip =
     request.headers.get("x-real-ip") ??
-    request.headers.get("x-forwarded-for")?.split(",").pop()?.trim() ??
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
     "127.0.0.1";
   const { success: allowed, reset } = await checkRateLimit(ip);
 
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
       { success: false, error: "Too many requests. Please try again later." },
       {
         status: 429,
-        headers: reset ? { "Retry-After": String(Math.ceil((reset - Date.now()) / 1000)) } : {},
+        headers: reset ? { "Retry-After": String(Math.max(1, Math.ceil((reset - Date.now()) / 1000))) } : {},
       },
     );
   }
