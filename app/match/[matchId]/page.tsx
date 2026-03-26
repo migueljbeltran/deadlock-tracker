@@ -35,8 +35,12 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { matchId } = await params;
   return {
-    title: `Match #${matchId} | dltracker`,
-    description: `Match details and scoreboard for match ${matchId} in Deadlock.`,
+    title: `Match #${matchId} — Deadlock Match Details`,
+    description: `Scoreboard, team composition, and player stats for Deadlock match #${matchId}.`,
+    robots: { index: false },
+    alternates: {
+      canonical: `/match/${matchId}`,
+    },
   };
 }
 

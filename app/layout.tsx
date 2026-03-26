@@ -33,19 +33,38 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "dltracker | Deadlock Stats Tracker",
-  description: "A living record of souls and matches from the Cursed Apple. Track your Deadlock statistics, hero performance, and match history.",
-  keywords: ["Deadlock", "stats", "tracker", "Valve", "match history", "heroes", "dltracker"],
+  metadataBase: new URL("https://dltracker.app"),
+  title: {
+    default: "dltracker — Deadlock Stats Tracker | Hero Win Rates, Match History & Leaderboards",
+    template: "%s | dltracker",
+  },
+  description:
+    "Track your Deadlock stats, hero win rates, match history, and ranked leaderboards. Free stats tracker for Valve's Deadlock — search any player, browse all heroes, and view global rankings.",
+  keywords: [
+    "deadlock tracker",
+    "deadlock stats",
+    "dltracker",
+    "deadlock hero win rates",
+    "deadlock match history",
+    "deadlock leaderboard",
+    "deadlock player stats",
+    "valve deadlock",
+    "deadlock ranked",
+  ],
   openGraph: {
     title: "dltracker | Deadlock Stats Tracker",
-    description: "Track your Deadlock statistics, hero performance, match history, and leaderboards.",
+    description:
+      "Track Deadlock hero win rates, player stats, match history, and ranked leaderboards. Free and open.",
     siteName: "dltracker",
     type: "website",
+    locale: "en_US",
+    url: "https://dltracker.app",
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "dltracker | Deadlock Stats Tracker",
-    description: "Track your Deadlock statistics, hero performance, match history, and leaderboards.",
+    description:
+      "Track Deadlock hero win rates, player stats, match history, and ranked leaderboards.",
   },
 };
 
@@ -59,6 +78,26 @@ export default function RootLayout({
       <body
         className={`${cinzelDecorative.variable} ${cinzel.variable} ${inter.variable} ${jetbrainsMono.variable} antialiased`}
       >
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebApplication",
+              name: "dltracker",
+              url: "https://dltracker.app",
+              description:
+                "Free Deadlock stats tracker. Search players, browse hero win rates, view match history, and check ranked leaderboards.",
+              applicationCategory: "GameApplication",
+              operatingSystem: "Web",
+              offers: {
+                "@type": "Offer",
+                price: "0",
+                priceCurrency: "USD",
+              },
+            }),
+          }}
+        />
         {children}
         <Analytics />
         <SpeedInsights />

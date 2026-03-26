@@ -9,8 +9,18 @@ import HeroesContent from "@/components/hero/HeroesContent";
 import { SigilLoader } from "@/components/ui/SigilLoader";
 
 export const metadata: Metadata = {
-  title: "Heroes | dltracker",
-  description: "Browse all Deadlock heroes with global win rates and pick rates.",
+  title: "All Deadlock Heroes — Win Rates & Pick Rates",
+  description:
+    "Browse all Deadlock heroes with global win rates, pick rates, and stats by rank. Filter and sort to find the strongest heroes in the current meta.",
+  alternates: {
+    canonical: "/heroes",
+  },
+  openGraph: {
+    title: "All Deadlock Heroes — Win Rates & Pick Rates",
+    description:
+      "Browse all Deadlock heroes with global win rates, pick rates, and stats by rank.",
+    url: "/heroes",
+  },
 };
 
 interface HeroesPageProps {

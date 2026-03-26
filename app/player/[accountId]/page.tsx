@@ -26,19 +26,30 @@ export async function generateMetadata(
   const { accountId: raw } = await params;
 
   if (!isValidAccountId(raw)) {
-    return { title: "Player Not Found | dltracker" };
+    return { title: "Player Not Found", robots: { index: false } };
   }
 
   const steam64 = accountIdToSteam64(Number(raw));
   const player = await getPlayerSummary(steam64);
 
   if (!player) {
-    return { title: "Player Not Found | dltracker" };
+    return { title: "Player Not Found", robots: { index: false } };
   }
 
   return {
-    title: `${player.personaname} | dltracker`,
-    description: `Deadlock stats and match history for ${player.personaname}`,
+    title: `${player.personaname} — Deadlock Player Stats`,
+    description: `Deadlock stats, match history, and hero performance for ${player.personaname}. View win rates, recent matches, and top heroes.`,
+    alternates: {
+      canonical: `/player/${raw}`,
+    },
+    openGraph: {
+      title: `${player.personaname} — Deadlock Player Stats`,
+      description: `Deadlock stats and match history for ${player.personaname}.`,
+      url: `/player/${raw}`,
+      images: player.avatarfull
+        ? [{ url: player.avatarfull, alt: player.personaname }]
+        : undefined,
+    },
   };
 }
 

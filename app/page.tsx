@@ -1,5 +1,6 @@
 export const revalidate = 300; // ISR: cache homepage for 5 minutes
 
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Users, Swords, Shield } from "lucide-react";
 import { Header } from "@/components/layout/Header";
@@ -10,6 +11,24 @@ import { Button } from "@/components/ui/Button";
 import { HeroSearchSection } from "@/components/search/HeroSearchSection";
 import { FadeIn, ScrollReveal, GlowCard, CountUp, StaggerList, StaggerItem } from "@/components/motion";
 import { getHeroes, getApiInfo } from "@/lib/api";
+
+export const metadata: Metadata = {
+  title: {
+    absolute:
+      "dltracker — Deadlock Stats Tracker | Hero Win Rates, Match History & Leaderboards",
+  },
+  description:
+    "The free Deadlock stats tracker. Search any player, browse hero win rates and pick rates, view match details, and check ranked leaderboards for Valve's Deadlock.",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "dltracker — Deadlock Stats Tracker",
+    description:
+      "Search players, browse hero win rates, view match history, and check ranked leaderboards for Valve's Deadlock.",
+    url: "/",
+  },
+};
 
 export default async function Home() {
   const [heroes, apiInfo] = await Promise.all([

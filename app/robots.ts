@@ -4,20 +4,9 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       {
-        userAgent: "Googlebot",
-        allow: "/",
-        disallow: ["/api/", "/leaderboard", "/player/"],
-      },
-      {
-        userAgent: "Bingbot",
-        allow: "/",
-        disallow: ["/api/", "/leaderboard", "/player/"],
-      },
-      {
         userAgent: "*",
         allow: "/",
-        disallow: ["/api/", "/leaderboard", "/player/"],
-        crawlDelay: 10,
+        disallow: ["/api/"],
       },
     ],
     sitemap: "https://dltracker.app/sitemap.xml",

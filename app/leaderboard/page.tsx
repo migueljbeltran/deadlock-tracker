@@ -9,8 +9,18 @@ import LeaderboardContent from "@/components/leaderboard/LeaderboardContent";
 import { LeaderboardTableSkeleton } from "@/components/leaderboard/LeaderboardTableSkeleton";
 
 export const metadata: Metadata = {
-  title: "Leaderboard | dltracker",
-  description: "Deadlock ranked leaderboard across all regions.",
+  title: "Deadlock Ranked Leaderboard — Top Players by Region",
+  description:
+    "View the Deadlock ranked leaderboard. See top players across North America, Europe, Asia, South America, and Oceania with ranks, badges, and top heroes.",
+  alternates: {
+    canonical: "/leaderboard",
+  },
+  openGraph: {
+    title: "Deadlock Ranked Leaderboard",
+    description:
+      "Top Deadlock players across all regions. View ranks, badges, and top heroes.",
+    url: "/leaderboard",
+  },
 };
 
 interface LeaderboardPageProps {

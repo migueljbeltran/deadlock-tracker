@@ -30,16 +30,28 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { heroId } = await params;
   const id = Number(heroId);
-  if (isNaN(id)) return { title: "Hero Not Found | dltracker" };
+  if (isNaN(id)) return { title: "Hero Not Found" };
 
   try {
     const hero = await getHero(id);
+    const description = `${hero.name} stats in Deadlock — win rate, pick rate, and performance breakdown by rank. View global analytics for ${hero.name}.`;
     return {
-      title: `${hero.name} | dltracker`,
-      description: `Global stats and info for ${hero.name} in Deadlock.`,
+      title: `${hero.name} — Deadlock Hero Stats & Win Rate`,
+      description,
+      alternates: {
+        canonical: `/heroes/${heroId}`,
+      },
+      openGraph: {
+        title: `${hero.name} — Deadlock Hero Stats`,
+        description,
+        url: `/heroes/${heroId}`,
+        images: hero.images?.minimap_image
+          ? [{ url: hero.images.minimap_image, alt: hero.name }]
+          : undefined,
+      },
     };
   } catch {
-    return { title: "Hero Not Found | dltracker" };
+    return { title: "Hero Not Found" };
   }
 }
 
