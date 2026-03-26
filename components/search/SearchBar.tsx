@@ -91,7 +91,7 @@ export function SearchBar({ onPlayerFound }: SearchBarProps) {
         </Button>
       </form>
       <p className="mt-2 text-sm text-text-muted">
-        Search by Steam ID, vanity URL, or profile link
+        Search by in-game name, Steam ID, vanity URL, or profile link
       </p>
 
       {/* Dropdown Results */}

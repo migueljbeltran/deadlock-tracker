@@ -4,6 +4,8 @@ import {
   resolveVanityURL,
   getPlayerSummary,
   steam64ToAccountId,
+  accountIdToSteam64,
+  searchLeaderboardByName,
 } from "@/lib/api";
 import { searchQuerySchema } from "@/lib/validations";
 import { checkRateLimit } from "@/lib/ratelimit";
@@ -81,9 +83,18 @@ export async function GET(request: NextRequest) {
       steamId = await resolveVanityURL(query);
     }
 
+    // Path 3: Leaderboard name search (fallback for in-game names)
+    if (!steamId) {
+      const accountId = await searchLeaderboardByName(query);
+      if (accountId) {
+        steamId = accountIdToSteam64(accountId);
+        logger.info({ query, accountId }, "Found via leaderboard search");
+      }
+    }
+
     if (!steamId) {
       return NextResponse.json(
-        { success: false, error: "No player found" },
+        { success: false, error: "No player found. Try a Steam ID, profile URL, or Steam vanity URL." },
         { status: 404 },
       );
     }
@@ -92,7 +103,7 @@ export async function GET(request: NextRequest) {
 
     if (!player) {
       return NextResponse.json(
-        { success: false, error: "No player found" },
+        { success: false, error: "No player found. Try a Steam ID, profile URL, or Steam vanity URL." },
         { status: 404 },
       );
     }

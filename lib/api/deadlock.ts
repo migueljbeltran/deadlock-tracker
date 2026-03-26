@@ -227,3 +227,32 @@ export async function getLeaderboard(
   );
   return data.entries;
 }
+
+const ALL_REGIONS: DeadlockRegion[] = [
+  "NAmerica",
+  "SAmerica",
+  "Europe",
+  "Asia",
+  "Oceania",
+];
+
+/**
+ * Search all regional leaderboards for a player by in-game name.
+ * Returns the first matching account ID, or null if not found.
+ */
+export async function searchLeaderboardByName(
+  name: string,
+): Promise<number | null> {
+  const needle = name.toLowerCase();
+  const boards = await Promise.all(ALL_REGIONS.map(getLeaderboard));
+
+  for (const entries of boards) {
+    const match = entries.find(
+      (e) => e.account_name.toLowerCase() === needle,
+    );
+    if (match && match.possible_account_ids.length > 0) {
+      return match.possible_account_ids[0];
+    }
+  }
+  return null;
+}

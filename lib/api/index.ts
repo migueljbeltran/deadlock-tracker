@@ -46,4 +46,5 @@ export {
   getHeroAnalytics,
   getPlayerMetrics,
   getLeaderboard,
+  searchLeaderboardByName,
 } from "./deadlock";
