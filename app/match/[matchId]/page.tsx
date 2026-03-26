@@ -1,4 +1,4 @@
-export const revalidate = 3600; // ISR: cache match detail for 1 hour (immutable after completion)
+export const revalidate = 86400; // ISR: cache match detail for 24 hours (immutable after completion)
 
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";

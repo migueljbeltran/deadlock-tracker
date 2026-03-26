@@ -75,7 +75,7 @@ export async function getPlayerSummaries(
   const ids = steamIds.join(",");
   const url = `${STEAM_API_BASE}/ISteamUser/GetPlayerSummaries/v2/?key=${key}&steamids=${ids}`;
 
-  const res = await fetch(url, { next: { revalidate: 300 }, signal: AbortSignal.timeout(10_000) });
+  const res = await fetch(url, { next: { revalidate: 900 }, signal: AbortSignal.timeout(10_000) });
 
   if (!res.ok) {
     logger.error({ endpoint: "GetPlayerSummaries", status: res.status }, "Steam API error");
