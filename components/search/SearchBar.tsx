@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { SearchResults, type SearchResultPlayer } from "./SearchResults";
+import { SearchResults, type SearchResult } from "./SearchResults";
 import type { RecentSearch } from "@/lib/hooks/useRecentSearches";
 
 interface SearchBarProps {
@@ -16,10 +16,12 @@ export function SearchBar({ onPlayerFound }: SearchBarProps) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [player, setPlayer] = useState<SearchResultPlayer | null>(null);
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [dropdownMaxH, setDropdownMaxH] = useState<number | undefined>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -32,21 +34,35 @@ export function SearchBar({ onPlayerFound }: SearchBarProps) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Cap dropdown height to viewport bottom
+  useEffect(() => {
+    if (!showDropdown || !dropdownRef.current) return;
+    function recalc() {
+      if (!dropdownRef.current) return;
+      const rect = dropdownRef.current.getBoundingClientRect();
+      const available = window.innerHeight - rect.top - 16; // 16px breathing room
+      setDropdownMaxH(Math.max(available, 120));
+    }
+    recalc();
+    window.addEventListener("resize", recalc);
+    return () => window.removeEventListener("resize", recalc);
+  }, [showDropdown, results, isLoading, error]);
+
   const handleSearch = useCallback(async (searchQuery: string) => {
     const trimmed = searchQuery.trim();
     if (!trimmed) return;
 
     setIsLoading(true);
     setError(null);
-    setPlayer(null);
+    setResults([]);
     setShowDropdown(true);
 
     try {
       const res = await fetch(`/api/search?q=${encodeURIComponent(trimmed)}`);
       const data = await res.json();
 
-      if (data.success) {
-        setPlayer(data.player);
+      if (data.success && data.results?.length > 0) {
+        setResults(data.results);
       } else {
         setError(data.error || "No player found");
       }
@@ -62,14 +78,17 @@ export function SearchBar({ onPlayerFound }: SearchBarProps) {
     handleSearch(query);
   };
 
-  const handleSelect = (selected: SearchResultPlayer) => {
-    onPlayerFound?.({
-      accountId: selected.accountId,
-      name: selected.name,
-      avatar: selected.avatar,
-    });
+  const handleSelect = (selected: SearchResult) => {
     setShowDropdown(false);
     setQuery("");
+
+    const name = selected.source === "steam" ? selected.name : selected.accountName;
+    const avatar = selected.source === "steam" ? selected.avatar : "";
+    onPlayerFound?.({
+      accountId: selected.accountId,
+      name,
+      avatar,
+    });
     router.push(`/player/${selected.accountId}`);
   };
 
@@ -91,15 +110,19 @@ export function SearchBar({ onPlayerFound }: SearchBarProps) {
         </Button>
       </form>
       <p className="mt-2 text-sm text-text-muted">
-        Search by in-game name, Steam ID, vanity URL, or profile link
+        Search by Account ID, Steam ID, vanity URL, or profile link
       </p>
 
       {/* Dropdown Results */}
-      {showDropdown && (isLoading || player || error) && (
-        <div className="absolute left-0 right-0 top-12 z-20 mt-1 overflow-hidden rounded-md glass-panel shadow-[var(--shadow-depth-md)]">
+      {showDropdown && (isLoading || results.length > 0 || error) && (
+        <div
+          ref={dropdownRef}
+          className="absolute left-0 right-0 top-full z-50 mt-1 overflow-y-auto rounded-md glass-panel shadow-[var(--shadow-depth-md)]"
+          style={dropdownMaxH ? { maxHeight: dropdownMaxH } : undefined}
+        >
           <SearchResults
             isLoading={isLoading}
-            player={player}
+            results={results}
             error={error}
             onSelect={handleSelect}
           />

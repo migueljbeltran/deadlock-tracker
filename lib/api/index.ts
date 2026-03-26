@@ -18,7 +18,9 @@ export type {
 } from "./types";
 
 export { ApiError } from "./types";
-export type { DeadlockRegion } from "./deadlock";
+export type { DeadlockRegion, LeaderboardSearchMatch } from "./deadlock";
+export { resolveAccountIds } from "./resolve";
+export type { ResolvableEntry, ResolvedAccount } from "./resolve";
 
 // Steam API
 export {

@@ -236,23 +236,76 @@ const ALL_REGIONS: DeadlockRegion[] = [
   "Oceania",
 ];
 
+export interface LeaderboardSearchMatch {
+  accountId: number;
+  possibleAccountIds: number[];
+  accountName: string;
+  rank: number;
+  rankedRank: number;
+  rankedSubrank: number;
+  topHeroIds: number[];
+  region: DeadlockRegion;
+}
+
+const MAX_LEADERBOARD_RESULTS = 50;
+
 /**
- * Search all regional leaderboards for a player by in-game name.
- * Returns the first matching account ID, or null if not found.
+ * Search all regional leaderboards for players by in-game name.
+ * Uses substring matching and returns up to 15 results sorted by relevance:
+ * exact match > prefix match > substring match, then by leaderboard rank.
  */
 export async function searchLeaderboardByName(
   name: string,
-): Promise<number | null> {
+): Promise<LeaderboardSearchMatch[]> {
   const needle = name.toLowerCase();
-  const boards = await Promise.all(ALL_REGIONS.map(getLeaderboard));
 
-  for (const entries of boards) {
-    const match = entries.find(
-      (e) => e.account_name.toLowerCase() === needle,
-    );
-    if (match && match.possible_account_ids.length > 0) {
-      return match.possible_account_ids[0];
+  if (needle.length < 3) return [];
+
+  const boards = await Promise.all(ALL_REGIONS.map(getLeaderboard));
+  const matches: (LeaderboardSearchMatch & { _relevance: number })[] = [];
+
+  for (let i = 0; i < boards.length; i++) {
+    const region = ALL_REGIONS[i];
+    for (const entry of boards[i]) {
+      if (entry.possible_account_ids.length === 0) continue;
+
+      const lower = entry.account_name.toLowerCase();
+      let relevance: number;
+
+      if (lower === needle) {
+        relevance = 0; // exact
+      } else if (lower.startsWith(needle)) {
+        relevance = 1; // prefix
+      } else if (lower.includes(needle)) {
+        relevance = 2; // substring
+      } else {
+        continue;
+      }
+
+      matches.push({
+        accountId: entry.possible_account_ids[0],
+        possibleAccountIds: entry.possible_account_ids,
+        accountName: entry.account_name,
+        rank: entry.rank,
+        rankedRank: entry.ranked_rank,
+        rankedSubrank: entry.ranked_subrank,
+        topHeroIds: entry.top_hero_ids,
+        region,
+        _relevance: relevance,
+      });
     }
   }
-  return null;
+
+  matches.sort((a, b) => a._relevance - b._relevance || a.rank - b.rank);
+
+  return matches.slice(0, MAX_LEADERBOARD_RESULTS).map((m) => ({
+    accountId: m.accountId,
+    possibleAccountIds: m.possibleAccountIds,
+    accountName: m.accountName,
+    rank: m.rank,
+    rankedRank: m.rankedRank,
+    rankedSubrank: m.rankedSubrank,
+    topHeroIds: m.topHeroIds,
+    region: m.region,
+  }));
 }

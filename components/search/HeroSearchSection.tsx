@@ -7,7 +7,7 @@ import { useRecentSearches, type RecentSearch } from "@/lib/hooks/useRecentSearc
 
 export function HeroSearchSection() {
   const router = useRouter();
-  const { searches, addSearch } = useRecentSearches();
+  const { searches, addSearch, clearSearches } = useRecentSearches();
 
   const handlePlayerFound = (player: RecentSearch) => {
     addSearch(player);
@@ -21,7 +21,7 @@ export function HeroSearchSection() {
     <div className="w-full max-w-lg">
       <div className="glass-panel animated-border rounded-xl p-8 shadow-[var(--shadow-depth-md)]">
         <SearchBar onPlayerFound={handlePlayerFound} />
-        <RecentSearches searches={searches} onSelect={handleRecentSelect} />
+        <RecentSearches searches={searches} onSelect={handleRecentSelect} onClear={clearSearches} />
       </div>
     </div>
   );

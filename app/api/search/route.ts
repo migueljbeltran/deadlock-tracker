@@ -6,6 +6,7 @@ import {
   steam64ToAccountId,
   accountIdToSteam64,
   searchLeaderboardByName,
+  resolveAccountIds,
 } from "@/lib/api";
 import { searchQuerySchema } from "@/lib/validations";
 import { checkRateLimit } from "@/lib/ratelimit";
@@ -73,52 +74,114 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    let steamId: string | null = null;
-
-    // Path 1: Direct Steam64 ID
+    // For direct Steam64 IDs, skip leaderboard search entirely
     if (isValidSteam64(query)) {
-      steamId = query;
-    } else {
-      // Path 2: Vanity URL resolution
-      steamId = await resolveVanityURL(query);
+      const player = await getPlayerSummary(query);
+
+      if (player) {
+        const accountId = steam64ToAccountId(player.steamid);
+        logger.info({ query, accountId }, "Search success (steam64)");
+        return NextResponse.json({
+          success: true,
+          results: [{
+            source: "steam" as const,
+            accountId,
+            name: player.personaname,
+            avatar: player.avatarfull,
+          }],
+        });
+      }
+
+      return NextResponse.json(
+        { success: false, error: "No player found for that Steam ID." },
+        { status: 404 },
+      );
     }
 
-    // Path 3: Leaderboard name search (fallback for in-game names)
-    if (!steamId) {
-      const accountId = await searchLeaderboardByName(query);
-      if (accountId) {
-        steamId = accountIdToSteam64(accountId);
-        logger.info({ query, accountId }, "Found via leaderboard search");
+    // For Deadlock Account IDs (numeric, not 17 digits), convert to Steam64
+    if (/^\d+$/.test(query) && query.length < 17) {
+      const accountId = parseInt(query, 10);
+      if (accountId > 0) {
+        const steam64 = accountIdToSteam64(accountId);
+        const player = await getPlayerSummary(steam64);
+
+        if (player) {
+          logger.info({ query, accountId }, "Search success (account_id)");
+          return NextResponse.json({
+            success: true,
+            results: [{
+              source: "steam" as const,
+              accountId,
+              name: player.personaname,
+              avatar: player.avatarfull,
+            }],
+          });
+        }
       }
     }
 
-    if (!steamId) {
-      return NextResponse.json(
-        { success: false, error: "No player found. Try a Steam ID, profile URL, or Steam vanity URL." },
-        { status: 404 },
-      );
+    // Run vanity URL + leaderboard search in parallel for name queries
+    const [vanityResult, leaderboardResults] = await Promise.all([
+      resolveVanityURL(query).catch(() => null),
+      searchLeaderboardByName(query),
+    ]);
+
+    const results: Array<Record<string, unknown>> = [];
+
+    // Add Steam vanity match first (if found)
+    if (vanityResult) {
+      const player = await getPlayerSummary(vanityResult);
+      if (player) {
+        const accountId = steam64ToAccountId(player.steamid);
+        results.push({
+          source: "steam",
+          accountId,
+          name: player.personaname,
+          avatar: player.avatarfull,
+        });
+      }
     }
 
-    const player = await getPlayerSummary(steamId);
+    // Resolve ambiguous leaderboard entries using 3-signal scoring
+    // (name match + hero overlap + match count) — same algorithm the
+    // leaderboard page uses. Falls back to first candidate on failure.
+    const resolvableEntries = leaderboardResults.map((m) => ({
+      account_name: m.accountName,
+      possible_account_ids: m.possibleAccountIds,
+      top_hero_ids: m.topHeroIds,
+    }));
 
-    if (!player) {
-      return NextResponse.json(
-        { success: false, error: "No player found. Try a Steam ID, profile URL, or Steam vanity URL." },
-        { status: 404 },
-      );
-    }
+    const resolvedMap = resolvableEntries.length > 0
+      ? await resolveAccountIds(resolvableEntries).catch(() => new Map<number, { accountId: number }>())
+      : new Map<number, { accountId: number }>();
 
-    const accountId = steam64ToAccountId(player.steamid);
-    logger.info({ query, accountId }, "Search success");
-
-    return NextResponse.json({
-      success: true,
-      player: {
+    const steamAccountId = results.length > 0 ? results[0].accountId : null;
+    for (let i = 0; i < leaderboardResults.length; i++) {
+      const m = leaderboardResults[i];
+      const resolved = resolvedMap.get(i);
+      const accountId = resolved ? resolved.accountId : m.accountId;
+      if (accountId === steamAccountId) continue;
+      results.push({
+        source: "leaderboard",
         accountId,
-        name: player.personaname,
-        avatar: player.avatarfull,
-      },
-    });
+        accountName: m.accountName,
+        rank: m.rank,
+        rankedRank: m.rankedRank,
+        rankedSubrank: m.rankedSubrank,
+        topHeroIds: m.topHeroIds,
+        region: m.region,
+      });
+    }
+
+    if (results.length > 0) {
+      logger.info({ query, count: results.length }, "Search success");
+      return NextResponse.json({ success: true, results });
+    }
+
+    return NextResponse.json(
+      { success: false, error: "No player found. Try a Steam ID, profile URL, or in-game name." },
+      { status: 404 },
+    );
   } catch (err) {
     logger.error({ query, error: err instanceof Error ? err.message : "Unknown" }, "Search failed");
     return NextResponse.json(

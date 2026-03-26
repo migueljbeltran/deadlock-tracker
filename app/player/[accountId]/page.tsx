@@ -71,7 +71,7 @@ export default async function PlayerPage({ params, searchParams }: PlayerPagePro
         <SigilBackground intensity="subtle" />
 
         {/* Inline search — find another player without going home */}
-        <div className="relative z-10 mx-auto max-w-3xl px-4 pt-6 sm:px-6 lg:px-8">
+        <div className="relative z-20 mx-auto max-w-3xl px-4 pt-6 sm:px-6 lg:px-8">
           <PlayerSearchBar />
         </div>
 
