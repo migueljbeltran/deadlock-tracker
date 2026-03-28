@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Cinzel, Cinzel_Decorative, Inter, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 const cinzelDecorative = Cinzel_Decorative({
@@ -100,7 +99,6 @@ export default function RootLayout({
         />
         {children}
         <Analytics />
-        <SpeedInsights />
         {/* Vignette overlay — deeper edges + warm amber candlelight from above */}
         <div
           className="pointer-events-none fixed inset-0 z-50"
