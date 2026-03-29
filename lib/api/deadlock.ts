@@ -113,7 +113,7 @@ export async function getPlayerHeroStats(
 ): Promise<DeadlockPlayerHeroStat[]> {
   return deadlockFetch<DeadlockPlayerHeroStat[]>(
     `${GAME_API}/v1/players/hero-stats?account_ids=${accountId}`,
-    600,
+    1800,
   );
 }
 
@@ -123,7 +123,7 @@ export async function getBatchPlayerHeroStats(
   if (accountIds.length === 0) return [];
   return deadlockFetch<DeadlockPlayerHeroStat[]>(
     `${GAME_API}/v1/players/hero-stats?account_ids=${accountIds.join(",")}`,
-    600,
+    1800,
   );
 }
 
@@ -133,7 +133,7 @@ export async function getMatchHistory(
 ): Promise<DeadlockMatchMetadata[]> {
   return deadlockFetch<DeadlockMatchMetadata[]>(
     `${GAME_API}/v1/matches/metadata?account_ids=${accountId}&include_player_info=true&limit=${limit}&order_by=start_time&order_direction=desc`,
-    300,
+    900,
   );
 }
 
@@ -207,7 +207,7 @@ export async function getPlayerMetrics(
 ): Promise<DeadlockPlayerMetrics> {
   return deadlockFetch<DeadlockPlayerMetrics>(
     `${GAME_API}/v1/analytics/player-stats/metrics?account_ids=${accountId}`,
-    600,
+    1800,
   );
 }
 
@@ -223,7 +223,7 @@ export async function getLeaderboard(
 ): Promise<DeadlockLeaderboardEntry[]> {
   const data = await deadlockFetch<{ entries: DeadlockLeaderboardEntry[] }>(
     `${GAME_API}/v1/leaderboard/${region}`,
-    900,
+    1800,
   );
   return data.entries;
 }

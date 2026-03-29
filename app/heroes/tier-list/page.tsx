@@ -1,4 +1,4 @@
-export const revalidate = 900; // ISR: cache tier list for 15 minutes
+export const revalidate = 3600; // ISR: cache tier list for 1 hour
 
 import { Suspense } from "react";
 import type { Metadata } from "next";

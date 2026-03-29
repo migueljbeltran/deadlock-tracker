@@ -1,4 +1,4 @@
-export const revalidate = 900; // ISR: cache items page for 15 minutes
+export const revalidate = 3600; // ISR: cache items page for 1 hour
 
 import { Suspense } from "react";
 import type { Metadata } from "next";
