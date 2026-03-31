@@ -80,12 +80,15 @@ export async function getPlayerSummaries(
     throw new Error("Steam API supports at most 100 Steam IDs per request");
   }
 
-  // Check Redis for individually cached profiles, only fetch missing ones
+  // Check Redis for individually cached profiles in parallel, only fetch missing ones
+  const cacheResults = await Promise.all(
+    steamIds.map(async (id) => ({ id, cached: await cacheGet<SteamPlayerSummary>(`steam:${id}`) })),
+  );
+
   const cachedPlayers: SteamPlayerSummary[] = [];
   const missingIds: string[] = [];
 
-  for (const id of steamIds) {
-    const cached = await cacheGet<SteamPlayerSummary>(`steam:${id}`);
+  for (const { id, cached } of cacheResults) {
     if (cached) {
       cachedPlayers.push(cached);
     } else {

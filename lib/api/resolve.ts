@@ -40,12 +40,14 @@ interface CachedResolution {
   /** entry index → resolved account */
   entries: Record<string, ResolvedAccount>;
   /** Hash of entry names to detect stale cache */
-  namesHash: string;
+  entriesHash: string;
 }
 
-function hashNames(entries: ResolvableEntry[]): string {
-  // Simple hash: join all names — if leaderboard shifts, cache invalidates
-  return entries.map((e) => e.account_name).join("|");
+function hashEntries(entries: ResolvableEntry[]): string {
+  // Hash all fields that influence resolution — names, candidate IDs, and hero signatures
+  return entries.map((e) =>
+    `${e.account_name}:${e.possible_account_ids.join(",")}:${e.top_hero_ids.join(",")}`
+  ).join("|");
 }
 
 export async function resolveAccountIds(
@@ -54,11 +56,11 @@ export async function resolveAccountIds(
   page?: number,
 ): Promise<Map<number, ResolvedAccount>> {
   // Check Redis cache for this region+page's resolution
-  const currentHash = hashNames(entries);
+  const currentHash = hashEntries(entries);
   if (region != null && page != null) {
     const cacheKey = `resolve:${region}:${page}`;
     const cached = await cacheGet<CachedResolution>(cacheKey);
-    if (cached && cached.namesHash === currentHash) {
+    if (cached && cached.entriesHash === currentHash) {
       const map = new Map<number, ResolvedAccount>();
       for (const [k, v] of Object.entries(cached.entries)) {
         map.set(Number(k), v);
@@ -205,7 +207,7 @@ export async function resolveAccountIds(
     const cacheKey = `resolve:${region}:${page}`;
     const serializable: CachedResolution = {
       entries: Object.fromEntries([...resolved.entries()].map(([k, v]) => [String(k), v])),
-      namesHash: currentHash,
+      entriesHash: currentHash,
     };
     await cacheSet(cacheKey, serializable, 172800); // 48h TTL
   }
