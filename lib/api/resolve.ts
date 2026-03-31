@@ -16,7 +16,7 @@ export interface ResolvedAccount {
 }
 
 /** Max candidates to fetch per ambiguous entry (API orders by likelihood) */
-const MAX_CANDIDATES = 20;
+const MAX_CANDIDATES = 5;
 /** Max IDs per Steam API call */
 const STEAM_BATCH_SIZE = 100;
 /** Max IDs per hero-stats API call */

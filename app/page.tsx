@@ -1,4 +1,4 @@
-export const revalidate = 3600; // ISR: cache homepage for 1 hour
+export const revalidate = 21600; // ISR: cache homepage for 6 hours
 
 import type { Metadata } from "next";
 import Link from "next/link";

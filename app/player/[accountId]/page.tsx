@@ -1,4 +1,4 @@
-export const revalidate = 1800; // ISR: cache player profile for 30 minutes
+export const revalidate = 3600; // ISR: cache player profile for 1 hour
 
 import { Suspense } from "react";
 import type { Metadata } from "next";

@@ -1,5 +1,3 @@
-export const revalidate = 86400; // ISR: cache about page for 24 hours
-
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ExternalLink, Heart } from "lucide-react";

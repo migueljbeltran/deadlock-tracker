@@ -1,4 +1,4 @@
-export const revalidate = 1800; // ISR: cache leaderboard for 30 minutes
+export const revalidate = 7200; // ISR: cache leaderboard for 2 hours
 
 import { Suspense } from "react";
 import type { Metadata } from "next";
