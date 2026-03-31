@@ -41,7 +41,7 @@ export async function resolveVanityURL(
   const key = getSteamApiKey();
   const url = `${STEAM_API_BASE}/ISteamUser/ResolveVanityURL/v1/?key=${key}&vanityurl=${encodeURIComponent(vanityName)}`;
 
-  const res = await fetch(url, { next: { revalidate: 3600 }, signal: AbortSignal.timeout(10_000) });
+  const res = await fetch(url, { next: { revalidate: 86400 }, signal: AbortSignal.timeout(10_000) });
 
   if (!res.ok) {
     logger.error({ endpoint: "ResolveVanityURL", status: res.status, vanityName }, "Steam API error");
@@ -75,7 +75,7 @@ export async function getPlayerSummaries(
   const ids = steamIds.join(",");
   const url = `${STEAM_API_BASE}/ISteamUser/GetPlayerSummaries/v2/?key=${key}&steamids=${ids}`;
 
-  const res = await fetch(url, { next: { revalidate: 1800 }, signal: AbortSignal.timeout(10_000) });
+  const res = await fetch(url, { next: { revalidate: 3600 }, signal: AbortSignal.timeout(10_000) });
 
   if (!res.ok) {
     logger.error({ endpoint: "GetPlayerSummaries", status: res.status }, "Steam API error");

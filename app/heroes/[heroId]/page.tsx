@@ -1,4 +1,4 @@
-export const revalidate = 3600; // ISR: cache hero detail for 1 hour
+export const revalidate = 21600; // ISR: cache hero detail for 6 hours
 
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
