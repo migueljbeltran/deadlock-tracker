@@ -15,6 +15,7 @@ import type {
 } from "./types";
 import { ApiError } from "./types";
 import logger from "@/lib/logger";
+import { cacheGet, cacheSet } from "@/lib/cache";
 
 const ASSETS_API = "https://assets.deadlock-api.com";
 const GAME_API = "https://api.deadlock-api.com";
@@ -111,10 +112,16 @@ export async function getRanks(): Promise<DeadlockRank[]> {
 export async function getPlayerHeroStats(
   accountId: number,
 ): Promise<DeadlockPlayerHeroStat[]> {
-  return deadlockFetch<DeadlockPlayerHeroStat[]>(
+  const cacheKey = `phs:${accountId}`;
+  const cached = await cacheGet<DeadlockPlayerHeroStat[]>(cacheKey);
+  if (cached) return cached;
+
+  const data = await deadlockFetch<DeadlockPlayerHeroStat[]>(
     `${GAME_API}/v1/players/hero-stats?account_ids=${accountId}`,
     3600,
   );
+  await cacheSet(cacheKey, data, 3600);
+  return data;
 }
 
 export async function getBatchPlayerHeroStats(
@@ -205,10 +212,16 @@ export async function getHeroAnalytics(): Promise<DeadlockHeroAnalytics[]> {
 export async function getPlayerMetrics(
   accountId: number,
 ): Promise<DeadlockPlayerMetrics> {
-  return deadlockFetch<DeadlockPlayerMetrics>(
+  const cacheKey = `pm:${accountId}`;
+  const cached = await cacheGet<DeadlockPlayerMetrics>(cacheKey);
+  if (cached) return cached;
+
+  const data = await deadlockFetch<DeadlockPlayerMetrics>(
     `${GAME_API}/v1/analytics/player-stats/metrics?account_ids=${accountId}`,
     3600,
   );
+  await cacheSet(cacheKey, data, 3600);
+  return data;
 }
 
 export type DeadlockRegion =
@@ -221,10 +234,15 @@ export type DeadlockRegion =
 export async function getLeaderboard(
   region: DeadlockRegion,
 ): Promise<DeadlockLeaderboardEntry[]> {
+  const cacheKey = `lb:${region}`;
+  const cached = await cacheGet<DeadlockLeaderboardEntry[]>(cacheKey);
+  if (cached) return cached;
+
   const data = await deadlockFetch<{ entries: DeadlockLeaderboardEntry[] }>(
     `${GAME_API}/v1/leaderboard/${region}`,
     7200,
   );
+  await cacheSet(cacheKey, data.entries, 7200);
   return data.entries;
 }
 

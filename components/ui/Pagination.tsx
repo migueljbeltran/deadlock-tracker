@@ -1,7 +1,8 @@
 "use client";
 
-import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useTransition } from "react";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 interface PaginationProps {
@@ -50,20 +51,29 @@ export function Pagination({
   baseUrl,
   extraParams,
 }: PaginationProps) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const hasPrev = currentPage > 1;
 
   if (!hasPrev && !hasNextPage) return null;
 
+  function navigate(page: number) {
+    startTransition(() => {
+      router.push(buildUrl(baseUrl, page, extraParams));
+    });
+  }
+
   return (
-    <div className="flex items-center justify-center gap-4 pt-6">
+    <div className={cn("flex items-center justify-center gap-4 pt-6 transition-opacity", isPending && "opacity-60")}>
       {hasPrev ? (
-        <Link
-          href={buildUrl(baseUrl, currentPage - 1, extraParams)}
+        <button
+          disabled={isPending}
+          onClick={() => navigate(currentPage - 1)}
           className={linkStyles}
         >
           <ChevronLeft className="h-4 w-4" />
           Previous
-        </Link>
+        </button>
       ) : (
         <span className={disabledStyles} aria-disabled="true">
           <ChevronLeft className="h-4 w-4" />
@@ -71,18 +81,20 @@ export function Pagination({
         </span>
       )}
 
-      <span className="font-mono text-sm text-soul bg-[rgba(22,27,34,0.92)] border border-border-subtle rounded-full px-3 py-1">
+      <span className="font-mono text-sm text-soul bg-[rgba(22,27,34,0.92)] border border-border-subtle rounded-full px-3 py-1 flex items-center gap-2">
+        {isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin text-amber" /> : null}
         Page {currentPage}
       </span>
 
       {hasNextPage ? (
-        <Link
-          href={buildUrl(baseUrl, currentPage + 1, extraParams)}
+        <button
+          disabled={isPending}
+          onClick={() => navigate(currentPage + 1)}
           className={linkStyles}
         >
           Next
           <ChevronRight className="h-4 w-4" />
-        </Link>
+        </button>
       ) : (
         <span className={disabledStyles} aria-disabled="true">
           Next

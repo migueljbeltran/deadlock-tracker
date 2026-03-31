@@ -40,8 +40,8 @@ export default async function LeaderboardContent({ searchParams }: LeaderboardCo
   const rankMap = new Map(ranks.map((r) => [r.tier, r]));
   const heroMap = new Map(heroes.map((h) => [h.id, h]));
 
-  // Resolve ambiguous account IDs by matching Steam names
-  const resolvedIds = await resolveAccountIds(pageEntries);
+  // Resolve ambiguous account IDs by matching Steam names (cached in Redis)
+  const resolvedIds = await resolveAccountIds(pageEntries, region, page);
 
   return (
     <>
