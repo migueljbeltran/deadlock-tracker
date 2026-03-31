@@ -73,7 +73,7 @@ export async function getItems(): Promise<DeadlockItem[]> {
   itemsExpiry = Date.now() + ITEMS_CACHE_TTL;
   itemsPromise = (async () => {
     const res = await fetch(`${ASSETS_API}/v2/items/by-type/upgrade`, {
-      cache: "no-store",
+      next: { revalidate: 21600 },
       signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) {

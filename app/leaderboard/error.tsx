@@ -15,6 +15,11 @@ export default function LeaderboardError({
   reset: () => void;
 }) {
   useEffect(() => {
+    // Don't report transient upstream API failures to Sentry
+    const msg = error?.message ?? "";
+    if (msg.includes("Service Unavailable") || msg.includes("Request timeout")) {
+      return;
+    }
     Sentry.captureException(error);
   }, [error]);
 
