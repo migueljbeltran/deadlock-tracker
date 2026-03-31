@@ -1,7 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTransition } from "react";
 import { motion } from "framer-motion";
+import { Loader2 } from "lucide-react";
 import type { DeadlockRegion } from "@/lib/api";
 import { cn } from "@/lib/utils/cn";
 
@@ -19,13 +21,22 @@ interface RegionSelectorProps {
 
 export function RegionSelector({ currentRegion }: RegionSelectorProps) {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
   return (
-    <nav className="relative flex gap-1 glass-panel rounded-lg p-1">
+    <nav className={cn(
+      "relative flex items-center gap-1 glass-panel rounded-lg p-1 transition-opacity",
+      isPending && "opacity-60",
+    )}>
       {REGIONS.map(({ value, label }) => (
         <button
           key={value}
-          onClick={() => router.push(`/leaderboard?region=${value}`)}
+          disabled={isPending}
+          onClick={() => {
+            startTransition(() => {
+              router.push(`/leaderboard?region=${value}`);
+            });
+          }}
           className={cn(
             "relative z-10 rounded px-3 py-1.5 text-sm font-medium transition-colors",
             value === currentRegion
@@ -44,6 +55,9 @@ export function RegionSelector({ currentRegion }: RegionSelectorProps) {
           {label}
         </button>
       ))}
+      {isPending && (
+        <Loader2 className="h-4 w-4 animate-spin text-amber mx-1" />
+      )}
     </nav>
   );
 }
