@@ -43,15 +43,9 @@ export function TopHeroes({ heroStats, heroMap }: TopHeroesProps) {
   const [showAll, setShowAll] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>("played");
 
-  if (heroStats.length === 0) {
-    return (
-      <p className="text-sm text-text-muted">
-        No hero data available yet. Play some matches to see stats here.
-      </p>
-    );
-  }
-
   const sorted = useMemo(() => {
+    if (heroStats.length === 0) return [];
+
     const copy = [...heroStats];
     switch (sortMode) {
       case "winrate":
@@ -72,6 +66,14 @@ export function TopHeroes({ heroStats, heroMap }: TopHeroesProps) {
         return copy.sort((a, b) => b.matches_played - a.matches_played);
     }
   }, [heroStats, sortMode]);
+
+  if (heroStats.length === 0) {
+    return (
+      <p className="text-sm text-text-muted">
+        No hero data available yet. Play some matches to see stats here.
+      </p>
+    );
+  }
 
   const hasMore = sorted.length > INITIAL_COUNT;
   const visible = showAll ? sorted : sorted.slice(0, INITIAL_COUNT);

@@ -7,7 +7,6 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { SigilBackground } from "@/components/layout/SigilBackground";
 import { ArtDecoDivider } from "@/components/layout/ArtDecoDivider";
-import { Button } from "@/components/ui/Button";
 import { HeroSearchSection } from "@/components/search/HeroSearchSection";
 import { FadeIn, ScrollReveal, GlowCard, CountUp, StaggerList, StaggerItem } from "@/components/motion";
 import { getHeroes, getApiInfo } from "@/lib/api";

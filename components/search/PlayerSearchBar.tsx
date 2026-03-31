@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { SearchBar } from "./SearchBar";
 import { useRecentSearches, type RecentSearch } from "@/lib/hooks/useRecentSearches";
 
@@ -9,7 +8,6 @@ import { useRecentSearches, type RecentSearch } from "@/lib/hooks/useRecentSearc
  * No glass panel wrapper, no recent searches — just the search input.
  */
 export function PlayerSearchBar() {
-  const router = useRouter();
   const { addSearch } = useRecentSearches();
 
   const handlePlayerFound = (player: RecentSearch) => {
