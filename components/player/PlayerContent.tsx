@@ -11,8 +11,7 @@ import { Pagination } from "@/components/ui/Pagination";
 import { RefreshButton } from "@/components/player/RefreshButton";
 import type { DeadlockPlayerMetrics } from "@/lib/api";
 import {
-  accountIdToSteam64,
-  getPlayerSummary,
+  getPlayerIdentity,
   getPlayerHeroStats,
   getMatchHistory,
   getHeroes,
@@ -77,7 +76,6 @@ interface PlayerContentProps {
 export default async function PlayerContent({ accountId, searchParams }: PlayerContentProps) {
   const { page: pageParam } = await searchParams;
 
-  const steam64 = accountIdToSteam64(accountId);
   const rawPage = Number(pageParam);
   const page = Number.isInteger(rawPage) && rawPage > 0
     ? Math.min(rawPage, MAX_MATCH_PAGES)
@@ -87,7 +85,7 @@ export default async function PlayerContent({ accountId, searchParams }: PlayerC
   const fetchLimit = offset + MATCH_PAGE_SIZE + 1;
 
   const [player, heroStats, allMatches, heroes, ranks, playerMetrics] = await Promise.all([
-    getPlayerSummary(steam64),
+    getPlayerIdentity(accountId),
     getPlayerHeroStats(accountId).catch(() => [] as Awaited<ReturnType<typeof getPlayerHeroStats>>),
     getMatchHistory(accountId, fetchLimit).catch(() => [] as Awaited<ReturnType<typeof getMatchHistory>>),
     getHeroes(),
