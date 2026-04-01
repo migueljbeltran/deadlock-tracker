@@ -15,7 +15,7 @@ function getRedis(): Redis | null {
 
   if (!url || !token) return null;
 
-  redis = new Redis({ url, token, cache: "no-cache" });
+  redis = new Redis({ url, token, cache: "force-cache" });
   return redis;
 }
 
