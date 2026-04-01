@@ -138,29 +138,31 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const vanityResult = await resolveVanityURL(query).catch(() => null);
+    const [vanityResult, leaderboardResults] = await Promise.all([
+      resolveVanityURL(query).catch(() => null),
+      searchLeaderboardByName(query),
+    ]);
 
     const results: Array<Record<string, unknown>> = [];
     let ranLeaderboardSearch = false;
     let ranResolution = false;
+    let steamAccountId: number | null = null;
 
     if (vanityResult) {
       const player = await getPlayerSummary(vanityResult);
       if (player) {
-        const accountId = steam64ToAccountId(player.steamid);
+        steamAccountId = steam64ToAccountId(player.steamid);
         results.push({
           source: "steam",
-          accountId,
+          accountId: steamAccountId,
           name: player.personaname,
           avatar: player.avatarfull,
         });
       }
     }
 
-    if (results.length === 0) {
+    if (query.length >= 3) {
       ranLeaderboardSearch = true;
-      const leaderboardResults = await searchLeaderboardByName(query);
-
       const resolvableEntries = leaderboardResults.map((m) => ({
         account_name: m.accountName,
         possible_account_ids: m.possibleAccountIds,
@@ -177,6 +179,7 @@ export async function GET(request: NextRequest) {
         const m = leaderboardResults[i];
         const resolved = resolvedMap.get(i);
         const accountId = resolved ? resolved.accountId : m.accountId;
+        if (accountId === steamAccountId) continue;
         results.push({
           source: "leaderboard",
           accountId,
