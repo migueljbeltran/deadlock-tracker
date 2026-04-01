@@ -86,8 +86,8 @@ export default async function PlayerContent({ accountId, searchParams }: PlayerC
 
   const [player, heroStats, allMatches, heroes, ranks, playerMetrics] = await Promise.all([
     getPlayerIdentity(accountId),
-    getPlayerHeroStats(accountId).catch(() => [] as Awaited<ReturnType<typeof getPlayerHeroStats>>),
-    getMatchHistory(accountId, fetchLimit).catch(() => [] as Awaited<ReturnType<typeof getMatchHistory>>),
+    getPlayerHeroStats(accountId),
+    getMatchHistory(accountId, fetchLimit),
     getHeroes(),
     getRanks(),
     getPlayerMetrics(accountId).catch(() => null as DeadlockPlayerMetrics | null),
