@@ -72,11 +72,21 @@ export async function getItems(): Promise<DeadlockItem[]> {
   }
 
   itemsExpiry = Date.now() + ITEMS_CACHE_TTL;
+  const itemsUrl = `${ASSETS_API}/v2/items/by-type/upgrade`;
   itemsPromise = (async () => {
-    const res = await fetch(`${ASSETS_API}/v2/items/by-type/upgrade`, {
-      next: { revalidate: 21600 },
-      signal: AbortSignal.timeout(10_000),
-    });
+    let res: Response;
+    try {
+      res = await fetch(itemsUrl, {
+        next: { revalidate: 21600 },
+        signal: AbortSignal.timeout(10_000),
+      });
+    } catch (err) {
+      if (err instanceof Error && (err.name === "AbortError" || err.name === "TimeoutError")) {
+        logger.error({ url: itemsUrl }, "Items API timeout");
+        throw new ApiError("Request timeout", 408, itemsUrl);
+      }
+      throw err;
+    }
     if (!res.ok) {
       logger.warn({ url: res.url, status: res.status }, "Deadlock API error");
       throw new ApiError(`Deadlock API error: ${res.statusText}`, res.status, res.url);

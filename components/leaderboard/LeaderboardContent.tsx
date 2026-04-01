@@ -27,21 +27,23 @@ export default async function LeaderboardContent({ searchParams }: LeaderboardCo
   const rawPage = Number(pageParam);
   const page = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 
-  const [entries, ranks, heroes] = await Promise.all([
-    getLeaderboard(region),
-    getRanks(),
-    getHeroes(),
-  ]);
+  // Fetch leaderboard first (needed to know which entries to resolve)
+  const entries = await getLeaderboard(region);
 
   const offset = (page - 1) * PAGE_SIZE;
   const pageEntries = entries.slice(offset, offset + PAGE_SIZE);
   const hasNextPage = entries.length > offset + PAGE_SIZE;
 
+  // Kick off resolution, ranks, and heroes in parallel — resolution only
+  // depends on leaderboard data, not on ranks/heroes
+  const [ranks, heroes, resolvedIds] = await Promise.all([
+    getRanks(),
+    getHeroes(),
+    resolveAccountIds(pageEntries, region, page),
+  ]);
+
   const rankMap = new Map(ranks.map((r) => [r.tier, r]));
   const heroMap = new Map(heroes.map((h) => [h.id, h]));
-
-  // Resolve ambiguous account IDs by matching Steam names (cached in Redis)
-  const resolvedIds = await resolveAccountIds(pageEntries, region, page);
 
   return (
     <>

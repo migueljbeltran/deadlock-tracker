@@ -16,7 +16,7 @@ export default function MatchDetailError({
 }) {
   useEffect(() => {
     const msg = error?.message ?? "";
-    if (msg.includes("Service Unavailable") || msg.includes("Request timeout")) {
+    if (msg.includes("Service Unavailable") || msg.includes("Request timeout") || msg.includes("aborted")) {
       return;
     }
     Sentry.captureException(error);

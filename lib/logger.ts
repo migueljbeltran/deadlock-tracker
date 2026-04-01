@@ -1,21 +1,29 @@
 import "server-only";
 import pino from "pino";
 
-// Increase stream listener limit in dev to avoid MaxListenersExceededWarning
-// from pino-pretty when parallel API calls produce concurrent log writes
+// Raise listener limit to avoid MaxListenersExceededWarning from pino-pretty
 if (process.env.NODE_ENV === "development") {
-  process.stdout.setMaxListeners(20);
-  process.stderr.setMaxListeners(20);
+  process.stdout.setMaxListeners(50);
+  process.stderr.setMaxListeners(50);
 }
 
-const logger = pino({
-  level: process.env.LOG_LEVEL ?? "info",
-  ...(process.env.NODE_ENV === "development" && {
-    transport: {
-      target: "pino-pretty",
-      options: { colorize: true },
-    },
-  }),
-});
+// Cache across HMR reloads — same pattern as lib/db.ts (Prisma singleton)
+const globalForLogger = globalThis as unknown as {
+  __logger: ReturnType<typeof pino> | undefined;
+};
+
+const logger =
+  globalForLogger.__logger ??
+  pino({
+    level: process.env.LOG_LEVEL ?? "info",
+    ...(process.env.NODE_ENV === "development" && {
+      transport: {
+        target: "pino-pretty",
+        options: { colorize: true },
+      },
+    }),
+  });
+
+if (process.env.NODE_ENV !== "production") globalForLogger.__logger = logger;
 
 export default logger;
