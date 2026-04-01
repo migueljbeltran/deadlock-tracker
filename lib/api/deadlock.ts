@@ -279,8 +279,8 @@ const MAX_LEADERBOARD_RESULTS = 15;
 
 /**
  * Search all regional leaderboards for players by in-game name.
- * Uses substring matching and returns up to 15 results sorted by relevance:
- * exact match > prefix match > substring match, then by leaderboard rank.
+ * Prefers exact/prefix matches first and only falls back to substring matches
+ * when no higher-signal results exist.
  */
 export async function searchLeaderboardByName(
   name: string,
@@ -290,7 +290,8 @@ export async function searchLeaderboardByName(
   if (needle.length < 3) return [];
 
   const boards = await Promise.all(ALL_REGIONS.map(getLeaderboard));
-  const matches: (LeaderboardSearchMatch & { _relevance: number })[] = [];
+  const exactAndPrefixMatches: (LeaderboardSearchMatch & { _relevance: number })[] = [];
+  const substringMatches: (LeaderboardSearchMatch & { _relevance: number })[] = [];
 
   for (let i = 0; i < boards.length; i++) {
     const region = ALL_REGIONS[i];
@@ -310,7 +311,7 @@ export async function searchLeaderboardByName(
         continue;
       }
 
-      matches.push({
+      const match = {
         accountId: entry.possible_account_ids[0],
         possibleAccountIds: entry.possible_account_ids,
         accountName: entry.account_name,
@@ -320,9 +321,19 @@ export async function searchLeaderboardByName(
         topHeroIds: entry.top_hero_ids,
         region,
         _relevance: relevance,
-      });
+      };
+
+      if (relevance <= 1) {
+        exactAndPrefixMatches.push(match);
+      } else {
+        substringMatches.push(match);
+      }
     }
   }
+
+  const matches = exactAndPrefixMatches.length > 0
+    ? exactAndPrefixMatches
+    : substringMatches;
 
   matches.sort((a, b) => a._relevance - b._relevance || a.rank - b.rank);
 

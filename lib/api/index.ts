@@ -21,6 +21,7 @@ export { ApiError } from "./types";
 export type { DeadlockRegion, LeaderboardSearchMatch } from "./deadlock";
 export { resolveAccountIds } from "./resolve";
 export type { ResolvableEntry, ResolvedAccount } from "./resolve";
+export { getPlayerIdentity } from "./player";
 
 // Steam API
 export {

@@ -9,7 +9,7 @@ import { SigilBackground } from "@/components/layout/SigilBackground";
 import { SigilLoader } from "@/components/ui/SigilLoader";
 import { PlayerSearchBar } from "@/components/search/PlayerSearchBar";
 import PlayerContent from "@/components/player/PlayerContent";
-import { accountIdToSteam64, getPlayerSummary } from "@/lib/api";
+import { getPlayerIdentity } from "@/lib/api";
 
 interface PlayerPageProps {
   params: Promise<{ accountId: string }>;
@@ -30,8 +30,7 @@ export async function generateMetadata(
     return { title: "Player Not Found", robots: { index: false } };
   }
 
-  const steam64 = accountIdToSteam64(Number(raw));
-  const player = await getPlayerSummary(steam64);
+  const player = await getPlayerIdentity(Number(raw));
 
   if (!player) {
     return { title: "Player Not Found", robots: { index: false } };
