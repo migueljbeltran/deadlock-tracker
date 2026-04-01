@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getHeroes } from "@/lib/api";
 
-export const revalidate = 86400; // Regenerate sitemap once per day
+export const revalidate = 604800; // Regenerate sitemap once per week
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://dltracker.app";

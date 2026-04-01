@@ -3,6 +3,8 @@ import Link from "next/link";
 import { Crown, TrendingUp } from "lucide-react";
 import { getHeroes, getHeroAnalytics, getRanks } from "@/lib/api";
 import { RankFilter } from "@/components/hero/RankFilter";
+import { PageRefreshButton } from "@/components/ui/PageRefreshButton";
+import { refreshTierList } from "@/app/heroes/actions";
 import { cn } from "@/lib/utils/cn";
 import { FadeIn } from "@/components/motion";
 import { aggregateHeroAnalytics, parseRankTier } from "@/lib/utils/heroAnalytics";
@@ -99,11 +101,14 @@ export default async function TierListContent({ searchParams }: TierListContentP
             </p>
           </div>
 
-          <RankFilter
-            ranks={rankOptions}
-            currentMinTier={validMinTier}
-            baseUrl="/heroes/tier-list"
-          />
+          <div className="flex items-center gap-3">
+            <PageRefreshButton action={refreshTierList} />
+            <RankFilter
+              ranks={rankOptions}
+              currentMinTier={validMinTier}
+              baseUrl="/heroes/tier-list"
+            />
+          </div>
         </div>
       </div>
 

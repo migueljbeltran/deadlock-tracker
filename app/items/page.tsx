@@ -1,4 +1,4 @@
-export const revalidate = 21600; // ISR: cache items page for 6 hours
+export const revalidate = 604800; // ISR: cache items page for 7 days (item data changes only on game patches)
 
 import { Suspense } from "react";
 import type { Metadata } from "next";

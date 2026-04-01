@@ -1,4 +1,4 @@
-export const revalidate = 3600; // ISR: cache player profile for 1 hour
+export const revalidate = 604800; // ISR: cache player profile for 7 days (Refresh button handles on-demand updates)
 
 import { Suspense } from "react";
 import type { Metadata } from "next";

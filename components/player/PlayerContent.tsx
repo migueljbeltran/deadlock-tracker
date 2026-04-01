@@ -181,7 +181,7 @@ export default async function PlayerContent({ accountId, searchParams }: PlayerC
               <h2 className="font-heading text-xl text-amber">
                 Match History
               </h2>
-              <RefreshButton />
+              <RefreshButton accountId={accountId} />
             </div>
             <RecentForm matches={allMatches.slice(0, 20)} accountId={accountId} />
           </div>

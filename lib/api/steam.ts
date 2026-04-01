@@ -61,7 +61,7 @@ export async function resolveVanityURL(
   const key = getSteamApiKey();
   const url = `${STEAM_API_BASE}/ISteamUser/ResolveVanityURL/v1/?key=${key}&vanityurl=${encodeURIComponent(vanityName)}`;
 
-  const res = await steamFetch(url, 86400);
+  const res = await steamFetch(url, 604800);
 
   if (!res.ok) {
     logger.error({ endpoint: "ResolveVanityURL", status: res.status, vanityName }, "Steam API error");
@@ -76,13 +76,13 @@ export async function resolveVanityURL(
 
   if (data.response.success !== 1) {
     logger.info({ vanityName }, "Vanity URL not found");
-    await cacheSet(cacheKey, "NOT_FOUND", 86400);
+    await cacheSet(cacheKey, "NOT_FOUND", 604800);
     return null;
   }
 
   logger.info({ vanityName, steamId: data.response.steamid }, "Vanity URL resolved");
   const steamId = data.response.steamid ?? null;
-  if (steamId) await cacheSet(cacheKey, steamId, 86400);
+  if (steamId) await cacheSet(cacheKey, steamId, 604800);
   return steamId;
 }
 
@@ -116,7 +116,7 @@ export async function getPlayerSummaries(
   const ids = missingIds.join(",");
   const url = `${STEAM_API_BASE}/ISteamUser/GetPlayerSummaries/v2/?key=${key}&steamids=${ids}`;
 
-  const res = await steamFetch(url, 3600);
+  const res = await steamFetch(url, 604800);
 
   if (!res.ok) {
     logger.error({ endpoint: "GetPlayerSummaries", status: res.status }, "Steam API error");
@@ -134,7 +134,7 @@ export async function getPlayerSummaries(
     data.response.players.map((player) => ({
       key: `steam:${player.steamid}`,
       value: player,
-      ttlSeconds: 7200,
+      ttlSeconds: 604800,
     })),
   );
 

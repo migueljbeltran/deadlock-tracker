@@ -49,14 +49,14 @@ async function deadlockFetch<T>(url: string, revalidate: number): Promise<T> {
 export async function getHeroes(): Promise<DeadlockHero[]> {
   return deadlockFetch<DeadlockHero[]>(
     `${ASSETS_API}/v2/heroes`,
-    21600,
+    604800,
   );
 }
 
 export async function getHero(heroId: number): Promise<DeadlockHero> {
   return deadlockFetch<DeadlockHero>(
     `${ASSETS_API}/v2/heroes/${heroId}`,
-    21600,
+    604800,
   );
 }
 
@@ -64,7 +64,7 @@ export async function getHero(heroId: number): Promise<DeadlockHero> {
 // Stores the in-flight promise to prevent thundering herd on concurrent requests.
 let itemsPromise: Promise<DeadlockItem[]> | null = null;
 let itemsExpiry = 0;
-const ITEMS_CACHE_TTL = 21600_000; // 6 hours
+const ITEMS_CACHE_TTL = 604800_000; // 7 days
 
 export async function getItems(): Promise<DeadlockItem[]> {
   if (itemsPromise && Date.now() < itemsExpiry) {
@@ -77,7 +77,7 @@ export async function getItems(): Promise<DeadlockItem[]> {
     let res: Response;
     try {
       res = await fetch(itemsUrl, {
-        next: { revalidate: 21600 },
+        next: { revalidate: 604800 },
         signal: AbortSignal.timeout(10_000),
       });
     } catch (err) {
@@ -106,14 +106,14 @@ export async function getItemStats(minBadge?: number): Promise<DeadlockItemStats
   const params = minBadge != null ? `?min_average_badge=${minBadge}` : "";
   return deadlockFetch<DeadlockItemStats[]>(
     `${GAME_API}/v1/analytics/item-stats${params}`,
-    21600,
+    604800,
   );
 }
 
 export async function getRanks(): Promise<DeadlockRank[]> {
   return deadlockFetch<DeadlockRank[]>(
     `${ASSETS_API}/v2/ranks`,
-    86400,
+    604800,
   );
 }
 
@@ -128,9 +128,9 @@ export async function getPlayerHeroStats(
 
   const data = await deadlockFetch<DeadlockPlayerHeroStat[]>(
     `${GAME_API}/v1/players/hero-stats?account_ids=${accountId}`,
-    3600,
+    604800,
   );
-  await cacheSet(cacheKey, data, 3600);
+  await cacheSet(cacheKey, data, 604800);
   return data;
 }
 
@@ -140,7 +140,7 @@ export async function getBatchPlayerHeroStats(
   if (accountIds.length === 0) return [];
   return deadlockFetch<DeadlockPlayerHeroStat[]>(
     `${GAME_API}/v1/players/hero-stats?account_ids=${accountIds.join(",")}`,
-    3600,
+    604800,
   );
 }
 
@@ -150,7 +150,7 @@ export async function getMatchHistory(
 ): Promise<DeadlockMatchMetadata[]> {
   return deadlockFetch<DeadlockMatchMetadata[]>(
     `${GAME_API}/v1/matches/metadata?account_ids=${accountId}&include_player_info=true&limit=${limit}&order_by=start_time&order_direction=desc`,
-    3600,
+    604800,
   );
 }
 
@@ -162,7 +162,7 @@ export async function getMatchDetail(
   // a different schema with numeric enums instead of strings.
   const results = await deadlockFetch<DeadlockMatchMetadata[]>(
     `${GAME_API}/v1/matches/metadata?min_match_id=${matchId}&max_match_id=${matchId}&include_player_info=true`,
-    86400,
+    604800,
   );
   if (results.length === 0) {
     throw new ApiError("Match not found", 404, `matches/${matchId}`);
@@ -188,7 +188,7 @@ export async function getMatchPlayerItems(
 
   const data = await deadlockFetch<RawMatchDetail>(
     `${GAME_API}/v1/matches/${matchId}/metadata`,
-    86400,
+    604800,
   );
 
   const result = new Map<number, number[]>();
@@ -208,14 +208,14 @@ export async function getMatchPlayerItems(
 export async function getApiInfo(): Promise<DeadlockApiInfo> {
   return deadlockFetch<DeadlockApiInfo>(
     `${GAME_API}/v1/info`,
-    21600,
+    604800,
   );
 }
 
 export async function getHeroAnalytics(): Promise<DeadlockHeroAnalytics[]> {
   return deadlockFetch<DeadlockHeroAnalytics[]>(
     `${GAME_API}/v1/analytics/hero-stats?bucket=avg_badge`,
-    21600,
+    604800,
   );
 }
 
@@ -228,9 +228,9 @@ export async function getPlayerMetrics(
 
   const data = await deadlockFetch<DeadlockPlayerMetrics>(
     `${GAME_API}/v1/analytics/player-stats/metrics?account_ids=${accountId}`,
-    3600,
+    604800,
   );
-  await cacheSet(cacheKey, data, 3600);
+  await cacheSet(cacheKey, data, 604800);
   return data;
 }
 
@@ -250,9 +250,9 @@ export async function getLeaderboard(
 
   const data = await deadlockFetch<{ entries: DeadlockLeaderboardEntry[] }>(
     `${GAME_API}/v1/leaderboard/${region}`,
-    7200,
+    604800,
   );
-  await cacheSet(cacheKey, data.entries, 7200);
+  await cacheSet(cacheKey, data.entries, 604800);
   return data.entries;
 }
 

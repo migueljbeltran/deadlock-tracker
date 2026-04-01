@@ -1,6 +1,8 @@
 import { LeaderboardTable } from "@/components/leaderboard/LeaderboardTable";
 import { RegionSelector } from "@/components/leaderboard/RegionSelector";
 import { Pagination } from "@/components/ui/Pagination";
+import { PageRefreshButton } from "@/components/ui/PageRefreshButton";
+import { refreshLeaderboard } from "@/app/leaderboard/actions";
 import {
   getLeaderboard,
   getRanks,
@@ -57,7 +59,10 @@ export default async function LeaderboardContent({ searchParams }: LeaderboardCo
               Top ranked players in Deadlock across all regions.
             </p>
           </div>
-          <RegionSelector currentRegion={region} />
+          <div className="flex items-center gap-3">
+            <PageRefreshButton action={refreshLeaderboard.bind(null, region)} />
+            <RegionSelector currentRegion={region} />
+          </div>
         </div>
       </div>
 

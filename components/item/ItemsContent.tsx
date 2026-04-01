@@ -1,6 +1,8 @@
 import { Package } from "lucide-react";
 import { ItemGrid } from "@/components/item/ItemGrid";
 import { RankFilter } from "@/components/hero/RankFilter";
+import { PageRefreshButton } from "@/components/ui/PageRefreshButton";
+import { refreshItems } from "@/app/items/actions";
 import type { ItemWithStats } from "@/components/item/ItemCard";
 import { getItems, getItemStats, getRanks } from "@/lib/api";
 import { parseRankTier } from "@/lib/utils/heroAnalytics";
@@ -80,11 +82,14 @@ export default async function ItemsContent({ searchParams }: ItemsContentProps) 
             </div>
           </div>
 
-          <RankFilter
-            ranks={rankOptions}
-            currentMinTier={validMinTier}
-            baseUrl="/items"
-          />
+          <div className="flex items-center gap-3">
+            <PageRefreshButton action={refreshItems} />
+            <RankFilter
+              ranks={rankOptions}
+              currentMinTier={validMinTier}
+              baseUrl="/items"
+            />
+          </div>
         </div>
       </div>
 

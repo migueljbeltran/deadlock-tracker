@@ -30,7 +30,7 @@ export async function GET() {
     const start = Date.now();
     const res = await fetch("https://assets.deadlock-api.com/v2/heroes", {
       method: "HEAD",
-      next: { revalidate: 60 },
+      next: { revalidate: 3600 },
       signal: AbortSignal.timeout(5000),
     });
     checks.deadlock_api = {

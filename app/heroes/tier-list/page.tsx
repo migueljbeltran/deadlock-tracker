@@ -1,4 +1,4 @@
-export const revalidate = 21600; // ISR: cache tier list for 6 hours
+export const revalidate = 604800; // ISR: cache tier list for 7 days (hero data changes only on game patches)
 
 import { Suspense } from "react";
 import type { Metadata } from "next";

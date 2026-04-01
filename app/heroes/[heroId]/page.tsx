@@ -1,4 +1,4 @@
-export const revalidate = 21600; // ISR: cache hero detail for 6 hours
+export const revalidate = 604800; // ISR: cache hero detail for 7 days (hero data changes only on game patches)
 
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";

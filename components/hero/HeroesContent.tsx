@@ -1,6 +1,8 @@
 import { Shield } from "lucide-react";
 import { HeroGrid } from "@/components/hero/HeroGrid";
 import { RankFilter } from "@/components/hero/RankFilter";
+import { PageRefreshButton } from "@/components/ui/PageRefreshButton";
+import { refreshHeroesPage } from "@/app/heroes/actions";
 import type { HeroWithStats } from "@/components/hero/HeroCard";
 import { getHeroes, getHeroAnalytics, getRanks } from "@/lib/api";
 import { aggregateHeroAnalytics, parseRankTier } from "@/lib/utils/heroAnalytics";
@@ -72,11 +74,14 @@ export default async function HeroesContent({ searchParams }: HeroesContentProps
             </div>
           </div>
 
-          <RankFilter
-            ranks={rankOptions}
-            currentMinTier={validMinTier}
-            baseUrl="/heroes"
-          />
+          <div className="flex items-center gap-3">
+            <PageRefreshButton action={refreshHeroesPage} />
+            <RankFilter
+              ranks={rankOptions}
+              currentMinTier={validMinTier}
+              baseUrl="/heroes"
+            />
+          </div>
         </div>
       </div>
 
