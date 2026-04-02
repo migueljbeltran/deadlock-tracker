@@ -13,11 +13,7 @@ export const metadata: Metadata = {
   description: "Deadlock hero tier list based on global win rate and pick rate.",
 };
 
-interface TierListPageProps {
-  searchParams: Promise<{ rank?: string }>;
-}
-
-export default function TierListPage({ searchParams }: TierListPageProps) {
+export default function TierListPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
@@ -27,7 +23,7 @@ export default function TierListPage({ searchParams }: TierListPageProps) {
 
         <div className="relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
           <Suspense fallback={<SigilLoader />}>
-            <TierListContent searchParams={searchParams} />
+            <TierListContent />
           </Suspense>
         </div>
       </main>

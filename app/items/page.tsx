@@ -13,11 +13,7 @@ export const metadata: Metadata = {
   description: "Browse all Deadlock shop items with win rates and pick rates.",
 };
 
-interface ItemsPageProps {
-  searchParams: Promise<{ rank?: string }>;
-}
-
-export default function ItemsPage({ searchParams }: ItemsPageProps) {
+export default function ItemsPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
@@ -27,7 +23,7 @@ export default function ItemsPage({ searchParams }: ItemsPageProps) {
 
         <div className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
           <Suspense fallback={<SigilLoader />}>
-            <ItemsContent searchParams={searchParams} />
+            <ItemsContent />
           </Suspense>
         </div>
       </main>

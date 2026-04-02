@@ -11,9 +11,13 @@ import { PlayerSearchBar } from "@/components/search/PlayerSearchBar";
 import PlayerContent from "@/components/player/PlayerContent";
 import { getPlayerIdentity } from "@/lib/api";
 
+// Return empty array — player pages are generated on-demand and then cached via ISR
+export async function generateStaticParams() {
+  return [];
+}
+
 interface PlayerPageProps {
   params: Promise<{ accountId: string }>;
-  searchParams: Promise<{ page?: string }>;
 }
 
 function isValidAccountId(id: string): boolean {
@@ -53,7 +57,7 @@ export async function generateMetadata(
   };
 }
 
-export default async function PlayerPage({ params, searchParams }: PlayerPageProps) {
+export default async function PlayerPage({ params }: PlayerPageProps) {
   const { accountId: raw } = await params;
 
   if (!isValidAccountId(raw)) {
@@ -86,7 +90,7 @@ export default async function PlayerPage({ params, searchParams }: PlayerPagePro
             </div>
           }
         >
-          <PlayerContent accountId={accountId} searchParams={searchParams} />
+          <PlayerContent accountId={accountId} />
         </Suspense>
       </main>
 

@@ -23,11 +23,7 @@ export const metadata: Metadata = {
   },
 };
 
-interface HeroesPageProps {
-  searchParams: Promise<{ rank?: string }>;
-}
-
-export default function HeroesPage({ searchParams }: HeroesPageProps) {
+export default function HeroesPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
@@ -37,7 +33,7 @@ export default function HeroesPage({ searchParams }: HeroesPageProps) {
 
         <div className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
           <Suspense fallback={<SigilLoader />}>
-            <HeroesContent searchParams={searchParams} />
+            <HeroesContent />
           </Suspense>
         </div>
       </main>

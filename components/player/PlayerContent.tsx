@@ -2,13 +2,10 @@ import { notFound } from "next/navigation";
 import { ArtDecoDivider } from "@/components/layout/ArtDecoDivider";
 import { PlayerHeader } from "@/components/player/PlayerHeader";
 import { TopHeroes } from "@/components/player/TopHeroes";
-import { MatchHistoryList } from "@/components/player/MatchHistoryList";
 import { CareerStats } from "@/components/player/CareerStats";
-import { RecentForm } from "@/components/player/RecentForm";
 import { PlayerPercentiles } from "@/components/player/PlayerPercentiles";
+import { PlayerMatchSection } from "@/components/player/PlayerMatchSection";
 import { FadeIn } from "@/components/motion";
-import { Pagination } from "@/components/ui/Pagination";
-import { RefreshButton } from "@/components/player/RefreshButton";
 import type { DeadlockPlayerMetrics } from "@/lib/api";
 import {
   getPlayerIdentity,
@@ -21,6 +18,7 @@ import {
 
 const MATCH_PAGE_SIZE = 20;
 const MAX_MATCH_PAGES = 5; // Cap at 100 matches to limit API payload size
+const FETCH_LIMIT = MATCH_PAGE_SIZE * MAX_MATCH_PAGES + 1; // 101
 
 /**
  * Estimate the player's rank from recent match badge data.
@@ -70,31 +68,17 @@ function estimateRankBadge(
 
 interface PlayerContentProps {
   accountId: number;
-  searchParams: Promise<{ page?: string }>;
 }
 
-export default async function PlayerContent({ accountId, searchParams }: PlayerContentProps) {
-  const { page: pageParam } = await searchParams;
-
-  const rawPage = Number(pageParam);
-  const page = Number.isInteger(rawPage) && rawPage > 0
-    ? Math.min(rawPage, MAX_MATCH_PAGES)
-    : 1;
-
-  const offset = (page - 1) * MATCH_PAGE_SIZE;
-  const fetchLimit = offset + MATCH_PAGE_SIZE + 1;
-
+export default async function PlayerContent({ accountId }: PlayerContentProps) {
   const [player, heroStats, allMatches, heroes, ranks, playerMetrics] = await Promise.all([
     getPlayerIdentity(accountId),
     getPlayerHeroStats(accountId),
-    getMatchHistory(accountId, fetchLimit),
+    getMatchHistory(accountId, FETCH_LIMIT),
     getHeroes(),
     getRanks(),
     getPlayerMetrics(accountId).catch(() => null as DeadlockPlayerMetrics | null),
   ]);
-
-  const pageMatches = allMatches.slice(offset, offset + MATCH_PAGE_SIZE);
-  const hasNextPage = allMatches.length > offset + MATCH_PAGE_SIZE;
 
   if (!player) {
     notFound();
@@ -107,6 +91,13 @@ export default async function PlayerContent({ accountId, searchParams }: PlayerC
     ? ranks.find((r) => r.tier === badgeEstimate.tier) ?? null
     : null;
   const estimatedSubrank = badgeEstimate?.subrank ?? null;
+
+  // Lightweight hero lookup for client-side match rendering
+  const matchHeroEntries = heroes.map((h) => ({
+    id: h.id,
+    name: h.name,
+    iconUrl: h.images?.icon_image_small_webp,
+  }));
 
   return (
     <div className="relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
@@ -173,32 +164,12 @@ export default async function PlayerContent({ accountId, searchParams }: PlayerC
 
       <ArtDecoDivider variant="simple" className="my-8" />
 
-      {/* Match History */}
-      <section key={`matches-page-${page}`}>
-        <FadeIn delay={0.4}>
-          <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-            <div className="flex items-center gap-3">
-              <h2 className="font-heading text-xl text-amber">
-                Match History
-              </h2>
-              <RefreshButton accountId={accountId} />
-            </div>
-            <RecentForm matches={allMatches.slice(0, 20)} accountId={accountId} />
-          </div>
-        </FadeIn>
-        <div className="glass-panel rounded-xl p-6">
-          <MatchHistoryList
-            matches={pageMatches}
-            accountId={accountId}
-            heroMap={heroMap}
-          />
-          <Pagination
-            currentPage={page}
-            hasNextPage={hasNextPage}
-            baseUrl={`/player/${accountId}`}
-          />
-        </div>
-      </section>
+      {/* Match History — client-side pagination */}
+      <PlayerMatchSection
+        allMatches={allMatches}
+        accountId={accountId}
+        heroEntries={matchHeroEntries}
+      />
     </div>
   );
 }
