@@ -7,7 +7,6 @@ import type {
 } from "./types";
 import { ApiError } from "./types";
 import logger from "@/lib/logger";
-import { cacheGet, cacheSet, cacheMget, cacheMset } from "@/lib/cache";
 
 const STEAM_API_BASE = "https://api.steampowered.com";
 const STEAM64_OFFSET = BigInt("76561197960265728");
@@ -53,11 +52,6 @@ async function steamFetch(url: string, revalidate: number): Promise<Response> {
 export async function resolveVanityURL(
   vanityName: string,
 ): Promise<string | null> {
-  const cacheKey = `vanity:${vanityName.toLowerCase()}`;
-  const cached = await cacheGet<string | "NOT_FOUND">(cacheKey);
-  if (cached === "NOT_FOUND") return null;
-  if (cached) return cached;
-
   const key = getSteamApiKey();
   const url = `${STEAM_API_BASE}/ISteamUser/ResolveVanityURL/v1/?key=${key}&vanityurl=${encodeURIComponent(vanityName)}`;
 
@@ -76,14 +70,11 @@ export async function resolveVanityURL(
 
   if (data.response.success !== 1) {
     logger.info({ vanityName }, "Vanity URL not found");
-    await cacheSet(cacheKey, "NOT_FOUND", 604800);
     return null;
   }
 
   logger.info({ vanityName, steamId: data.response.steamid }, "Vanity URL resolved");
-  const steamId = data.response.steamid ?? null;
-  if (steamId) await cacheSet(cacheKey, steamId, 604800);
-  return steamId;
+  return data.response.steamid ?? null;
 }
 
 export async function getPlayerSummaries(
@@ -94,26 +85,8 @@ export async function getPlayerSummaries(
     throw new Error("Steam API supports at most 100 Steam IDs per request");
   }
 
-  // Batch-check Redis for cached profiles in a single round-trip
-  const cacheKeys = steamIds.map((id) => `steam:${id}`);
-  const cacheResults = await cacheMget<SteamPlayerSummary>(cacheKeys);
-
-  const cachedPlayers: SteamPlayerSummary[] = [];
-  const missingIds: string[] = [];
-
-  for (let i = 0; i < steamIds.length; i++) {
-    const cached = cacheResults[i];
-    if (cached) {
-      cachedPlayers.push(cached);
-    } else {
-      missingIds.push(steamIds[i]);
-    }
-  }
-
-  if (missingIds.length === 0) return cachedPlayers;
-
   const key = getSteamApiKey();
-  const ids = missingIds.join(",");
+  const ids = steamIds.join(",");
   const url = `${STEAM_API_BASE}/ISteamUser/GetPlayerSummaries/v2/?key=${key}&steamids=${ids}`;
 
   const res = await steamFetch(url, 604800);
@@ -128,17 +101,7 @@ export async function getPlayerSummaries(
   }
 
   const data: SteamPlayerSummariesResponse = await res.json();
-
-  // Cache all fetched players in a single Redis pipeline
-  await cacheMset(
-    data.response.players.map((player) => ({
-      key: `steam:${player.steamid}`,
-      value: player,
-      ttlSeconds: 604800,
-    })),
-  );
-
-  return [...cachedPlayers, ...data.response.players];
+  return data.response.players;
 }
 
 export async function getPlayerSummary(

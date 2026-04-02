@@ -13,7 +13,7 @@ import { searchQuerySchema } from "@/lib/validations";
 import { checkRateLimit } from "@/lib/ratelimit";
 import logger from "@/lib/logger";
 
-const SEARCH_CACHE_TTL_SECONDS = 21600; // 6 hours — search results (account IDs) rarely change
+const SEARCH_CACHE_TTL_SECONDS = 3600; // 1 hour — balances Redis storage with search cost savings
 
 type SearchResponseBody =
   | { success: true; results: Array<Record<string, unknown>> }

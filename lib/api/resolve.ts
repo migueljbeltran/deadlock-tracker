@@ -2,7 +2,6 @@ import "server-only";
 
 import { getPlayerSummaries, getBatchPlayerHeroStats, accountIdToSteam64 } from "./index";
 import logger from "@/lib/logger";
-import { cacheGet, cacheSet } from "@/lib/cache";
 
 /** Minimal shape needed for account resolution — any object with these 3 fields works. */
 export interface ResolvableEntry {
@@ -37,14 +36,6 @@ const CONFIDENT_SCORE_THRESHOLD = 10;
  * Entries with a single candidate are resolved immediately (confident).
  * Entries with zero candidates are skipped.
  */
-/** Serializable version of the resolution map for Redis storage */
-interface CachedResolution {
-  /** entry index → resolved account */
-  entries: Record<string, ResolvedAccount>;
-  /** Hash of entry names to detect stale cache */
-  entriesHash: string;
-}
-
 interface ScoreInputs {
   nameMap: Map<number, string>;
   heroDataMap: Map<number, { allHeroIds: Set<number>; totalMatches: number }>;
@@ -57,13 +48,6 @@ interface CandidateFetchResult extends ScoreInputs {
 interface ScoredResolution {
   accountId: number;
   bestScore: number;
-}
-
-function hashEntries(entries: ResolvableEntry[]): string {
-  // Hash all fields that influence resolution — names, candidate IDs, and hero signatures
-  return entries.map((e) =>
-    `${e.account_name}:${e.possible_account_ids.join(",")}:${e.top_hero_ids.join(",")}`
-  ).join("|");
 }
 
 function scoreEntry(
@@ -178,24 +162,7 @@ async function fetchCandidateData(candidateIds: number[]): Promise<CandidateFetc
 
 export async function resolveAccountIds(
   entries: ResolvableEntry[],
-  region?: string,
-  page?: number,
 ): Promise<Map<number, ResolvedAccount>> {
-  // Check Redis cache for this region+page's resolution
-  const currentHash = hashEntries(entries);
-  if (region != null && page != null) {
-    const cacheKey = `resolve:${region}:${page}`;
-    const cached = await cacheGet<CachedResolution>(cacheKey);
-    if (cached && cached.entriesHash === currentHash) {
-      const map = new Map<number, ResolvedAccount>();
-      for (const [k, v] of Object.entries(cached.entries)) {
-        map.set(Number(k), v);
-      }
-      logger.debug({ region, page }, "Resolution cache hit");
-      return map;
-    }
-  }
-
   const resolved = new Map<number, ResolvedAccount>();
   const ambiguous: { idx: number; entry: ResolvableEntry }[] = [];
 
@@ -257,19 +224,7 @@ export async function resolveAccountIds(
     confidentResolutions,
     fallbackExpandedEntries,
     fetchedCandidates: totalFetchedCandidates,
-    region,
-    page,
   }, "Account resolution complete");
-
-  // Store resolution in Redis for future ISR revalidations
-  if (region != null && page != null) {
-    const cacheKey = `resolve:${region}:${page}`;
-    const serializable: CachedResolution = {
-      entries: Object.fromEntries([...resolved.entries()].map(([k, v]) => [String(k), v])),
-      entriesHash: currentHash,
-    };
-    await cacheSet(cacheKey, serializable, 172800); // 48h TTL
-  }
 
   return resolved;
 }

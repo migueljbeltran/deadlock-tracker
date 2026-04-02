@@ -41,7 +41,7 @@ export default async function LeaderboardContent({ searchParams }: LeaderboardCo
   const [ranks, heroes, resolvedIds] = await Promise.all([
     getRanks(),
     getHeroes(),
-    resolveAccountIds(pageEntries, region, page),
+    resolveAccountIds(pageEntries),
   ]);
 
   const rankMap = new Map(ranks.map((r) => [r.tier, r]));
