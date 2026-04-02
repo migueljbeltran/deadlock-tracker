@@ -35,16 +35,33 @@ export function isValidSteam64(id: string): boolean {
 
 // ---- Fetch Wrapper ----
 
+const MAX_RETRIES = 2;
+
 async function steamFetch(url: string, revalidate: number): Promise<Response> {
-  try {
-    return await fetch(url, { next: { revalidate }, signal: AbortSignal.timeout(10_000) });
-  } catch (err) {
-    if (err instanceof Error && (err.name === "AbortError" || err.name === "TimeoutError")) {
-      logger.error({ url: url.replace(/key=[^&]+/, "key=***") }, "Steam API timeout");
-      throw new ApiError("Request timeout", 408, url);
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    let res: Response;
+    try {
+      res = await fetch(url, { next: { revalidate }, signal: AbortSignal.timeout(10_000) });
+    } catch (err) {
+      if (err instanceof Error && (err.name === "AbortError" || err.name === "TimeoutError")) {
+        logger.error({ url: url.replace(/key=[^&]+/, "key=***") }, "Steam API timeout");
+        throw new ApiError("Request timeout", 408, url);
+      }
+      throw err;
     }
-    throw err;
+
+    if ((res.status === 429 || res.status === 503) && attempt < MAX_RETRIES) {
+      const retryAfter = res.headers.get("Retry-After");
+      const delay = retryAfter ? Math.min(parseInt(retryAfter, 10) * 1000, 5000) : 1000 * (attempt + 1);
+      logger.warn({ url: url.replace(/key=[^&]+/, "key=***"), status: res.status, attempt, delay }, "Steam API rate limited, retrying");
+      await new Promise((r) => setTimeout(r, delay));
+      continue;
+    }
+
+    return res;
   }
+
+  throw new ApiError("Max retries exceeded", 429, url);
 }
 
 // ---- API Functions ----

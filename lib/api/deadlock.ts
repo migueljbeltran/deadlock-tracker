@@ -19,28 +19,38 @@ import logger from "@/lib/logger";
 const ASSETS_API = "https://assets.deadlock-api.com";
 const GAME_API = "https://api.deadlock-api.com";
 
+const MAX_RETRIES = 2;
+
 async function deadlockFetch<T>(url: string, revalidate: number): Promise<T> {
-  let res: Response;
-  try {
-    res = await fetch(url, { next: { revalidate }, signal: AbortSignal.timeout(10_000) });
-  } catch (err) {
-    if (err instanceof Error && err.name === "AbortError") {
-      logger.error({ url }, "Deadlock API timeout");
-      throw new ApiError("Request timeout", 408, url);
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    let res: Response;
+    try {
+      res = await fetch(url, { next: { revalidate }, signal: AbortSignal.timeout(10_000) });
+    } catch (err) {
+      if (err instanceof Error && (err.name === "AbortError" || err.name === "TimeoutError")) {
+        logger.error({ url }, "Deadlock API timeout");
+        throw new ApiError("Request timeout", 408, url);
+      }
+      throw err;
     }
-    throw err;
+
+    if ((res.status === 429 || res.status === 503) && attempt < MAX_RETRIES) {
+      const retryAfter = res.headers.get("Retry-After");
+      const delay = retryAfter ? Math.min(parseInt(retryAfter, 10) * 1000, 5000) : 1000 * (attempt + 1);
+      logger.warn({ url, status: res.status, attempt, delay }, "Deadlock API rate limited, retrying");
+      await new Promise((r) => setTimeout(r, delay));
+      continue;
+    }
+
+    if (!res.ok) {
+      logger.warn({ url, status: res.status }, "Deadlock API error");
+      throw new ApiError(`Deadlock API error: ${res.statusText}`, res.status, url);
+    }
+
+    return res.json() as Promise<T>;
   }
 
-  if (!res.ok) {
-    logger.warn({ url, status: res.status }, "Deadlock API error");
-    throw new ApiError(
-      `Deadlock API error: ${res.statusText}`,
-      res.status,
-      url,
-    );
-  }
-
-  return res.json() as Promise<T>;
+  throw new ApiError("Max retries exceeded", 429, url);
 }
 
 // ---- Assets API ----
