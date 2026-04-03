@@ -1,10 +1,10 @@
-import { getHeroes, getHeroAnalytics, getRanks } from "@/lib/api";
+import { getHeroes, getHeroAnalyticsSnapshot, getRanks } from "@/lib/api";
 import { HeroesClientView } from "@/components/hero/HeroesClientView";
 
 export default async function HeroesContent() {
-  const [heroes, analytics, ranks] = await Promise.all([
+  const [heroes, analyticsSnapshot, ranks] = await Promise.all([
     getHeroes(),
-    getHeroAnalytics(),
+    getHeroAnalyticsSnapshot(),
     getRanks(),
   ]);
 
@@ -27,8 +27,9 @@ export default async function HeroesContent() {
   return (
     <HeroesClientView
       playableHeroes={playableHeroes}
-      analytics={analytics}
+      analytics={analyticsSnapshot.data}
       rankOptions={rankOptions}
+      fetchedAt={analyticsSnapshot.fetchedAt}
     />
   );
 }

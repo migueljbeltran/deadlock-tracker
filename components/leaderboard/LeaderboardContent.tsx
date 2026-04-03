@@ -4,9 +4,10 @@ import { Pagination } from "@/components/ui/Pagination";
 import {
   getRanks,
   getHeroes,
+  getResolvedLeaderboardSnapshot,
 } from "@/lib/api";
 import type { DeadlockRegion } from "@/lib/api";
-import { getResolvedLeaderboard } from "@/lib/leaderboardSnapshot";
+import { DataFreshness } from "@/components/ui/DataFreshness";
 
 const PAGE_SIZE = 100;
 
@@ -26,7 +27,8 @@ export default async function LeaderboardContent({ searchParams }: LeaderboardCo
   const rawPage = Number(pageParam);
   const page = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 
-  const entries = await getResolvedLeaderboard(region);
+  const leaderboardSnapshot = await getResolvedLeaderboardSnapshot(region);
+  const entries = leaderboardSnapshot.entries;
 
   const offset = (page - 1) * PAGE_SIZE;
   const pageEntries = entries.slice(offset, offset + PAGE_SIZE);
@@ -51,6 +53,9 @@ export default async function LeaderboardContent({ searchParams }: LeaderboardCo
             <p className="mt-2 text-text-secondary">
               Top ranked players in Deadlock across all regions.
             </p>
+            <div className="mt-3">
+              <DataFreshness fetchedAt={leaderboardSnapshot.fetchedAt} />
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <RegionSelector currentRegion={region} />

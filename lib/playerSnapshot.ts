@@ -91,6 +91,30 @@ function toPlayerMatchSummary(
   };
 }
 
+function hasIncompleteMatchHistory(matches: PlayerMatchSummary[]): boolean {
+  if (matches.length === 0) return false;
+
+  const identifiedMatches = matches.filter((match) => match.hero_id != null).length;
+  const attributedMatches = matches.filter((match) => match.player_team != null).length;
+
+  return identifiedMatches === 0
+    || attributedMatches === 0
+    || identifiedMatches / matches.length < 0.5;
+}
+
+function normalizeSnapshot(snapshot: PlayerSnapshot): PlayerSnapshot {
+  const matchDataIncomplete = snapshot.matchDataIncomplete ?? hasIncompleteMatchHistory(snapshot.matches);
+
+  if (snapshot.matchDataIncomplete === matchDataIncomplete) {
+    return snapshot;
+  }
+
+  return {
+    ...snapshot,
+    matchDataIncomplete,
+  };
+}
+
 function isSnapshotStale(snapshot: PlayerSnapshot): boolean {
   const fetchedAt = Date.parse(snapshot.fetchedAt);
   if (Number.isNaN(fetchedAt)) return true;
@@ -125,15 +149,20 @@ async function buildPlayerSnapshot(accountId: number): Promise<PlayerSnapshot | 
   const matches = matchesResult.ok
     ? matchesResult.value.map((match) => toPlayerMatchSummary(match, accountId))
     : [];
+  const matchDataIncomplete = matchesResult.ok && hasIncompleteMatchHistory(matches);
   const metrics: DeadlockPlayerMetrics | null = metricsResult.ok ? metricsResult.value : null;
+  const status = heroStatsResult.ok && matchesResult.ok && metricsResult.ok && !matchDataIncomplete
+    ? "complete"
+    : "partial";
 
   const snapshot: PlayerSnapshot = {
     player,
     heroStats,
     matches,
+    matchDataIncomplete,
     metrics,
-    rankEstimate: matchesResult.ok ? estimateRankBadge(matches) : null,
-    status: heroStatsResult.ok && matchesResult.ok && metricsResult.ok ? "complete" : "partial",
+    rankEstimate: matchesResult.ok && !matchDataIncomplete ? estimateRankBadge(matches) : null,
+    status,
     fetchedAt: new Date().toISOString(),
   };
 
@@ -149,22 +178,26 @@ export async function getPlayerSnapshotState(accountId: number): Promise<{
   const cached = await cacheGet<PlayerSnapshot>(cacheKey);
 
   if (cached) {
-    const isStale = isSnapshotStale(cached);
-    const shouldRefresh = isStale || cached.status === "partial";
-    logger.info({ accountId, isStale, status: cached.status }, "Player snapshot cache hit");
-    return { snapshot: cached, isStale, shouldRefresh };
+    const snapshot = normalizeSnapshot(cached);
+    const isStale = isSnapshotStale(snapshot);
+    const shouldRefresh = isStale || snapshot.status === "partial" || snapshot.matchDataIncomplete === true;
+    logger.info({ accountId, isStale, status: snapshot.status, matchDataIncomplete: snapshot.matchDataIncomplete }, "Player snapshot cache hit");
+    return { snapshot, isStale, shouldRefresh };
   }
 
-  const snapshot = await buildPlayerSnapshot(accountId);
-  if (snapshot) {
-    await cacheSet(cacheKey, snapshot, SNAPSHOT_TTL_SECONDS);
-    logger.info({ accountId, status: snapshot.status }, "Player snapshot built on miss");
+  const builtSnapshot = await buildPlayerSnapshot(accountId);
+  if (builtSnapshot) {
+    await cacheSet(cacheKey, builtSnapshot, SNAPSHOT_TTL_SECONDS);
+    logger.info(
+      { accountId, status: builtSnapshot.status, matchDataIncomplete: builtSnapshot.matchDataIncomplete },
+      "Player snapshot built on miss",
+    );
   }
 
   return {
-    snapshot,
+    snapshot: builtSnapshot,
     isStale: false,
-    shouldRefresh: snapshot?.status === "partial",
+    shouldRefresh: builtSnapshot?.status === "partial" || builtSnapshot?.matchDataIncomplete === true,
   };
 }
 
@@ -178,7 +211,8 @@ export async function refreshPlayerSnapshot(
 
   if (mode === "background") {
     const cached = await cacheGet<PlayerSnapshot>(cacheKey);
-    if (cached && !isSnapshotStale(cached) && cached.status === "complete") {
+    const snapshot = cached ? normalizeSnapshot(cached) : null;
+    if (snapshot && !isSnapshotStale(snapshot) && snapshot.status === "complete" && snapshot.matchDataIncomplete !== true) {
       return { refreshed: false, reason: "fresh" };
     }
   }

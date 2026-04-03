@@ -279,6 +279,7 @@ export interface PlayerSnapshot {
   player: SteamPlayerSummary;
   heroStats: DeadlockPlayerHeroStat[];
   matches: PlayerMatchSummary[];
+  matchDataIncomplete?: boolean;
   metrics: DeadlockPlayerMetrics | null;
   rankEstimate: PlayerRankEstimate | null;
   status: "complete" | "partial";

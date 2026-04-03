@@ -1,10 +1,10 @@
-import { getItems, getItemStats, getRanks } from "@/lib/api";
+import { getItems, getItemStatsSnapshot, getRanks } from "@/lib/api";
 import { ItemsClientView } from "@/components/item/ItemsClientView";
 
 export default async function ItemsContent() {
-  const [items, itemStats, ranks] = await Promise.all([
+  const [items, itemStatsSnapshot, ranks] = await Promise.all([
     getItems(),
-    getItemStats().catch(() => []),
+    getItemStatsSnapshot(),
     getRanks(),
   ]);
 
@@ -30,8 +30,9 @@ export default async function ItemsContent() {
   return (
     <ItemsClientView
       shopableItems={shopableItems}
-      itemStats={itemStats}
+      itemStats={itemStatsSnapshot.data}
       rankOptions={rankOptions}
+      fetchedAt={itemStatsSnapshot.fetchedAt}
     />
   );
 }

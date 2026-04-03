@@ -19,20 +19,63 @@ export function PlayerDataRecovery({
 }: PlayerDataRecoveryProps) {
   const [isPending, startTransition] = useTransition();
   const attemptedRef = useRef(false);
+  const retryTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    attemptedRef.current = false;
+    if (retryTimeoutRef.current != null) {
+      window.clearTimeout(retryTimeoutRef.current);
+      retryTimeoutRef.current = null;
+    }
+  }, [accountId]);
+
+  useEffect(() => {
+    if (!shouldRecover) {
+      attemptedRef.current = false;
+      if (retryTimeoutRef.current != null) {
+        window.clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
+    }
+  }, [shouldRecover]);
 
   useEffect(() => {
     if (!shouldRecover || attemptedRef.current) return;
 
     attemptedRef.current = true;
+    let cancelled = false;
 
     startTransition(async () => {
       const result = await refreshPlayerData(accountId, "background");
+      if (cancelled) return;
+
       if (result.refreshed) {
         onRecovered?.();
-      } else if (result.reason === "failed") {
+        return;
+      }
+
+      if (result.reason === "locked" || result.reason === "fresh") {
+        retryTimeoutRef.current = window.setTimeout(() => {
+          retryTimeoutRef.current = null;
+          if (cancelled) return;
+          attemptedRef.current = false;
+          onRecovered?.();
+        }, 1500);
+        return;
+      }
+
+      if (result.reason === "failed") {
         attemptedRef.current = false;
       }
     });
+
+    return () => {
+      cancelled = true;
+      if (retryTimeoutRef.current != null) {
+        window.clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
+    };
   }, [accountId, onRecovered, shouldRecover, startTransition]);
 
   if (!shouldRecover) return null;

@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Package } from "lucide-react";
 import { ItemGrid } from "@/components/item/ItemGrid";
 import { RankFilter } from "@/components/hero/RankFilter";
+import { DataFreshness } from "@/components/ui/DataFreshness";
 import type { ItemWithStats } from "@/components/item/ItemCard";
 import type { DeadlockItemStats } from "@/lib/api/types";
 import { parseRankTier } from "@/lib/utils/heroAnalytics";
@@ -30,9 +31,10 @@ interface ItemsClientViewProps {
   shopableItems: ShopableItem[];
   itemStats: DeadlockItemStats[];
   rankOptions: RankOption[];
+  fetchedAt: string;
 }
 
-export function ItemsClientView({ shopableItems, itemStats, rankOptions }: ItemsClientViewProps) {
+export function ItemsClientView({ shopableItems, itemStats, rankOptions, fetchedAt }: ItemsClientViewProps) {
   const searchParams = useSearchParams();
   const validMinTier = parseRankTier(searchParams.get("rank") ?? undefined);
 
@@ -101,6 +103,9 @@ export function ItemsClientView({ shopableItems, itemStats, rankOptions }: Items
             <div className="mt-3 inline-flex items-center gap-2 rounded-full glass-panel px-4 py-1.5 text-xs text-text-secondary">
               <Package className="h-3.5 w-3.5 text-amber" />
               <span className="font-mono">{itemsWithStats.length}</span> items tracked
+            </div>
+            <div className="mt-3">
+              <DataFreshness fetchedAt={fetchedAt} />
             </div>
           </div>
 

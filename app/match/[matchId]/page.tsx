@@ -1,5 +1,3 @@
-export const revalidate = 604800; // ISR: cache match detail for 7 days (immutable after completion)
-
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Header } from "@/components/layout/Header";
@@ -20,6 +18,8 @@ import {
 } from "@/lib/api";
 import type { SteamPlayerSummary, DeadlockItem } from "@/lib/api";
 import { FadeIn } from "@/components/motion";
+
+export const dynamic = "force-dynamic";
 
 // Return empty array — matches are generated on-demand and then cached via ISR
 export async function generateStaticParams() {

@@ -9,7 +9,8 @@ import { SigilBackground } from "@/components/layout/SigilBackground";
 import { ArtDecoDivider } from "@/components/layout/ArtDecoDivider";
 import { HeroSearchSection } from "@/components/search/HeroSearchSection";
 import { FadeIn, ScrollReveal, GlowCard, CountUp, StaggerList, StaggerItem } from "@/components/motion";
-import { getHeroes, getApiInfo } from "@/lib/api";
+import { getHeroes, getApiInfoSnapshot } from "@/lib/api";
+import { DataFreshness } from "@/components/ui/DataFreshness";
 
 export const metadata: Metadata = {
   title: {
@@ -30,10 +31,11 @@ export const metadata: Metadata = {
 };
 
 export default async function Home() {
-  const [heroes, apiInfo] = await Promise.all([
+  const [heroes, apiInfoSnapshot] = await Promise.all([
     getHeroes().catch(() => []),
-    getApiInfo().catch(() => null),
+    getApiInfoSnapshot(),
   ]);
+  const apiInfo = apiInfoSnapshot.data;
 
   const playableCount = heroes.filter(
     (h) => h.player_selectable !== false && !h.disabled && !h.in_development,
@@ -128,7 +130,9 @@ export default async function Home() {
 
             {/* Trust bar — inline stats below search */}
             <FadeIn delay={0.9} triggerOnScroll={false}>
-              <div className="mt-8 flex items-center gap-6 sm:gap-10">
+              <div className="mt-8 flex flex-col items-center gap-4">
+                <DataFreshness fetchedAt={apiInfoSnapshot.fetchedAt} label="Dataset updated" />
+                <div className="flex items-center gap-6 sm:gap-10">
                 {[
                   { value: totalPlayers || null, label: "Players" },
                   { value: totalMatches || null, label: "Matches" },
@@ -147,6 +151,7 @@ export default async function Home() {
                     </span>
                   </div>
                 ))}
+                </div>
               </div>
             </FadeIn>
           </div>

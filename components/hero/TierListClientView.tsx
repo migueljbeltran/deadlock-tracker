@@ -5,8 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Crown, TrendingUp } from "lucide-react";
 import { RankFilter } from "@/components/hero/RankFilter";
-import { PageRefreshButton } from "@/components/ui/PageRefreshButton";
-import { refreshTierList } from "@/app/heroes/actions";
+import { DataFreshness } from "@/components/ui/DataFreshness";
 import { cn } from "@/lib/utils/cn";
 import { FadeIn } from "@/components/motion";
 import type { DeadlockHeroAnalytics } from "@/lib/api/types";
@@ -47,9 +46,10 @@ interface TierListClientViewProps {
   playableHeroes: PlayableHero[];
   analytics: DeadlockHeroAnalytics[];
   rankOptions: RankOption[];
+  fetchedAt: string;
 }
 
-export function TierListClientView({ playableHeroes, analytics, rankOptions }: TierListClientViewProps) {
+export function TierListClientView({ playableHeroes, analytics, rankOptions, fetchedAt }: TierListClientViewProps) {
   const searchParams = useSearchParams();
   const validMinTier = parseRankTier(searchParams.get("rank") ?? undefined);
 
@@ -99,10 +99,12 @@ export function TierListClientView({ playableHeroes, analytics, rankOptions }: T
                 ? `Heroes ranked by win rate and pick rate in ${activeRank.name}+ bracket.`
                 : "Heroes ranked by win rate and pick rate across all brackets."}
             </p>
+            <div className="mt-3">
+              <DataFreshness fetchedAt={fetchedAt} />
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <PageRefreshButton action={refreshTierList} />
             <RankFilter
               ranks={rankOptions}
               currentMinTier={validMinTier}

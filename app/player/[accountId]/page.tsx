@@ -1,4 +1,3 @@
-export const revalidate = 604800; // Keep player profile shell on a long ISR window for cost efficiency.
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Header } from "@/components/layout/Header";
@@ -6,7 +5,9 @@ import { Footer } from "@/components/layout/Footer";
 import { SigilBackground } from "@/components/layout/SigilBackground";
 import { PlayerSearchBar } from "@/components/search/PlayerSearchBar";
 import PlayerContent from "@/components/player/PlayerContent";
-import { getHeroes, getPlayerIdentity, getRanks } from "@/lib/api";
+import { getHeroes, getRanks } from "@/lib/api";
+
+export const dynamic = "force-dynamic";
 
 // Return empty array — player pages are generated on-demand and then cached via ISR
 export async function generateStaticParams() {
@@ -31,26 +32,18 @@ export async function generateMetadata(
     return { title: "Player Not Found", robots: { index: false } };
   }
 
-  const player = await getPlayerIdentity(Number(raw));
-
-  if (!player) {
-    return { title: "Player Not Found", robots: { index: false } };
-  }
-
   return {
-    title: `${player.personaname} — Deadlock Player Stats`,
-    description: `Deadlock stats, match history, and hero performance for ${player.personaname}. View win rates, recent matches, and top heroes.`,
+    title: `Player ${raw} — Deadlock Player Stats`,
+    description: `Deadlock stats, match history, and hero performance for player ${raw}. View win rates, recent matches, and top heroes.`,
     alternates: {
       canonical: `/player/${raw}`,
     },
     openGraph: {
-      title: `${player.personaname} — Deadlock Player Stats`,
-      description: `Deadlock stats and match history for ${player.personaname}.`,
+      title: `Player ${raw} — Deadlock Player Stats`,
+      description: `Deadlock stats and match history for player ${raw}.`,
       url: `/player/${raw}`,
-      images: player.avatarfull
-        ? [{ url: player.avatarfull, alt: player.personaname }]
-        : undefined,
     },
+    robots: { index: false },
   };
 }
 

@@ -28,6 +28,12 @@ export type { DeadlockRegion, LeaderboardSearchMatch } from "./deadlock";
 export { resolveAccountIds } from "./resolve";
 export type { ResolvableEntry, ResolvedAccount } from "./resolve";
 export { getPlayerIdentity } from "./player";
+export {
+  getApiInfoSnapshot,
+  getHeroAnalyticsSnapshot,
+  getItemStatsSnapshot,
+} from "@/lib/publicSnapshots";
+export { getResolvedLeaderboardSnapshot } from "@/lib/leaderboardSnapshot";
 
 // Steam API
 export {

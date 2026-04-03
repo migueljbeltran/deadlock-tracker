@@ -40,3 +40,15 @@ export function formatTimeAgo(input: string | number): string {
 export function formatNumber(n: number): string {
   return n.toLocaleString("en-US");
 }
+
+export function formatUpdatedAt(input: string): string {
+  const date = new Date(input);
+  if (Number.isNaN(date.getTime())) return "recently";
+
+  return date.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}

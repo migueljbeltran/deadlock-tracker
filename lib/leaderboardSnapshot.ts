@@ -1,7 +1,10 @@
 import "server-only";
 
-import type { DeadlockLeaderboardEntry, DeadlockRegion, ResolvedAccount } from "@/lib/api";
-import { getLeaderboard, resolveAccountIds } from "@/lib/api";
+import type { DeadlockLeaderboardEntry } from "@/lib/api/types";
+import type { DeadlockRegion } from "@/lib/api/deadlock";
+import type { ResolvedAccount } from "@/lib/api/resolve";
+import { getLeaderboard } from "@/lib/api/deadlock";
+import { resolveAccountIds } from "@/lib/api/resolve";
 import { cacheDelete, cacheGet, cacheSet, cacheSetIfNotExists, isCacheAvailable } from "@/lib/cache";
 import logger from "@/lib/logger";
 
@@ -56,8 +59,12 @@ async function buildResolvedLeaderboardSnapshot(region: DeadlockRegion): Promise
 }
 
 export async function getResolvedLeaderboard(region: DeadlockRegion): Promise<ResolvedLeaderboardEntry[]> {
+  return (await getResolvedLeaderboardSnapshot(region)).entries;
+}
+
+export async function getResolvedLeaderboardSnapshot(region: DeadlockRegion): Promise<ResolvedLeaderboardSnapshot> {
   if (!isCacheAvailable()) {
-    return (await buildResolvedLeaderboardSnapshot(region)).entries;
+    return buildResolvedLeaderboardSnapshot(region);
   }
 
   const key = getSnapshotKey(region);
@@ -66,35 +73,38 @@ export async function getResolvedLeaderboard(region: DeadlockRegion): Promise<Re
     const lockAcquired = await cacheSetIfNotExists(getSnapshotLockKey(region), "1", SNAPSHOT_LOCK_TTL_SECONDS);
     if (!lockAcquired) {
       const liveEntries = await getLeaderboard(region);
-      return liveEntries.map((entry) => ({
-        ...entry,
-        resolvedAccountId: entry.possible_account_ids[0] ?? null,
-        confident: entry.possible_account_ids.length === 1,
-      }));
+      return {
+        fetchedAt: new Date().toISOString(),
+        entries: liveEntries.map((entry) => ({
+          ...entry,
+          resolvedAccountId: entry.possible_account_ids[0] ?? null,
+          confident: entry.possible_account_ids.length === 1,
+        })),
+      };
     }
 
     try {
-      return (await buildResolvedLeaderboardSnapshot(region)).entries;
+      return await buildResolvedLeaderboardSnapshot(region);
     } finally {
       await cacheDelete(getSnapshotLockKey(region));
     }
   }
 
   if (!isSnapshotStale(cached)) {
-    return cached.entries;
+    return cached;
   }
 
   const lockAcquired = await cacheSetIfNotExists(getSnapshotLockKey(region), "1", SNAPSHOT_LOCK_TTL_SECONDS);
   if (!lockAcquired) {
     logger.info({ region }, "Resolved leaderboard snapshot stale; serving stale data");
-    return cached.entries;
+    return cached;
   }
 
   try {
-    return (await buildResolvedLeaderboardSnapshot(region)).entries;
+    return await buildResolvedLeaderboardSnapshot(region);
   } catch (error) {
     logger.warn({ region, error }, "Resolved leaderboard snapshot rebuild failed; serving stale data");
-    return cached.entries;
+    return cached;
   } finally {
     await cacheDelete(getSnapshotLockKey(region));
   }

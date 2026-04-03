@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { Shield } from "lucide-react";
 import { HeroGrid } from "@/components/hero/HeroGrid";
 import { RankFilter } from "@/components/hero/RankFilter";
+import { DataFreshness } from "@/components/ui/DataFreshness";
 import type { HeroWithStats } from "@/components/hero/HeroCard";
 import type { DeadlockHeroAnalytics } from "@/lib/api/types";
 import { aggregateHeroAnalytics, parseRankTier } from "@/lib/utils/heroAnalytics";
@@ -26,9 +27,10 @@ interface HeroesClientViewProps {
   playableHeroes: PlayableHero[];
   analytics: DeadlockHeroAnalytics[];
   rankOptions: RankOption[];
+  fetchedAt: string;
 }
 
-export function HeroesClientView({ playableHeroes, analytics, rankOptions }: HeroesClientViewProps) {
+export function HeroesClientView({ playableHeroes, analytics, rankOptions, fetchedAt }: HeroesClientViewProps) {
   const searchParams = useSearchParams();
   const validMinTier = parseRankTier(searchParams.get("rank") ?? undefined);
 
@@ -70,6 +72,9 @@ export function HeroesClientView({ playableHeroes, analytics, rankOptions }: Her
             <div className="mt-3 inline-flex items-center gap-2 rounded-full glass-panel px-4 py-1.5 text-xs text-text-secondary">
               <Shield className="h-3.5 w-3.5 text-sigil" />
               <span className="font-mono">{playableHeroes.length}</span> playable heroes
+            </div>
+            <div className="mt-3">
+              <DataFreshness fetchedAt={fetchedAt} />
             </div>
           </div>
 

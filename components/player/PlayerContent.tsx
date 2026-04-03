@@ -120,7 +120,8 @@ export default function PlayerContent({ accountId, heroes, ranks }: PlayerConten
   const estimatedRank = snapshot.rankEstimate
     ? rankMap.get(snapshot.rankEstimate.tier) ?? null
     : null;
-  const matchesUnavailable = snapshot.status === "partial" && snapshot.matches.length === 0;
+  const matchesUnavailable = snapshot.matchDataIncomplete === true
+    || (snapshot.status === "partial" && snapshot.matches.length === 0);
   const heroStatsUnavailable = snapshot.status === "partial" && snapshot.heroStats.length === 0;
   const metricsUnavailable = snapshot.status === "partial" && snapshot.metrics == null;
 
