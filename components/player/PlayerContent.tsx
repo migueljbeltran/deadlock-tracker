@@ -6,7 +6,7 @@ import { CareerStats } from "@/components/player/CareerStats";
 import { PlayerPercentiles } from "@/components/player/PlayerPercentiles";
 import { PlayerMatchSection } from "@/components/player/PlayerMatchSection";
 import { FadeIn } from "@/components/motion";
-import type { DeadlockPlayerMetrics } from "@/lib/api";
+import type { DeadlockPlayerMetrics, DeadlockPlayerHeroStat, DeadlockMatchMetadata } from "@/lib/api";
 import {
   getPlayerIdentity,
   getPlayerHeroStats,
@@ -73,8 +73,8 @@ interface PlayerContentProps {
 export default async function PlayerContent({ accountId }: PlayerContentProps) {
   const [player, heroStats, allMatches, heroes, ranks, playerMetrics] = await Promise.all([
     getPlayerIdentity(accountId),
-    getPlayerHeroStats(accountId),
-    getMatchHistory(accountId, FETCH_LIMIT),
+    getPlayerHeroStats(accountId).catch(() => [] as DeadlockPlayerHeroStat[]),
+    getMatchHistory(accountId, FETCH_LIMIT).catch(() => [] as DeadlockMatchMetadata[]),
     getHeroes(),
     getRanks(),
     getPlayerMetrics(accountId).catch(() => null as DeadlockPlayerMetrics | null),
