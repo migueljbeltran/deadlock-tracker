@@ -1,7 +1,10 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { refreshPlayerSnapshot } from "@/lib/playerSnapshot";
 
-export async function refreshPlayerData(accountId: number) {
-  revalidatePath(`/player/${accountId}`);
+export async function refreshPlayerData(
+  accountId: number,
+  mode: "manual" | "background" = "manual",
+) {
+  return refreshPlayerSnapshot(accountId, mode);
 }

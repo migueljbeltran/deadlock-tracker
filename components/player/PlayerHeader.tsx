@@ -6,9 +6,16 @@ interface PlayerHeaderProps {
   accountId: number;
   estimatedRank: DeadlockRank | null;
   estimatedSubrank?: number | null;
+  rankUnavailable?: boolean;
 }
 
-export function PlayerHeader({ player, accountId, estimatedRank, estimatedSubrank }: PlayerHeaderProps) {
+export function PlayerHeader({
+  player,
+  accountId,
+  estimatedRank,
+  estimatedSubrank,
+  rankUnavailable = false,
+}: PlayerHeaderProps) {
   return (
     <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
       {/* Avatar with triple-ring effect */}
@@ -71,6 +78,8 @@ export function PlayerHeader({ player, accountId, estimatedRank, estimatedSubran
             </span>
             <span className="text-xs text-text-muted">(Estimated)</span>
           </div>
+        ) : rankUnavailable ? (
+          <p className="mt-3 text-sm text-text-muted">Rank unavailable right now</p>
         ) : (
           <p className="mt-3 text-sm text-text-muted">Unranked</p>
         )}

@@ -1,17 +1,16 @@
 import Link from "next/link";
 import Image from "next/image";
-import type { DeadlockMatchMetadata, DeadlockHero } from "@/lib/api";
+import type { PlayerMatchSummary, DeadlockHero } from "@/lib/api";
 import { formatDuration, formatTimeAgo } from "@/lib/utils/format";
 import { StaggerList, StaggerItem } from "@/components/motion";
 import { cn } from "@/lib/utils/cn";
 
 interface MatchHistoryListProps {
-  matches: DeadlockMatchMetadata[];
-  accountId: number;
+  matches: PlayerMatchSummary[];
   heroMap: Map<number, DeadlockHero>;
 }
 
-export function MatchHistoryList({ matches, accountId, heroMap }: MatchHistoryListProps) {
+export function MatchHistoryList({ matches, heroMap }: MatchHistoryListProps) {
   if (matches.length === 0) {
     return (
       <p className="text-sm text-text-muted">
@@ -23,11 +22,10 @@ export function MatchHistoryList({ matches, accountId, heroMap }: MatchHistoryLi
   return (
     <StaggerList staggerDelay={0.04} className="space-y-2">
       {matches.map((match) => {
-        const playerData = match.players?.find((p) => p.account_id === accountId);
-        const isVictory = playerData
-          ? playerData.team === match.winning_team
+        const isVictory = match.player_team != null
+          ? match.player_team === match.winning_team
           : false;
-        const hero = playerData ? heroMap.get(playerData.hero_id) : null;
+        const hero = match.hero_id != null ? heroMap.get(match.hero_id) : null;
 
         return (
           <StaggerItem key={match.match_id}>
@@ -80,13 +78,13 @@ export function MatchHistoryList({ matches, accountId, heroMap }: MatchHistoryLi
               </div>
 
               {/* K/D/A */}
-              {playerData && (
+              {match.kills != null && match.deaths != null && match.assists != null && (
                 <div className="flex items-center gap-1 text-xs">
-                  <span className="font-mono text-soul">{playerData.kills}</span>
+                  <span className="font-mono text-soul">{match.kills}</span>
                   <span className="text-text-muted">/</span>
-                  <span className="font-mono text-blood">{playerData.deaths}</span>
+                  <span className="font-mono text-blood">{match.deaths}</span>
                   <span className="text-text-muted">/</span>
-                  <span className="font-mono text-sigil">{playerData.assists}</span>
+                  <span className="font-mono text-sigil">{match.assists}</span>
                 </div>
               )}
 

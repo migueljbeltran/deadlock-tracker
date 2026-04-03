@@ -19,6 +19,10 @@ function getRedis(): Redis | null {
   return redis;
 }
 
+export function isCacheAvailable(): boolean {
+  return getRedis() != null;
+}
+
 /**
  * Get a cached value by key. Returns null on miss or Redis error.
  */
@@ -49,6 +53,36 @@ export async function cacheSet<T>(key: string, value: T, ttlSeconds: number): Pr
     await client.set(`${PREFIX}${key}`, value, { ex: ttlSeconds });
   } catch (err) {
     logger.warn({ err, key }, "Cache set failed");
+  }
+}
+
+/**
+ * Store a value only if the key does not already exist.
+ */
+export async function cacheSetIfNotExists<T>(key: string, value: T, ttlSeconds: number): Promise<boolean> {
+  const client = getRedis();
+  if (!client) return false;
+
+  try {
+    const result = await client.set(`${PREFIX}${key}`, value, { ex: ttlSeconds, nx: true });
+    return result === "OK";
+  } catch (err) {
+    logger.warn({ err, key }, "Cache set-if-not-exists failed");
+    return false;
+  }
+}
+
+/**
+ * Delete a cached value. Silently swallows errors.
+ */
+export async function cacheDelete(key: string): Promise<void> {
+  const client = getRedis();
+  if (!client) return;
+
+  try {
+    await client.del(`${PREFIX}${key}`);
+  } catch (err) {
+    logger.warn({ err, key }, "Cache delete failed");
   }
 }
 

@@ -20,12 +20,33 @@ const ASSETS_API = "https://assets.deadlock-api.com";
 const GAME_API = "https://api.deadlock-api.com";
 
 const MAX_RETRIES = 2;
+const PLAYER_DATA_REVALIDATE_SECONDS = 604800;
 
-async function deadlockFetch<T>(url: string, revalidate: number): Promise<T> {
+interface DeadlockFetchOptions {
+  revalidate?: number;
+  tags?: string[];
+  cache?: RequestCache;
+}
+
+export function getPlayerDataTag(accountId: number): string {
+  return `player:${accountId}`;
+}
+
+async function deadlockFetch<T>(url: string, options: DeadlockFetchOptions): Promise<T> {
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     let res: Response;
     try {
-      res = await fetch(url, { next: { revalidate }, signal: AbortSignal.timeout(10_000) });
+      const fetchOptions: RequestInit & { next?: { revalidate?: number; tags?: string[] } } = {
+        signal: AbortSignal.timeout(10_000),
+      };
+
+      if (options.cache != null) {
+        fetchOptions.cache = options.cache;
+      } else {
+        fetchOptions.next = { revalidate: options.revalidate, tags: options.tags };
+      }
+
+      res = await fetch(url, fetchOptions);
     } catch (err) {
       if (err instanceof Error && (err.name === "AbortError" || err.name === "TimeoutError")) {
         logger.error({ url }, "Deadlock API timeout");
@@ -58,14 +79,14 @@ async function deadlockFetch<T>(url: string, revalidate: number): Promise<T> {
 export async function getHeroes(): Promise<DeadlockHero[]> {
   return deadlockFetch<DeadlockHero[]>(
     `${ASSETS_API}/v2/heroes`,
-    604800,
+    { revalidate: 604800 },
   );
 }
 
 export async function getHero(heroId: number): Promise<DeadlockHero> {
   return deadlockFetch<DeadlockHero>(
     `${ASSETS_API}/v2/heroes/${heroId}`,
-    604800,
+    { revalidate: 604800 },
   );
 }
 
@@ -115,14 +136,14 @@ export async function getItemStats(minBadge?: number): Promise<DeadlockItemStats
   const params = minBadge != null ? `?min_average_badge=${minBadge}` : "";
   return deadlockFetch<DeadlockItemStats[]>(
     `${GAME_API}/v1/analytics/item-stats${params}`,
-    604800,
+    { revalidate: 604800 },
   );
 }
 
 export async function getRanks(): Promise<DeadlockRank[]> {
   return deadlockFetch<DeadlockRank[]>(
     `${ASSETS_API}/v2/ranks`,
-    604800,
+    { revalidate: 604800 },
   );
 }
 
@@ -133,7 +154,7 @@ export async function getPlayerHeroStats(
 ): Promise<DeadlockPlayerHeroStat[]> {
   return deadlockFetch<DeadlockPlayerHeroStat[]>(
     `${GAME_API}/v1/players/hero-stats?account_ids=${accountId}`,
-    604800,
+    { revalidate: PLAYER_DATA_REVALIDATE_SECONDS, tags: [getPlayerDataTag(accountId)] },
   );
 }
 
@@ -143,7 +164,7 @@ export async function getBatchPlayerHeroStats(
   if (accountIds.length === 0) return [];
   return deadlockFetch<DeadlockPlayerHeroStat[]>(
     `${GAME_API}/v1/players/hero-stats?account_ids=${accountIds.join(",")}`,
-    604800,
+    { revalidate: PLAYER_DATA_REVALIDATE_SECONDS },
   );
 }
 
@@ -153,7 +174,7 @@ export async function getMatchHistory(
 ): Promise<DeadlockMatchMetadata[]> {
   return deadlockFetch<DeadlockMatchMetadata[]>(
     `${GAME_API}/v1/matches/metadata?account_ids=${accountId}&include_player_info=true&limit=${limit}&order_by=start_time&order_direction=desc`,
-    604800,
+    { cache: "no-store" },
   );
 }
 
@@ -165,7 +186,7 @@ export async function getMatchDetail(
   // a different schema with numeric enums instead of strings.
   const results = await deadlockFetch<DeadlockMatchMetadata[]>(
     `${GAME_API}/v1/matches/metadata?min_match_id=${matchId}&max_match_id=${matchId}&include_player_info=true`,
-    604800,
+    { revalidate: 604800 },
   );
   if (results.length === 0) {
     throw new ApiError("Match not found", 404, `matches/${matchId}`);
@@ -191,7 +212,7 @@ export async function getMatchPlayerItems(
 
   const data = await deadlockFetch<RawMatchDetail>(
     `${GAME_API}/v1/matches/${matchId}/metadata`,
-    604800,
+    { revalidate: 604800 },
   );
 
   const result = new Map<number, number[]>();
@@ -211,14 +232,14 @@ export async function getMatchPlayerItems(
 export async function getApiInfo(): Promise<DeadlockApiInfo> {
   return deadlockFetch<DeadlockApiInfo>(
     `${GAME_API}/v1/info`,
-    604800,
+    { revalidate: 604800 },
   );
 }
 
 export async function getHeroAnalytics(): Promise<DeadlockHeroAnalytics[]> {
   return deadlockFetch<DeadlockHeroAnalytics[]>(
     `${GAME_API}/v1/analytics/hero-stats?bucket=avg_badge`,
-    604800,
+    { revalidate: 604800 },
   );
 }
 
@@ -227,7 +248,7 @@ export async function getPlayerMetrics(
 ): Promise<DeadlockPlayerMetrics> {
   return deadlockFetch<DeadlockPlayerMetrics>(
     `${GAME_API}/v1/analytics/player-stats/metrics?account_ids=${accountId}`,
-    604800,
+    { revalidate: PLAYER_DATA_REVALIDATE_SECONDS, tags: [getPlayerDataTag(accountId)] },
   );
 }
 
@@ -243,7 +264,7 @@ export async function getLeaderboard(
 ): Promise<DeadlockLeaderboardEntry[]> {
   const data = await deadlockFetch<{ entries: DeadlockLeaderboardEntry[] }>(
     `${GAME_API}/v1/leaderboard/${region}`,
-    604800,
+    { revalidate: 604800 },
   );
   return data.entries;
 }

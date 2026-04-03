@@ -4,19 +4,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { Medal } from "lucide-react";
 import { motion } from "framer-motion";
-import type { DeadlockLeaderboardEntry, DeadlockRank, DeadlockHero } from "@/lib/api";
+import type { DeadlockRank, DeadlockHero } from "@/lib/api";
 import { cn } from "@/lib/utils/cn";
-
-interface ResolvedAccount {
-  accountId: number;
-  confident: boolean;
-}
+import type { ResolvedLeaderboardEntry } from "@/lib/leaderboardSnapshot";
 
 interface LeaderboardTableProps {
-  entries: DeadlockLeaderboardEntry[];
+  entries: ResolvedLeaderboardEntry[];
   rankMap: Map<number, DeadlockRank>;
   heroMap: Map<number, DeadlockHero>;
-  resolvedAccountIds?: Map<number, ResolvedAccount>;
 }
 
 const rowVariants = {
@@ -32,7 +27,6 @@ export function LeaderboardTable({
   entries,
   rankMap,
   heroMap,
-  resolvedAccountIds,
 }: LeaderboardTableProps) {
   if (entries.length === 0) {
     return (
@@ -60,10 +54,8 @@ export function LeaderboardTable({
         >
           {entries.map((entry, idx) => {
             const rank = rankMap.get(entry.ranked_rank);
-            const resolved = resolvedAccountIds?.get(idx);
-            const playerAccountId = resolved?.accountId
-              ?? (entry.possible_account_ids.length > 0 ? entry.possible_account_ids[0] : null);
-            const isConfident = resolved?.confident ?? (entry.possible_account_ids.length === 1);
+            const playerAccountId = entry.resolvedAccountId;
+            const isConfident = entry.confident;
 
             const isTop1 = entry.rank === 1;
             const isTop2 = entry.rank === 2;
@@ -71,7 +63,7 @@ export function LeaderboardTable({
 
             return (
               <motion.tr
-                key={idx}
+                key={`${entry.rank}-${entry.account_name}-${idx}`}
                 variants={rowVariants}
                 className={cn(
                   "border-b border-border-subtle hover:bg-[rgba(31,41,55,0.4)] hover:translate-x-0.5 transition-all",

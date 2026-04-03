@@ -7,7 +7,7 @@ import { RecentForm } from "@/components/player/RecentForm";
 import { Pagination } from "@/components/ui/Pagination";
 import { RefreshButton } from "@/components/player/RefreshButton";
 import { FadeIn } from "@/components/motion";
-import type { DeadlockMatchMetadata, DeadlockHero } from "@/lib/api";
+import type { PlayerMatchSummary, DeadlockHero } from "@/lib/api";
 
 const MATCH_PAGE_SIZE = 20;
 const MAX_MATCH_PAGES = 5;
@@ -19,12 +19,20 @@ interface HeroEntry {
 }
 
 interface PlayerMatchSectionProps {
-  allMatches: DeadlockMatchMetadata[];
+  allMatches: PlayerMatchSummary[];
   accountId: number;
   heroEntries: HeroEntry[];
+  matchesUnavailable?: boolean;
+  onRefresh?: () => void;
 }
 
-export function PlayerMatchSection({ allMatches, accountId, heroEntries }: PlayerMatchSectionProps) {
+export function PlayerMatchSection({
+  allMatches,
+  accountId,
+  heroEntries,
+  matchesUnavailable = false,
+  onRefresh,
+}: PlayerMatchSectionProps) {
   const searchParams = useSearchParams();
   const pageParam = searchParams.get("page");
 
@@ -55,20 +63,25 @@ export function PlayerMatchSection({ allMatches, accountId, heroEntries }: Playe
             <h2 className="font-heading text-xl text-amber">
               Match History
             </h2>
-            <RefreshButton accountId={accountId} />
+            <RefreshButton accountId={accountId} onRefreshed={onRefresh} />
           </div>
-          <RecentForm matches={allMatches.slice(0, 20)} accountId={accountId} />
+          {!matchesUnavailable ? <RecentForm matches={allMatches.slice(0, 20)} /> : null}
         </div>
       </FadeIn>
       <div className="glass-panel rounded-xl p-6">
-        <MatchHistoryList
-          matches={pageMatches}
-          accountId={accountId}
-          heroMap={heroMap}
-        />
+        {matchesUnavailable ? (
+          <div className="rounded-lg border border-border-subtle bg-surface-elevated/30 px-4 py-5 text-sm text-text-secondary">
+            Match history is temporarily unavailable. Use refresh to retry.
+          </div>
+        ) : (
+          <MatchHistoryList
+            matches={pageMatches}
+            heroMap={heroMap}
+          />
+        )}
         <Pagination
           currentPage={page}
-          hasNextPage={hasNextPage}
+          hasNextPage={!matchesUnavailable && hasNextPage}
           baseUrl={`/player/${accountId}`}
         />
       </div>

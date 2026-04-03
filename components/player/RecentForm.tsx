@@ -1,18 +1,14 @@
-import type { DeadlockMatchMetadata } from "@/lib/api";
+import type { PlayerMatchSummary } from "@/lib/api";
 
 interface RecentFormProps {
-  matches: DeadlockMatchMetadata[];
-  accountId: number;
+  matches: PlayerMatchSummary[];
 }
 
-export function RecentForm({ matches, accountId }: RecentFormProps) {
+export function RecentForm({ matches }: RecentFormProps) {
   if (matches.length === 0) return null;
 
   // Determine W/L for each match
-  const results = matches.map((match) => {
-    const playerData = match.players?.find((p) => p.account_id === accountId);
-    return playerData ? playerData.team === match.winning_team : false;
-  });
+  const results = matches.map((match) => match.player_team === match.winning_team);
 
   // Current streak
   let streakCount = 1;

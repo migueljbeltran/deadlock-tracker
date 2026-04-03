@@ -214,6 +214,21 @@ export interface DeadlockPlayerMetrics {
   };
 }
 
+export interface PlayerMatchSummary {
+  match_id: number;
+  start_time: string;
+  duration_s: number;
+  winning_team: string;
+  match_mode?: string;
+  average_badge_team0?: number | null;
+  average_badge_team1?: number | null;
+  player_team?: string;
+  hero_id?: number;
+  kills?: number;
+  deaths?: number;
+  assists?: number;
+}
+
 export interface DeadlockLeaderboardEntry {
   account_name: string;
   possible_account_ids: number[];
@@ -240,6 +255,49 @@ export interface DeadlockApiInfo {
     };
   };
 }
+
+export interface PlayerRankEstimate {
+  tier: number;
+  subrank: number;
+}
+
+export interface GlobalPlayerMetricThresholds {
+  median: number | null;
+  p75: number | null;
+  p90: number | null;
+  p95: number | null;
+  mean?: number | null;
+  sampleSize?: number | null;
+}
+
+export interface GlobalPlayerMetricsBenchmark {
+  fetchedAt: string;
+  metrics: Record<string, GlobalPlayerMetricThresholds>;
+}
+
+export interface PlayerSnapshot {
+  player: SteamPlayerSummary;
+  heroStats: DeadlockPlayerHeroStat[];
+  matches: PlayerMatchSummary[];
+  metrics: DeadlockPlayerMetrics | null;
+  rankEstimate: PlayerRankEstimate | null;
+  status: "complete" | "partial";
+  fetchedAt: string;
+}
+
+export type PlayerSnapshotResponse =
+  | {
+    success: true;
+    snapshot: PlayerSnapshot;
+    benchmark: GlobalPlayerMetricsBenchmark | null;
+    isStale: boolean;
+    shouldRefresh: boolean;
+  }
+  | {
+    success: false;
+    error: string;
+    notFound?: boolean;
+  };
 
 // ============================================================
 // API Error

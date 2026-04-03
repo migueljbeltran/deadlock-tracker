@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Search } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { SearchResults, type SearchResult } from "./SearchResults";
@@ -14,12 +14,14 @@ interface SearchBarProps {
 
 export function SearchBar({ onPlayerFound }: SearchBarProps) {
   const router = useRouter();
+  const [isNavigating, startTransition] = useTransition();
   const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [dropdownMaxH, setDropdownMaxH] = useState<number | undefined>(undefined);
+  const [pendingPlayerName, setPendingPlayerName] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -79,17 +81,19 @@ export function SearchBar({ onPlayerFound }: SearchBarProps) {
   };
 
   const handleSelect = (selected: SearchResult) => {
-    setShowDropdown(false);
-    setQuery("");
-
     const name = selected.source === "steam" ? selected.name : selected.accountName;
     const avatar = selected.source === "steam" ? selected.avatar : "";
+    setPendingPlayerName(name);
+    setShowDropdown(false);
+    setQuery("");
     onPlayerFound?.({
       accountId: selected.accountId,
       name,
       avatar,
     });
-    router.push(`/player/${selected.accountId}`);
+    startTransition(() => {
+      router.push(`/player/${selected.accountId}`);
+    });
   };
 
   return (
@@ -112,6 +116,12 @@ export function SearchBar({ onPlayerFound }: SearchBarProps) {
       <p className="mt-2 text-sm text-text-muted">
         Search by Account ID, Steam ID, vanity URL, or profile link
       </p>
+      {isNavigating ? (
+        <div className="mt-3 flex items-center gap-2 rounded-md glass-panel px-3 py-2 text-sm text-text-secondary">
+          <Loader2 className="h-4 w-4 animate-spin text-soul" />
+          Opening {pendingPlayerName ?? "player"}...
+        </div>
+      ) : null}
 
       {/* Dropdown Results */}
       {showDropdown && (isLoading || results.length > 0 || error) && (

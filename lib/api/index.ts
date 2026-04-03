@@ -12,9 +12,15 @@ export type {
   DeadlockMatchPlayer,
   DeadlockHeroAnalytics,
   DeadlockPlayerMetrics,
+  PlayerMatchSummary,
   DeadlockLeaderboardEntry,
   DeadlockItemStats,
   DeadlockApiInfo,
+  PlayerRankEstimate,
+  GlobalPlayerMetricThresholds,
+  GlobalPlayerMetricsBenchmark,
+  PlayerSnapshot,
+  PlayerSnapshotResponse,
 } from "./types";
 
 export { ApiError } from "./types";

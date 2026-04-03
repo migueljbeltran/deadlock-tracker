@@ -1,15 +1,12 @@
-export const revalidate = 604800; // ISR: cache player profile for 7 days (Refresh button handles on-demand updates)
-
-import { Suspense } from "react";
+export const revalidate = 604800; // Keep player profile shell on a long ISR window for cost efficiency.
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { SigilBackground } from "@/components/layout/SigilBackground";
-import { SigilLoader } from "@/components/ui/SigilLoader";
 import { PlayerSearchBar } from "@/components/search/PlayerSearchBar";
 import PlayerContent from "@/components/player/PlayerContent";
-import { getPlayerIdentity } from "@/lib/api";
+import { getHeroes, getPlayerIdentity, getRanks } from "@/lib/api";
 
 // Return empty array — player pages are generated on-demand and then cached via ISR
 export async function generateStaticParams() {
@@ -65,6 +62,7 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
   }
 
   const accountId = Number(raw);
+  const [heroes, ranks] = await Promise.all([getHeroes(), getRanks()]);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -78,20 +76,7 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
           <PlayerSearchBar />
         </div>
 
-        <Suspense
-          fallback={
-            <div className="relative z-10 flex items-center justify-center py-32">
-              <div className="glass-panel rounded-xl px-10 py-8 flex flex-col items-center gap-4 shadow-[var(--glow-soul-ambient)]">
-                <SigilLoader size="lg" />
-                <p className="font-heading text-text-secondary">
-                  Summoning soul records...
-                </p>
-              </div>
-            </div>
-          }
-        >
-          <PlayerContent accountId={accountId} />
-        </Suspense>
+        <PlayerContent accountId={accountId} heroes={heroes} ranks={ranks} />
       </main>
 
       <Footer />

@@ -10,6 +10,12 @@ import logger from "@/lib/logger";
 
 const STEAM_API_BASE = "https://api.steampowered.com";
 const STEAM64_OFFSET = BigInt("76561197960265728");
+const PLAYER_IDENTITY_REVALIDATE_SECONDS = 604800;
+
+interface SteamFetchOptions {
+  revalidate: number;
+  tags?: string[];
+}
 
 function getSteamApiKey(): string {
   const key = process.env.STEAM_API_KEY;
@@ -29,6 +35,10 @@ export function accountIdToSteam64(accountId: number): string {
   return String(BigInt(accountId) + STEAM64_OFFSET);
 }
 
+export function getPlayerIdentityTag(accountId: number): string {
+  return `player:${accountId}`;
+}
+
 export function isValidSteam64(id: string): boolean {
   return /^\d{17}$/.test(id) && BigInt(id) >= STEAM64_OFFSET;
 }
@@ -37,11 +47,14 @@ export function isValidSteam64(id: string): boolean {
 
 const MAX_RETRIES = 2;
 
-async function steamFetch(url: string, revalidate: number): Promise<Response> {
+async function steamFetch(url: string, options: SteamFetchOptions): Promise<Response> {
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     let res: Response;
     try {
-      res = await fetch(url, { next: { revalidate }, signal: AbortSignal.timeout(10_000) });
+      res = await fetch(url, {
+        next: { revalidate: options.revalidate, tags: options.tags },
+        signal: AbortSignal.timeout(10_000),
+      });
     } catch (err) {
       if (err instanceof Error && (err.name === "AbortError" || err.name === "TimeoutError")) {
         logger.error({ url: url.replace(/key=[^&]+/, "key=***") }, "Steam API timeout");
@@ -72,7 +85,7 @@ export async function resolveVanityURL(
   const key = getSteamApiKey();
   const url = `${STEAM_API_BASE}/ISteamUser/ResolveVanityURL/v1/?key=${key}&vanityurl=${encodeURIComponent(vanityName)}`;
 
-  const res = await steamFetch(url, 604800);
+  const res = await steamFetch(url, { revalidate: 604800 });
 
   if (!res.ok) {
     logger.error({ endpoint: "ResolveVanityURL", status: res.status, vanityName }, "Steam API error");
@@ -106,7 +119,11 @@ export async function getPlayerSummaries(
   const ids = steamIds.join(",");
   const url = `${STEAM_API_BASE}/ISteamUser/GetPlayerSummaries/v2/?key=${key}&steamids=${ids}`;
 
-  const res = await steamFetch(url, 604800);
+  const tags = steamIds.length === 1
+    ? [getPlayerIdentityTag(steam64ToAccountId(steamIds[0]))]
+    : undefined;
+  const revalidate = steamIds.length === 1 ? PLAYER_IDENTITY_REVALIDATE_SECONDS : 604800;
+  const res = await steamFetch(url, { revalidate, tags });
 
   if (!res.ok) {
     logger.error({ endpoint: "GetPlayerSummaries", status: res.status }, "Steam API error");

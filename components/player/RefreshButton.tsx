@@ -1,47 +1,69 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState, useTransition, useCallback } from "react";
-import { RefreshCw } from "lucide-react";
+import { AlertCircle, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { refreshPlayerData } from "@/app/player/[accountId]/actions";
 
-const COOLDOWN_MS = 30_000;
-
 interface RefreshButtonProps {
   accountId: number;
+  onRefreshed?: () => void;
 }
 
-export function RefreshButton({ accountId }: RefreshButtonProps) {
-  const router = useRouter();
+export function RefreshButton({ accountId, onRefreshed }: RefreshButtonProps) {
   const [isPending, startTransition] = useTransition();
-  const [onCooldown, setOnCooldown] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleRefresh = useCallback(() => {
-    if (onCooldown) return;
-
-    setOnCooldown(true);
-    setTimeout(() => setOnCooldown(false), COOLDOWN_MS);
+    setError(null);
 
     startTransition(async () => {
-      await refreshPlayerData(accountId);
-      router.refresh();
+      const result = await refreshPlayerData(accountId, "manual");
+      if (result.refreshed) {
+        onRefreshed?.();
+        return;
+      }
+
+      if (result.reason === "throttled") {
+        setError("Try again in a minute");
+        return;
+      }
+
+      if (result.reason === "fresh") {
+        setError("Already up to date");
+        return;
+      }
+
+      if (result.reason === "locked") {
+        setError("Refresh already running");
+        return;
+      }
+
+      setError("Refresh failed");
     });
-  }, [onCooldown, router, startTransition, accountId]);
+  }, [accountId, onRefreshed, startTransition]);
 
   return (
-    <button
-      onClick={handleRefresh}
-      disabled={isPending || onCooldown}
-      title="Refresh match data"
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-full glass-panel px-3 py-1.5 text-xs text-text-secondary transition-all",
-        "hover:text-soul hover:border-soul/30",
-        "disabled:opacity-50 disabled:cursor-not-allowed",
-      )}
-    >
-      <RefreshCw className={cn("h-3 w-3", isPending && "animate-spin")} />
-      {isPending ? "Refreshing..." : "Refresh"}
-    </button>
+    <div className="flex items-center gap-2">
+      <button
+        onClick={handleRefresh}
+        disabled={isPending}
+        title="Refresh match data"
+        className={cn(
+          "inline-flex items-center gap-1.5 rounded-full glass-panel px-3 py-1.5 text-xs text-text-secondary transition-all",
+          "hover:text-soul hover:border-soul/30",
+          "disabled:opacity-50 disabled:cursor-not-allowed",
+        )}
+      >
+        <RefreshCw className={cn("h-3 w-3", isPending && "animate-spin")} />
+        {isPending ? "Refreshing..." : "Refresh"}
+      </button>
+      {error ? (
+        <span className="inline-flex items-center gap-1 text-xs text-blood">
+          <AlertCircle className="h-3.5 w-3.5" />
+          {error}
+        </span>
+      ) : null}
+    </div>
   );
 }

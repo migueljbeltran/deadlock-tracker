@@ -5,15 +5,16 @@ import {
   getPlayerSummary,
   steam64ToAccountId,
   accountIdToSteam64,
-  searchLeaderboardByName,
   resolveAccountIds,
 } from "@/lib/api";
 import { cacheGet, cacheSet } from "@/lib/cache";
+import { searchLeaderboardByNameCached } from "@/lib/leaderboardSearch";
 import { searchQuerySchema } from "@/lib/validations";
 import { checkRateLimit } from "@/lib/ratelimit";
 import logger from "@/lib/logger";
 
-const SEARCH_CACHE_TTL_SECONDS = 3600; // 1 hour — balances Redis storage with search cost savings
+const SEARCH_CACHE_TTL_SECONDS = 86400; // 24 hours — prefer cache hits over repeated search fan-out
+const MAX_RESOLVED_AMBIGUOUS_RESULTS = 5;
 
 type SearchResponseBody =
   | { success: true; results: Array<Record<string, unknown>> }
@@ -140,7 +141,7 @@ export async function GET(request: NextRequest) {
 
     const [vanityResult, leaderboardResults] = await Promise.all([
       resolveVanityURL(query).catch(() => null),
-      searchLeaderboardByName(query),
+      searchLeaderboardByNameCached(query),
     ]);
 
     const results: Array<Record<string, unknown>> = [];
@@ -163,22 +164,34 @@ export async function GET(request: NextRequest) {
 
     if (query.length >= 3) {
       ranLeaderboardSearch = true;
-      const resolvableEntries = leaderboardResults.map((m) => ({
-        account_name: m.accountName,
-        possible_account_ids: m.possibleAccountIds,
-        top_hero_ids: m.topHeroIds,
+      const ambiguousMatches = leaderboardResults
+        .map((m, index) => ({ match: m, index }))
+        .filter(({ match }) => match.possibleAccountIds.length > 1)
+        .slice(0, MAX_RESOLVED_AMBIGUOUS_RESULTS);
+
+      const resolvableEntries = ambiguousMatches.map(({ match }) => ({
+          account_name: match.accountName,
+          possible_account_ids: match.possibleAccountIds,
+          top_hero_ids: match.topHeroIds,
       }));
 
       const resolvedMap = resolvableEntries.length > 0
         ? await resolveAccountIds(resolvableEntries).catch(() => new Map<number, { accountId: number }>())
         : new Map<number, { accountId: number }>();
+      const resolvedByLeaderboardIndex = new Map<number, { accountId: number }>();
+      for (let i = 0; i < ambiguousMatches.length; i++) {
+        const resolved = resolvedMap.get(i);
+        if (resolved) {
+          resolvedByLeaderboardIndex.set(ambiguousMatches[i].index, resolved);
+        }
+      }
 
       ranResolution = resolvableEntries.length > 0;
 
       for (let i = 0; i < leaderboardResults.length; i++) {
         const m = leaderboardResults[i];
-        const resolved = resolvedMap.get(i);
-        const accountId = resolved ? resolved.accountId : m.accountId;
+        const resolved = resolvedByLeaderboardIndex.get(i);
+        const accountId = resolved?.accountId ?? m.accountId;
         if (accountId === steamAccountId) continue;
         results.push({
           source: "leaderboard",

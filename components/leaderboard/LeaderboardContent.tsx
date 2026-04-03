@@ -1,15 +1,12 @@
 import { LeaderboardTable } from "@/components/leaderboard/LeaderboardTable";
 import { RegionSelector } from "@/components/leaderboard/RegionSelector";
 import { Pagination } from "@/components/ui/Pagination";
-import { PageRefreshButton } from "@/components/ui/PageRefreshButton";
-import { refreshLeaderboard } from "@/app/leaderboard/actions";
 import {
-  getLeaderboard,
   getRanks,
   getHeroes,
-  resolveAccountIds,
 } from "@/lib/api";
 import type { DeadlockRegion } from "@/lib/api";
+import { getResolvedLeaderboard } from "@/lib/leaderboardSnapshot";
 
 const PAGE_SIZE = 100;
 
@@ -29,19 +26,15 @@ export default async function LeaderboardContent({ searchParams }: LeaderboardCo
   const rawPage = Number(pageParam);
   const page = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 
-  // Fetch leaderboard first (needed to know which entries to resolve)
-  const entries = await getLeaderboard(region);
+  const entries = await getResolvedLeaderboard(region);
 
   const offset = (page - 1) * PAGE_SIZE;
   const pageEntries = entries.slice(offset, offset + PAGE_SIZE);
   const hasNextPage = entries.length > offset + PAGE_SIZE;
 
-  // Kick off resolution, ranks, and heroes in parallel — resolution only
-  // depends on leaderboard data, not on ranks/heroes
-  const [ranks, heroes, resolvedIds] = await Promise.all([
+  const [ranks, heroes] = await Promise.all([
     getRanks(),
     getHeroes(),
-    resolveAccountIds(pageEntries),
   ]);
 
   const rankMap = new Map(ranks.map((r) => [r.tier, r]));
@@ -60,7 +53,6 @@ export default async function LeaderboardContent({ searchParams }: LeaderboardCo
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <PageRefreshButton action={refreshLeaderboard.bind(null, region)} />
             <RegionSelector currentRegion={region} />
           </div>
         </div>
@@ -70,7 +62,6 @@ export default async function LeaderboardContent({ searchParams }: LeaderboardCo
         entries={pageEntries}
         rankMap={rankMap}
         heroMap={heroMap}
-        resolvedAccountIds={resolvedIds}
       />
 
       <Pagination
