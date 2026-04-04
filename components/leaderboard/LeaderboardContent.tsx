@@ -1,46 +1,74 @@
+"use client";
+
+import { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { LeaderboardTable } from "@/components/leaderboard/LeaderboardTable";
 import { RegionSelector } from "@/components/leaderboard/RegionSelector";
 import { Pagination } from "@/components/ui/Pagination";
-import {
-  getRanks,
-  getHeroes,
-  getResolvedLeaderboardSnapshot,
-} from "@/lib/api";
-import type { DeadlockRegion } from "@/lib/api";
 import { DataFreshness } from "@/components/ui/DataFreshness";
+import { LeaderboardTableSkeleton } from "@/components/leaderboard/LeaderboardTableSkeleton";
+import type { DeadlockRegion, DeadlockHero, DeadlockRank } from "@/lib/api";
+import type { ResolvedLeaderboardEntry } from "@/lib/leaderboardSnapshot";
 
 const PAGE_SIZE = 100;
-
 const VALID_REGIONS: DeadlockRegion[] = ["NAmerica", "SAmerica", "Europe", "Asia", "Oceania"];
 
 interface LeaderboardContentProps {
-  searchParams: Promise<{ region?: string; page?: string }>;
+  heroes: DeadlockHero[];
+  ranks: DeadlockRank[];
 }
 
-export default async function LeaderboardContent({ searchParams }: LeaderboardContentProps) {
-  const { region: regionParam, page: pageParam } = await searchParams;
+interface LeaderboardSnapshot {
+  fetchedAt: string;
+  entries: ResolvedLeaderboardEntry[];
+}
 
+export default function LeaderboardContent({ heroes, ranks }: LeaderboardContentProps) {
+  const searchParams = useSearchParams();
+  const regionParam = searchParams.get("region") ?? "NAmerica";
   const region: DeadlockRegion = VALID_REGIONS.includes(regionParam as DeadlockRegion)
     ? (regionParam as DeadlockRegion)
     : "NAmerica";
-
-  const rawPage = Number(pageParam);
+  const rawPage = Number(searchParams.get("page"));
   const page = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 
-  const leaderboardSnapshot = await getResolvedLeaderboardSnapshot(region);
-  const entries = leaderboardSnapshot.entries;
+  const [snapshot, setSnapshot] = useState<LeaderboardSnapshot | null>(null);
+  const [hasError, setHasError] = useState(false);
+  const [loadedRegion, setLoadedRegion] = useState<string | null>(null);
 
+  // Derived: loading whenever the fetched region doesn't match the requested one.
+  // Avoids synchronous setState at the top of the effect.
+  const isLoading = loadedRegion !== region;
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    fetch(`/api/leaderboard?region=${region}`, { signal: controller.signal })
+      .then((r) => r.json() as Promise<LeaderboardSnapshot>)
+      .then((data) => {
+        if (!controller.signal.aborted) {
+          setSnapshot(data);
+          setHasError(false);
+          setLoadedRegion(region);
+        }
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setHasError(true);
+          setLoadedRegion(region);
+        }
+      });
+
+    return () => controller.abort();
+  }, [region]);
+
+  const rankMap = useMemo(() => new Map(ranks.map((r) => [r.tier, r])), [ranks]);
+  const heroMap = useMemo(() => new Map(heroes.map((h) => [h.id, h])), [heroes]);
+
+  const entries = snapshot?.entries ?? [];
   const offset = (page - 1) * PAGE_SIZE;
   const pageEntries = entries.slice(offset, offset + PAGE_SIZE);
   const hasNextPage = entries.length > offset + PAGE_SIZE;
-
-  const [ranks, heroes] = await Promise.all([
-    getRanks(),
-    getHeroes(),
-  ]);
-
-  const rankMap = new Map(ranks.map((r) => [r.tier, r]));
-  const heroMap = new Map(heroes.map((h) => [h.id, h]));
 
   return (
     <>
@@ -53,9 +81,11 @@ export default async function LeaderboardContent({ searchParams }: LeaderboardCo
             <p className="mt-2 text-text-secondary">
               Top ranked players in Deadlock across all regions.
             </p>
-            <div className="mt-3">
-              <DataFreshness fetchedAt={leaderboardSnapshot.fetchedAt} />
-            </div>
+            {snapshot && (
+              <div className="mt-3">
+                <DataFreshness fetchedAt={snapshot.fetchedAt} />
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <RegionSelector currentRegion={region} />
@@ -63,18 +93,28 @@ export default async function LeaderboardContent({ searchParams }: LeaderboardCo
         </div>
       </div>
 
-      <LeaderboardTable
-        entries={pageEntries}
-        rankMap={rankMap}
-        heroMap={heroMap}
-      />
+      {isLoading ? (
+        <LeaderboardTableSkeleton />
+      ) : hasError ? (
+        <div className="py-16 text-center text-text-secondary">
+          Failed to load leaderboard data. Please try again later.
+        </div>
+      ) : (
+        <>
+          <LeaderboardTable
+            entries={pageEntries}
+            rankMap={rankMap}
+            heroMap={heroMap}
+          />
 
-      <Pagination
-        currentPage={page}
-        hasNextPage={hasNextPage}
-        baseUrl="/leaderboard"
-        extraParams={{ region }}
-      />
+          <Pagination
+            currentPage={page}
+            hasNextPage={hasNextPage}
+            baseUrl="/leaderboard"
+            extraParams={{ region }}
+          />
+        </>
+      )}
     </>
   );
 }

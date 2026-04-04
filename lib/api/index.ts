@@ -32,6 +32,7 @@ export {
   getApiInfoSnapshot,
   getHeroAnalyticsSnapshot,
   getItemStatsSnapshot,
+  getShopableItemsSnapshot,
 } from "@/lib/publicSnapshots";
 export { getResolvedLeaderboardSnapshot } from "@/lib/leaderboardSnapshot";
 

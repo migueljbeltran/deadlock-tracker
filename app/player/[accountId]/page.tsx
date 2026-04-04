@@ -7,7 +7,7 @@ import { PlayerSearchBar } from "@/components/search/PlayerSearchBar";
 import PlayerContent from "@/components/player/PlayerContent";
 import { getHeroes, getRanks } from "@/lib/api";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 604800;
 
 // Return empty array — player pages are generated on-demand and then cached via ISR
 export async function generateStaticParams() {

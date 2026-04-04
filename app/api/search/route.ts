@@ -14,6 +14,7 @@ import { checkRateLimit } from "@/lib/ratelimit";
 import logger from "@/lib/logger";
 
 const SEARCH_CACHE_TTL_SECONDS = 86400; // 24 hours — prefer cache hits over repeated search fan-out
+const SEARCH_MISS_CACHE_TTL_SECONDS = 900; // 15 min — transient API errors shouldn't block a player all day
 const MAX_RESOLVED_AMBIGUOUS_RESULTS = 5;
 
 type SearchResponseBody =
@@ -38,6 +39,9 @@ function extractQuery(raw: string): string {
 
   // Strip trailing slashes
   q = q.replace(/\/+$/, "");
+
+  // Collapse internal whitespace (prevents duplicate cache keys for " john " vs "john")
+  q = q.replace(/\s+/g, " ").trim();
 
   return q;
 }
@@ -87,7 +91,14 @@ export async function GET(request: NextRequest) {
     const cached = await cacheGet<SearchResponseBody>(cacheKey);
     if (cached) {
       logger.info({ query: normalizedQuery }, "Search cache hit");
-      return NextResponse.json(cached, { status: cached.success ? 200 : 404 });
+      return NextResponse.json(cached, {
+        status: cached.success ? 200 : 404,
+        headers: {
+          "Cache-Control": cached.success
+            ? "public, s-maxage=3600, stale-while-revalidate=86400"
+            : "public, s-maxage=900, stale-while-revalidate=3600",
+        },
+      });
     }
 
     // For direct Steam64 IDs, skip leaderboard search entirely
@@ -107,12 +118,17 @@ export async function GET(request: NextRequest) {
           }],
         };
         await cacheSet(cacheKey, body, SEARCH_CACHE_TTL_SECONDS);
-        return NextResponse.json(body);
+        return NextResponse.json(body, {
+          headers: { "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400" },
+        });
       }
 
       const body: SearchResponseBody = { success: false, error: "No player found for that Steam ID." };
-      await cacheSet(cacheKey, body, SEARCH_CACHE_TTL_SECONDS);
-      return NextResponse.json(body, { status: 404 });
+      await cacheSet(cacheKey, body, SEARCH_MISS_CACHE_TTL_SECONDS);
+      return NextResponse.json(body, {
+        status: 404,
+        headers: { "Cache-Control": "public, s-maxage=900, stale-while-revalidate=3600" },
+      });
     }
 
     // For Deadlock Account IDs (numeric, not 17 digits), convert to Steam64
@@ -216,7 +232,9 @@ export async function GET(request: NextRequest) {
       }, "Search success");
       const body: SearchResponseBody = { success: true, results };
       await cacheSet(cacheKey, body, SEARCH_CACHE_TTL_SECONDS);
-      return NextResponse.json(body);
+      return NextResponse.json(body, {
+        headers: { "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400" },
+      });
     }
 
     logger.info({
@@ -230,8 +248,11 @@ export async function GET(request: NextRequest) {
       success: false,
       error: "No player found. Try a Steam ID, profile URL, or in-game name.",
     };
-    await cacheSet(cacheKey, body, SEARCH_CACHE_TTL_SECONDS);
-    return NextResponse.json(body, { status: 404 });
+    await cacheSet(cacheKey, body, SEARCH_MISS_CACHE_TTL_SECONDS);
+    return NextResponse.json(body, {
+      status: 404,
+      headers: { "Cache-Control": "public, s-maxage=900, stale-while-revalidate=3600" },
+    });
   } catch (err) {
     logger.error({ query, error: err instanceof Error ? err.message : "Unknown" }, "Search failed");
     return NextResponse.json(

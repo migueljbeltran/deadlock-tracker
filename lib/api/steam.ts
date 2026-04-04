@@ -85,7 +85,7 @@ export async function resolveVanityURL(
   const key = getSteamApiKey();
   const url = `${STEAM_API_BASE}/ISteamUser/ResolveVanityURL/v1/?key=${key}&vanityurl=${encodeURIComponent(vanityName)}`;
 
-  const res = await steamFetch(url, { revalidate: 604800 });
+  const res = await steamFetch(url, { revalidate: 31536000 });
 
   if (!res.ok) {
     logger.error({ endpoint: "ResolveVanityURL", status: res.status, vanityName }, "Steam API error");

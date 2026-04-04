@@ -10,7 +10,7 @@ import {
   getMatchDetail,
   getMatchPlayerItems,
   getHeroes,
-  getItems,
+  getShopableItemsSnapshot,
   getRanks,
   getPlayerSummaries,
   accountIdToSteam64,
@@ -19,7 +19,7 @@ import {
 import type { SteamPlayerSummary, DeadlockItem } from "@/lib/api";
 import { FadeIn } from "@/components/motion";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 604800;
 
 // Return empty array — matches are generated on-demand and then cached via ISR
 export async function generateStaticParams() {
@@ -61,22 +61,20 @@ export default async function MatchDetailPage({ params }: MatchDetailPageProps) 
 
   // Convert account IDs → Steam64 for the Steam API name lookup
   const steam64Ids = players.map((p) => accountIdToSteam64(p.account_id));
-  const [heroes, ranks, steamPlayers, allItems, playerItemsMap] = await Promise.all([
+  const [heroes, ranks, steamPlayers, shopableItemsSnapshot, playerItemsMap] = await Promise.all([
     getHeroes(),
     getRanks(),
     getPlayerSummaries(steam64Ids).catch(() => [] as SteamPlayerSummary[]),
-    getItems().catch(() => [] as DeadlockItem[]),
+    getShopableItemsSnapshot().catch(() => null),
     getMatchPlayerItems(id).catch(() => new Map<number, number[]>()),
   ]);
 
   const heroMap = new Map(heroes.map((h) => [h.id, h]));
 
-  // Build item lookup (only shopable upgrades)
+  // Build item lookup from Redis-cached shopable items snapshot
   const itemMap = new Map<number, DeadlockItem>();
-  for (const item of allItems) {
-    if (item.shopable) {
-      itemMap.set(item.id, item);
-    }
+  for (const item of shopableItemsSnapshot?.data ?? []) {
+    itemMap.set(item.id, item);
   }
 
   // Map account_id → player name (bridge Steam names to Deadlock IDs)

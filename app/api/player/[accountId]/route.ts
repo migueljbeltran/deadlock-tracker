@@ -17,7 +17,10 @@ export async function GET(_request: NextRequest, { params }: PlayerRouteProps) {
 
   if (!isValidAccountId(raw)) {
     const body: PlayerSnapshotResponse = { success: false, error: "Invalid account ID", notFound: true };
-    return NextResponse.json(body, { status: 404 });
+    return NextResponse.json(body, {
+      status: 404,
+      headers: { "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400" },
+    });
   }
 
   const [playerState, benchmark] = await Promise.all([
@@ -28,7 +31,10 @@ export async function GET(_request: NextRequest, { params }: PlayerRouteProps) {
 
   if (!snapshot) {
     const body: PlayerSnapshotResponse = { success: false, error: "Player not found", notFound: true };
-    return NextResponse.json(body, { status: 404 });
+    return NextResponse.json(body, {
+      status: 404,
+      headers: { "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400" },
+    });
   }
 
   const body: PlayerSnapshotResponse = {

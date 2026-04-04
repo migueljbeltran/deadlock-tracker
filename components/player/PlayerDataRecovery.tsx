@@ -54,7 +54,8 @@ export function PlayerDataRecovery({
         return;
       }
 
-      if (result.reason === "locked" || result.reason === "fresh") {
+      if (result.reason === "locked") {
+        // A rebuild is already in progress — poll after a short delay
         retryTimeoutRef.current = window.setTimeout(() => {
           retryTimeoutRef.current = null;
           if (cancelled) return;
@@ -63,6 +64,10 @@ export function PlayerDataRecovery({
         }, 1500);
         return;
       }
+
+      // "fresh": snapshot is not stale, no automatic rebuild will happen.
+      // Stop here — show the static unavailable banner without looping.
+      // The user can force a rebuild via the manual refresh button.
 
       if (result.reason === "failed") {
         attemptedRef.current = false;

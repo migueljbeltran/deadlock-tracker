@@ -196,7 +196,7 @@ export default async function Home() {
 
               {/* Feature 2: Match History */}
               <StaggerItem>
-                <Link href="/" className="block h-full group">
+                <Link href="/#search" className="block h-full group">
                   <GlowCard className="p-6 sm:p-8 h-full flex flex-col">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-amber/10 border border-amber/20 group-hover:bg-amber/20 transition-colors">

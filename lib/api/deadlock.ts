@@ -26,6 +26,7 @@ interface DeadlockFetchOptions {
   revalidate?: number;
   tags?: string[];
   cache?: RequestCache;
+  timeout?: number;
 }
 
 export function getPlayerDataTag(accountId: number): string {
@@ -37,7 +38,7 @@ async function deadlockFetch<T>(url: string, options: DeadlockFetchOptions): Pro
     let res: Response;
     try {
       const fetchOptions: RequestInit & { next?: { revalidate?: number; tags?: string[] } } = {
-        signal: AbortSignal.timeout(10_000),
+        signal: AbortSignal.timeout(options.timeout ?? 10_000),
       };
 
       if (options.cache != null) {
@@ -232,7 +233,7 @@ export async function getMatchPlayerItems(
 export async function getApiInfo(): Promise<DeadlockApiInfo> {
   return deadlockFetch<DeadlockApiInfo>(
     `${GAME_API}/v1/info`,
-    { revalidate: 604800 },
+    { revalidate: 604800, timeout: 3000 }, // non-critical display stats — fail fast
   );
 }
 

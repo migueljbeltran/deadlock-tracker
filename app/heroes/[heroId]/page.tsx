@@ -9,7 +9,7 @@ import { ArtDecoDivider } from "@/components/layout/ArtDecoDivider";
 import { HeroDetailHeader } from "@/components/hero/HeroDetailHeader";
 import { HeroDescription } from "@/components/hero/HeroDescription";
 import { HeroGlobalStats } from "@/components/hero/HeroGlobalStats";
-import { getHero, getHeroes, getHeroAnalytics, getRanks } from "@/lib/api";
+import { getHero, getHeroAnalyticsSnapshot, getRanks } from "@/lib/api";
 import type { DeadlockHeroAnalytics } from "@/lib/api";
 import { HeroRankBreakdown } from "@/components/hero/HeroRankBreakdown";
 import { FadeIn } from "@/components/motion";
@@ -18,11 +18,9 @@ interface HeroDetailPageProps {
   params: Promise<{ heroId: string }>;
 }
 
+// Return empty array — hero pages are generated on-demand and then cached via ISR
 export async function generateStaticParams() {
-  const heroes = await getHeroes();
-  return heroes
-    .filter((h) => h.player_selectable !== false && !h.disabled && !h.in_development)
-    .map((h) => ({ heroId: String(h.id) }));
+  return [];
 }
 
 export async function generateMetadata(
@@ -67,11 +65,12 @@ export default async function HeroDetailPage({ params }: HeroDetailPageProps) {
     notFound();
   }
 
-  // Fetch analytics + ranks in parallel
-  const [analytics, ranks] = await Promise.all([
-    getHeroAnalytics().catch(() => []),
+  // Fetch analytics snapshot + ranks in parallel (snapshot is Redis-cached 24h)
+  const [analyticsSnapshot, ranks] = await Promise.all([
+    getHeroAnalyticsSnapshot().catch(() => null),
     getRanks(),
   ]);
+  const analytics = analyticsSnapshot?.data ?? [];
 
   // Aggregate stats across rank buckets for this hero
   let totalWins = 0;

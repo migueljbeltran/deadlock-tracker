@@ -3,9 +3,10 @@ import "server-only";
 import type {
   DeadlockApiInfo,
   DeadlockHeroAnalytics,
+  DeadlockItem,
   DeadlockItemStats,
 } from "@/lib/api/types";
-import { getApiInfo, getHeroAnalytics, getItemStats } from "@/lib/api/deadlock";
+import { getApiInfo, getHeroAnalytics, getItemStats, getItems } from "@/lib/api/deadlock";
 import { cacheDelete, cacheGet, cacheSet, cacheSetIfNotExists, isCacheAvailable } from "@/lib/cache";
 import logger from "@/lib/logger";
 
@@ -108,5 +109,16 @@ export async function getApiInfoSnapshot(): Promise<PublicSnapshot<DeadlockApiIn
     "public-snapshot:api-info:v1",
     "api-info",
     async () => getApiInfo().catch(() => null),
+  );
+}
+
+export async function getShopableItemsSnapshot(): Promise<PublicSnapshot<DeadlockItem[]>> {
+  return getOrBuildSnapshot(
+    "public-snapshot:shopable-items:v1",
+    "shopable-items",
+    async () => {
+      const items = await getItems();
+      return items.filter((item) => item.shopable === true);
+    },
   );
 }

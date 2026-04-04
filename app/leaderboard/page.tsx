@@ -7,6 +7,7 @@ import { Footer } from "@/components/layout/Footer";
 import { SigilBackground } from "@/components/layout/SigilBackground";
 import LeaderboardContent from "@/components/leaderboard/LeaderboardContent";
 import { LeaderboardTableSkeleton } from "@/components/leaderboard/LeaderboardTableSkeleton";
+import { getHeroes, getRanks } from "@/lib/api";
 
 export const metadata: Metadata = {
   title: "Deadlock Ranked Leaderboard — Top Players by Region",
@@ -23,11 +24,9 @@ export const metadata: Metadata = {
   },
 };
 
-interface LeaderboardPageProps {
-  searchParams: Promise<{ region?: string; page?: string }>;
-}
+export default async function LeaderboardPage() {
+  const [ranks, heroes] = await Promise.all([getRanks(), getHeroes()]);
 
-export default function LeaderboardPage({ searchParams }: LeaderboardPageProps) {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
@@ -37,7 +36,7 @@ export default function LeaderboardPage({ searchParams }: LeaderboardPageProps) 
 
         <div className="atmosphere-amber relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
           <Suspense fallback={<LeaderboardTableSkeleton />}>
-            <LeaderboardContent searchParams={searchParams} />
+            <LeaderboardContent ranks={ranks} heroes={heroes} />
           </Suspense>
         </div>
       </main>

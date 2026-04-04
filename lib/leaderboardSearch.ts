@@ -1,7 +1,6 @@
 import "server-only";
 
 import type { DeadlockLeaderboardEntry, DeadlockRegion, LeaderboardSearchMatch } from "@/lib/api";
-import { searchLeaderboardByName as searchLeaderboardByNameLive } from "@/lib/api/deadlock";
 import { cacheDelete, cacheGet, cacheSet, cacheSetIfNotExists, isCacheAvailable } from "@/lib/cache";
 import logger from "@/lib/logger";
 
@@ -10,7 +9,7 @@ const CORPUS_KEY = "leaderboard-search:corpus:v1";
 const CORPUS_LOCK_KEY = "leaderboard-search-refresh-lock";
 const CORPUS_FRESHNESS_SECONDS = 86400;
 const CORPUS_TTL_SECONDS = 604800;
-const CORPUS_LOCK_TTL_SECONDS = 300;
+const CORPUS_LOCK_TTL_SECONDS = 600;
 const MAX_LEADERBOARD_RESULTS = 15;
 
 const ALL_REGIONS: DeadlockRegion[] = [
@@ -134,7 +133,9 @@ export async function searchLeaderboardByNameCached(
 
   const corpus = await getLeaderboardSearchCorpus();
   if (!corpus) {
-    return searchLeaderboardByNameLive(name);
+    // Corpus unavailable (Redis down or rebuild in progress).
+    // Return empty rather than triggering a 5-region live fan-out on every search.
+    return [];
   }
 
   const exactAndPrefixMatches: (LeaderboardSearchMatch & { _relevance: number })[] = [];

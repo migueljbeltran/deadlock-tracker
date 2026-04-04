@@ -16,7 +16,7 @@ function isBenchmarkStale(benchmark: GlobalPlayerMetricsBenchmark): boolean {
 export async function getLatestGlobalPlayerMetricsBenchmark(): Promise<GlobalPlayerMetricsBenchmark | null> {
   const benchmark = await cacheGet<GlobalPlayerMetricsBenchmark>(PLAYER_METRICS_BENCHMARK_KEY);
   if (!benchmark) {
-    logger.info("Global player metrics benchmark missing");
+    logger.debug("Global player metrics benchmark missing");
     return null;
   }
 

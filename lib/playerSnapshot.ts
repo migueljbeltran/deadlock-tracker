@@ -212,7 +212,7 @@ export async function refreshPlayerSnapshot(
   if (mode === "background") {
     const cached = await cacheGet<PlayerSnapshot>(cacheKey);
     const snapshot = cached ? normalizeSnapshot(cached) : null;
-    if (snapshot && !isSnapshotStale(snapshot) && snapshot.status === "complete" && snapshot.matchDataIncomplete !== true) {
+    if (snapshot && !isSnapshotStale(snapshot)) {
       return { refreshed: false, reason: "fresh" };
     }
   }
@@ -240,9 +240,25 @@ export async function refreshPlayerSnapshot(
   }
 
   try {
-    const snapshot = await buildPlayerSnapshot(accountId);
+    let snapshot = await buildPlayerSnapshot(accountId);
     if (!snapshot) {
       return { refreshed: false, reason: "not_found" };
+    }
+
+    // If the rebuild returned degraded match data, preserve the existing cached matches.
+    // This prevents a transient Deadlock API response (missing player entries) from
+    // overwriting good match history that was already cached.
+    if (snapshot.matchDataIncomplete || snapshot.matches.length === 0) {
+      const existing = await cacheGet<PlayerSnapshot>(cacheKey);
+      if (existing && !existing.matchDataIncomplete && existing.matches.length > 0) {
+        snapshot = {
+          ...snapshot,
+          matches: existing.matches,
+          matchDataIncomplete: false,
+          rankEstimate: existing.rankEstimate,
+        };
+        logger.info({ accountId, mode }, "Player snapshot refresh: preserved cached match data over degraded rebuild");
+      }
     }
 
     await cacheSet(cacheKey, snapshot, SNAPSHOT_TTL_SECONDS);
