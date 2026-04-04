@@ -49,8 +49,16 @@ export async function GET() {
   const appOk = checks.app.status === "ok";
   const status = allOk ? "healthy" : appOk ? "degraded" : "unhealthy";
 
+  const httpStatus = allOk || appOk ? 200 : 503;
   return NextResponse.json(
     { status, timestamp: new Date().toISOString(), checks },
-    { status: allOk || appOk ? 200 : 503 },
+    {
+      status: httpStatus,
+      // Cache healthy responses for 60s so uptime monitors don't hammer the DB.
+      // Never cache degraded/unhealthy — monitors need to see recovery immediately.
+      headers: httpStatus === 200
+        ? { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" }
+        : { "Cache-Control": "no-store" },
+    },
   );
 }
