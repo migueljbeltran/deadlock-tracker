@@ -87,18 +87,21 @@ Framed as "support dltracker" rather than "unlock premium." All stats and match 
 - Tertiary: Casual observers browsing heroes and meta trends.
 
 ## Current Baseline (from repository)
-- All core routes implemented and functional: `/`, `/heroes`, `/heroes/[heroId]`, `/player/[accountId]`, `/match/[matchId]`, `/leaderboard`.
-- Search route implemented: `GET /api/search?q=...` with Steam vanity/URL/Steam64 handling.
-- Data sources: Deadlock API + Steam Web API.
-- Local recent-search UX exists (`localStorage`, max 5).
-- Visual redesign complete: "Occult Noir Ascended" — glassmorphism, animated gradient borders, page atmospheres, motion components (FadeIn, ScrollReveal, CountUp, GlowCard, StaggerList).
-- Zero TypeScript compile errors; production build passes cleanly.
-- `/about` and `/privacy` pages implemented with full content.
-- Security hardening complete: Zod validation, Upstash rate limiting, security headers.
-- CI/CD: GitHub Actions PR checks (lint → tsc → build), Vercel auto-deploy.
+- All core routes implemented and functional: `/`, `/about`, `/privacy`, `/heroes`, `/heroes/[heroId]`, `/heroes/tier-list`, `/items`, `/player/[accountId]`, `/match/[matchId]`, `/leaderboard`.
+- API routes: `GET /api/search`, `GET /api/health`, `GET /api/leaderboard`, `GET /api/player/[accountId]`.
+- Search supports Steam vanity URL, Steam64 ID, and profile URL; recent searches in localStorage (max 5).
+- Data sources: Deadlock Community API + Steam Web API (15+ wrapped endpoints in `lib/api/deadlock.ts`).
+- Player snapshot system built (`lib/playerSnapshot.ts`, `lib/publicSnapshots.ts`) with caching layer (`lib/cache.ts`).
+- Leaderboard account resolution via cross-referenced hero patterns (`lib/api/resolve.ts`, `lib/leaderboardSnapshot.ts`).
+- Player percentile benchmarking (`lib/playerBenchmark.ts`).
+- Visual redesign complete: "Occult Noir Ascended" — glassmorphism, animated gradient borders, page atmospheres, motion components.
+- OG image generation (`app/opengraph-image.tsx`, 1200×630), static sitemap with all hero pages, `robots.txt`.
+- Security hardening complete: Zod validation, Upstash rate limiting, security headers (CSP report-only, HSTS, X-Frame-Options, etc.).
+- CI/CD: GitHub Actions PR checks (lint → tsc → build), Vercel auto-deploy on push to master.
 - Observability: Sentry error monitoring, Pino structured logging, health endpoint, Vercel Analytics.
 - Ko-fi donation link in footer and about page.
 - Deployed to Vercel with Supabase (PostgreSQL) and Upstash Redis.
+- Zero TypeScript compile errors; production build passes cleanly.
 
 ## Success Metrics (Beta Exit)
 - p95 server response time for cacheable data routes under 900ms.
@@ -371,39 +374,59 @@ Framed as "support dltracker" rather than "unlock premium." All stats and match 
 - ~~Fix Pino MaxListenersExceededWarning in dev.~~ ✅
 - ~~Update eslint-config-next to match Next.js 16.2.x.~~ ✅
 - ~~Add explicit read-only permissions to CI workflow.~~ ✅
-- ~~Merge Dependabot PR for flatted prototype pollution fix.~~ ✅
-- ~~Dismiss effect Dependabot alert (dev-only, not exploitable).~~ ✅
+- ~~Resolve all Dependabot vulnerability alerts (flatted, effect, picomatch, brace-expansion, defu) via `npm audit fix`.~~ ✅
+
+### Phase 3.6: Items & Tier List ✅ Complete
+- ~~`/items` page — 171 items with win rates, filterable by type (Weapon/Vitality/Spirit) and tier.~~ ✅
+- ~~`/heroes/tier-list` page — S/A/B/C/D tier list by win rate and pick rate, filterable by rank bracket.~~ ✅
 
 ### Phase 4: Scaling & Caching Layer
 **Trigger:** ~1K+ DAU or frequent Deadlock API 429s.
 
-- [ ] Add Redis caching layer for Deadlock API responses (hero stats, leaderboard, match history).
+- ~~Build snapshot system for player data (`lib/playerSnapshot.ts`, `lib/publicSnapshots.ts`).~~ ✅
+- ~~Build leaderboard snapshot + account resolution (`lib/leaderboardSnapshot.ts`, `lib/api/resolve.ts`).~~ ✅
+- ~~Player percentile benchmarking (`lib/playerBenchmark.ts`).~~ ✅
+- ~~In-memory process cache for items endpoint (>2MB, bypasses Next.js 2MB cache limit).~~ ✅
+- [ ] Wire Redis caching layer fully for Deadlock API responses (hero stats, leaderboard, match history).
   - Short TTLs: 60s for leaderboard, 300s for hero stats, 600s for match history.
-  - Eliminates redundant upstream API calls across concurrent visitors.
 - [ ] Batch/throttle leaderboard match history fetches to avoid Deadlock API 429s.
 - [ ] Implement stale-while-error fallback: serve cached data when upstream is down.
-- [ ] Cache items endpoint response in Redis (>2MB, exceeds Next.js fetch cache limit).
 - [ ] Switch CSP from report-only to enforcing after monitoring violations.
 - [ ] Add CI trigger on push to master (currently only runs on PRs).
 - [ ] Exit criteria: zero 429s under normal traffic; pages render during upstream outages.
 
+### Phase 4.5: Player Name Search
+**High impact, low effort — backend endpoint already exists.**
+
+The Deadlock API has `GET /v1/players/steam-search?search_query=NAME` (discovered 2026-03-26). Currently the search only accepts Steam IDs/vanity URLs, so players who don't know their Steam ID can't find themselves.
+
+- [ ] Add name search path to `/api/search` route — try name search if input is not a Steam ID/URL.
+- [ ] Update `SearchBar` / `SearchResults` to handle multi-result responses (name search can return multiple players).
+- [ ] Deduplicate: if name search and vanity resolve both return a result, prefer vanity.
+- [ ] Update Zod validation schema to accept name queries.
+- [ ] Update search UX copy ("Search by Steam ID, vanity URL, or player name").
+- [ ] Exit criteria: typing a player name returns correct profile without knowing Steam ID.
+
 ### Phase 5: Testing
 - [ ] Set up Playwright for E2E tests.
-- [ ] E2E: Homepage → search → player profile.
-- [ ] E2E: Heroes grid → hero detail.
+- [ ] E2E: Homepage → search → player profile (Steam ID and player name paths).
+- [ ] E2E: Heroes grid → hero detail → rank breakdown.
 - [ ] E2E: Player profile → match detail.
 - [ ] E2E: Leaderboard → region switching.
-- [ ] API tests: `/api/search` — valid Steam ID, vanity URL, invalid input, rate limit.
+- [ ] E2E: Items page → filter by type and tier.
+- [ ] E2E: Tier list → rank bracket filter.
+- [ ] API tests: `/api/search` — valid Steam ID, vanity URL, player name, invalid input, rate limit.
 - [ ] Add Playwright to GitHub Actions PR checks.
 
-### Phase 6: UX Completion & Polish
-- [ ] Improve error messages with retryability hints.
-- [ ] Add "last updated" and "data source" indicators on cached pages.
-- [ ] Refine empty states and skeleton consistency.
-- [ ] Dynamic sitemap for hero/player pages.
+### Phase 6: SEO, Performance & Polish
+- [ ] Responsive audit across all breakpoints (mobile is untested).
+- [ ] Lighthouse audit: target mobile performance ≥ 75 on `/`, `/player/[id]`, `/heroes`, `/leaderboard`.
+- [ ] Accessibility pass: `aria-live` regions for search results, contrast audit, keyboard navigation on tables.
+- [ ] Dynamic sitemap for player pages (top leaderboard players as seed set).
+- [ ] Structured data (JSON-LD) on hero and player pages for richer search snippets.
+- [ ] Custom domain `dltracker.gg` DNS configuration via Vercel.
 - ~~`robots.txt` generation.~~ ✅ (implemented as `app/robots.ts`)
-- [ ] Accessibility pass: `aria-live` regions, contrast audit, keyboard navigation.
-- [ ] Responsive audit across breakpoints.
+- ~~OG image generation.~~ ✅ (implemented as `app/opengraph-image.tsx`)
 
 ### Phase 7: User Accounts & Social
 - [ ] NextAuth.js with Steam OpenID + Discord OAuth.
