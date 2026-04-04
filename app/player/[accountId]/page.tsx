@@ -7,12 +7,8 @@ import { PlayerSearchBar } from "@/components/search/PlayerSearchBar";
 import PlayerContent from "@/components/player/PlayerContent";
 import { getHeroes, getRanks } from "@/lib/api";
 
-export const revalidate = 604800;
-
-// Return empty array — player pages are generated on-demand and then cached via ISR
-export async function generateStaticParams() {
-  return [];
-}
+// Player data changes with every match played — serve fresh from Redis snapshot, not ISR
+export const dynamic = 'force-dynamic';
 
 interface PlayerPageProps {
   params: Promise<{ accountId: string }>;

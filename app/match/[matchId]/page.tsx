@@ -19,7 +19,8 @@ import {
 import type { SteamPlayerSummary, DeadlockItem } from "@/lib/api";
 import { FadeIn } from "@/components/motion";
 
-export const revalidate = 604800;
+// Match data is immutable — cache permanently, never rewrite
+export const revalidate = false;
 
 // Return empty array — matches are generated on-demand and then cached via ISR
 export async function generateStaticParams() {
