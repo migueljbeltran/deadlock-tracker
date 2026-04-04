@@ -26,8 +26,5 @@ jobs:
       - name: Type check
         run: npx tsc --noEmit
 
-      - name: Build
-        run: npm run build
-        env:
-          STEAM_API_KEY: "dummy-for-ci-build"
-          DATABASE_URL: "postgresql://dummy:dummy@localhost:5432/dummy"
+      # Build step removed — Vercel deploy preview validates the build on every PR.
+      # Lint + typecheck above catch the vast majority of CI failures.

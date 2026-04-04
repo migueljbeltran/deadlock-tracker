@@ -47,7 +47,8 @@ export async function GET(_request: NextRequest, { params }: PlayerRouteProps) {
 
   return NextResponse.json(body, {
     headers: {
-      "Cache-Control": "public, s-maxage=300, stale-while-revalidate=86400",
+      // Redis snapshot handles data freshness — CDN can serve this for 30 min safely
+      "Cache-Control": "public, s-maxage=1800, stale-while-revalidate=86400",
     },
   });
 }

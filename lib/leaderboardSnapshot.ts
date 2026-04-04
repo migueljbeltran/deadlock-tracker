@@ -19,7 +19,8 @@ interface ResolvedLeaderboardSnapshot {
 }
 
 const SNAPSHOT_TTL_SECONDS = 604800;
-const SNAPSHOT_FRESHNESS_SECONDS = 86400;
+// 2-day freshness: leaderboard shifts daily but perfect real-time accuracy isn't critical
+const SNAPSHOT_FRESHNESS_SECONDS = 172800;
 const SNAPSHOT_LOCK_TTL_SECONDS = 300;
 
 function getSnapshotKey(region: DeadlockRegion): string {

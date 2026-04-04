@@ -16,7 +16,8 @@ interface PublicSnapshot<T> {
 }
 
 const SNAPSHOT_TTL_SECONDS = 604800;
-const SNAPSHOT_FRESHNESS_SECONDS = 86400;
+// Hero/item data only changes on game patches (~every 2 weeks) — refresh weekly, not daily
+const SNAPSHOT_FRESHNESS_SECONDS = 604800;
 const SNAPSHOT_LOCK_TTL_SECONDS = 300;
 
 function isSnapshotStale<T>(snapshot: PublicSnapshot<T>): boolean {
