@@ -1,15 +1,17 @@
-import { getItems, getItemStatsSnapshot, getRanks } from "@/lib/api";
+import { getShopableItemsSnapshot, getItemStatsSnapshot, getRanks } from "@/lib/api";
 import { ItemsClientView } from "@/components/item/ItemsClientView";
 
 export default async function ItemsContent() {
-  const [items, itemStatsSnapshot, ranks] = await Promise.all([
-    getItems(),
+  // Use the Redis-backed snapshot instead of raw getItems() — getItems() pulls
+  // a 2.5 MB payload from the upstream Deadlock API on every ISR regeneration,
+  // while the snapshot already pre-filters to shopable items and caches weekly.
+  const [itemsSnapshot, itemStatsSnapshot, ranks] = await Promise.all([
+    getShopableItemsSnapshot(),
     getItemStatsSnapshot(),
     getRanks(),
   ]);
 
-  const shopableItems = items
-    .filter((i) => i.shopable)
+  const shopableItems = itemsSnapshot.data
     .map((i) => ({
       id: i.id,
       name: i.name,

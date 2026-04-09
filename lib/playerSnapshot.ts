@@ -191,7 +191,7 @@ export async function getPlayerSnapshotState(accountId: number): Promise<{
     const snapshot = normalizeSnapshot(stripped);
     const isStale = isSnapshotStale(snapshot);
     const shouldRefresh = isStale || snapshot.status === "partial" || snapshot.matchDataIncomplete === true;
-    logger.info({ accountId, isStale, status: snapshot.status, matchDataIncomplete: snapshot.matchDataIncomplete }, "Player snapshot cache hit");
+    logger.debug({ accountId, isStale, status: snapshot.status, matchDataIncomplete: snapshot.matchDataIncomplete }, "Player snapshot cache hit");
     return { snapshot, isStale, shouldRefresh };
   }
 
