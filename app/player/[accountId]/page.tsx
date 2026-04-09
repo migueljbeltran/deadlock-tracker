@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -7,8 +8,14 @@ import { PlayerSearchBar } from "@/components/search/PlayerSearchBar";
 import PlayerContent from "@/components/player/PlayerContent";
 import { getHeroes, getRanks } from "@/lib/api";
 
-// Player data changes with every match played — serve fresh from Redis snapshot, not ISR
-export const dynamic = 'force-dynamic';
+// Shell only renders heroes + ranks (7-day cached). Player data is fetched client-side by
+// PlayerContent via /api/player/[accountId], which has its own s-maxage=1800 cache.
+export const revalidate = 604800;
+
+// Return empty array — player pages are generated on-demand and then ISR-cached
+export async function generateStaticParams() {
+  return [];
+}
 
 interface PlayerPageProps {
   params: Promise<{ accountId: string }>;
@@ -65,7 +72,11 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
           <PlayerSearchBar />
         </div>
 
-        <PlayerContent accountId={accountId} heroes={heroes} ranks={ranks} />
+        {/* Suspense boundary required: PlayerMatchSection inside PlayerContent uses
+            useSearchParams, which would force the whole page dynamic without it. */}
+        <Suspense>
+          <PlayerContent accountId={accountId} heroes={heroes} ranks={ranks} />
+        </Suspense>
       </main>
 
       <Footer />

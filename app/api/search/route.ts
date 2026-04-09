@@ -257,7 +257,11 @@ export async function GET(request: NextRequest) {
     logger.error({ query, error: err instanceof Error ? err.message : "Unknown" }, "Search failed");
     return NextResponse.json(
       { success: false, error: "Failed to search. Please try again." },
-      { status: 500 },
+      {
+        status: 500,
+        // Cache errors briefly — prevents retry storms during upstream API outages
+        headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" },
+      },
     );
   }
 }

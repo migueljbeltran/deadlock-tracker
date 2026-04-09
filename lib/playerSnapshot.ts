@@ -145,7 +145,11 @@ async function buildPlayerSnapshot(accountId: number): Promise<PlayerSnapshot | 
 
   if (!player) return null;
 
-  const heroStats: DeadlockPlayerHeroStat[] = heroStatsResult.ok ? heroStatsResult.value : [];
+  // Strip the `matches: number[]` array (all historical match IDs per hero) — it's never used
+  // in the UI and can be hundreds of KB for veteran players, bloating Redis and API responses.
+  const heroStats: DeadlockPlayerHeroStat[] = heroStatsResult.ok
+    ? heroStatsResult.value.map((s) => ({ ...s, matches: [] }))
+    : [];
   const matches = matchesResult.ok
     ? matchesResult.value.map((match) => toPlayerMatchSummary(match, accountId))
     : [];
@@ -178,7 +182,13 @@ export async function getPlayerSnapshotState(accountId: number): Promise<{
   const cached = await cacheGet<PlayerSnapshot>(cacheKey);
 
   if (cached) {
-    const snapshot = normalizeSnapshot(cached);
+    // Retroactively strip the bloated `matches` arrays from snapshots that were cached
+    // before this optimization — avoids waiting 7 days (TTL) for them to naturally expire.
+    const stripped = {
+      ...cached,
+      heroStats: cached.heroStats.map((s) => ({ ...s, matches: [] })),
+    };
+    const snapshot = normalizeSnapshot(stripped);
     const isStale = isSnapshotStale(snapshot);
     const shouldRefresh = isStale || snapshot.status === "partial" || snapshot.matchDataIncomplete === true;
     logger.info({ accountId, isStale, status: snapshot.status, matchDataIncomplete: snapshot.matchDataIncomplete }, "Player snapshot cache hit");
