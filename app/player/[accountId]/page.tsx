@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -8,14 +7,11 @@ import { PlayerSearchBar } from "@/components/search/PlayerSearchBar";
 import PlayerContent from "@/components/player/PlayerContent";
 import { getHeroes, getRanks } from "@/lib/api";
 
-// Shell only renders heroes + ranks (7-day cached). Player data is fetched client-side by
-// PlayerContent via /api/player/[accountId], which has its own s-maxage=1800 cache.
-export const revalidate = 604800;
-
-// Return empty array — player pages are generated on-demand and then ISR-cached
-export async function generateStaticParams() {
-  return [];
-}
+// DO NOT convert to ISR. Player URLs are a long-tail of unique account IDs —
+// ISR would generate a CDN write per unique visit ($$$). Redis snapshot system
+// in lib/playerSnapshot.ts already provides 24h freshness / 7-day TTL. See
+// commit c838155 and the ISR-Write spike on 2026-04-09 for prior incidents.
+export const dynamic = 'force-dynamic';
 
 interface PlayerPageProps {
   params: Promise<{ accountId: string }>;
@@ -72,11 +68,7 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
           <PlayerSearchBar />
         </div>
 
-        {/* Suspense boundary required: PlayerMatchSection inside PlayerContent uses
-            useSearchParams, which would force the whole page dynamic without it. */}
-        <Suspense>
-          <PlayerContent accountId={accountId} heroes={heroes} ranks={ranks} />
-        </Suspense>
+        <PlayerContent accountId={accountId} heroes={heroes} ranks={ranks} />
       </main>
 
       <Footer />
