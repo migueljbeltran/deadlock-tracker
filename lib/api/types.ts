@@ -301,6 +301,34 @@ export type PlayerSnapshotResponse =
   };
 
 // ============================================================
+// Public Route DTOs
+// ============================================================
+
+export interface SteamSearchResult {
+  source: "steam";
+  accountId: number;
+  name: string;
+  avatar: string;
+}
+
+export interface LeaderboardSearchResult {
+  source: "leaderboard";
+  accountId: number;
+  accountName: string;
+  rank: number;
+  rankedRank: number;
+  rankedSubrank: number;
+  topHeroIds: number[];
+  region: string;
+}
+
+export type SearchResult = SteamSearchResult | LeaderboardSearchResult;
+
+export type SearchResponseBody =
+  | { success: true; results: SearchResult[] }
+  | { success: false; error: string };
+
+// ============================================================
 // API Error
 // ============================================================
 

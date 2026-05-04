@@ -6,6 +6,11 @@ import type {
   SteamPlayerSummary,
 } from "./types";
 import { ApiError } from "./types";
+import {
+  parseExternalData,
+  steamPlayerSummariesResponseSchema,
+  steamResolveVanityResponseSchema,
+} from "./guards";
 import { getRequiredServerEnv } from "@/lib/env";
 import logger from "@/lib/logger";
 
@@ -99,7 +104,11 @@ export async function resolveVanityURL(
     );
   }
 
-  const data: SteamResolveVanityResponse = await res.json();
+  const data = parseExternalData<SteamResolveVanityResponse>(
+    steamResolveVanityResponseSchema,
+    await res.json(),
+    "Steam ResolveVanityURL",
+  );
 
   if (data.response.success !== 1) {
     logger.info({ vanityName }, "Vanity URL not found");
@@ -137,7 +146,11 @@ export async function getPlayerSummaries(
     );
   }
 
-  const data: SteamPlayerSummariesResponse = await res.json();
+  const data = parseExternalData<SteamPlayerSummariesResponse>(
+    steamPlayerSummariesResponseSchema,
+    await res.json(),
+    "Steam GetPlayerSummaries",
+  );
   return data.response.players;
 }
 

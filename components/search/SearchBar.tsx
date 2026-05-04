@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { Loader2, Search } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { SearchResults, type SearchResult } from "./SearchResults";
+import { SearchResults } from "./SearchResults";
+import type { SearchResponseBody, SearchResult } from "@/lib/api/types";
 import type { RecentSearch } from "@/lib/hooks/useRecentSearches";
 
 interface SearchBarProps {
@@ -61,12 +62,16 @@ export function SearchBar({ onPlayerFound }: SearchBarProps) {
 
     try {
       const res = await fetch(`/api/search?q=${encodeURIComponent(trimmed)}`);
-      const data = await res.json();
+      const data = await res.json() as SearchResponseBody;
 
-      if (data.success && data.results?.length > 0) {
-        setResults(data.results);
+      if (data.success) {
+        if (data.results.length > 0) {
+          setResults(data.results);
+        } else {
+          setError("No player found");
+        }
       } else {
-        setError(data.error || "No player found");
+        setError(data.error);
       }
     } catch {
       setError("Search failed. Please try again.");

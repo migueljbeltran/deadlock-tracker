@@ -11,15 +11,12 @@ import { cacheGet, cacheSet } from "@/lib/cache";
 import { searchLeaderboardByNameCached } from "@/lib/leaderboardSearch";
 import { searchQuerySchema } from "@/lib/validations";
 import { checkRequestRateLimit, rateLimitResponse } from "@/lib/ratelimit";
+import type { SearchResponseBody, SearchResult } from "@/lib/api/types";
 import logger from "@/lib/logger";
 
 const SEARCH_CACHE_TTL_SECONDS = 86400; // 24 hours — prefer cache hits over repeated search fan-out
 const SEARCH_MISS_CACHE_TTL_SECONDS = 900; // 15 min — transient API errors shouldn't block a player all day
 const MAX_RESOLVED_AMBIGUOUS_RESULTS = 5;
-
-type SearchResponseBody =
-  | { success: true; results: Array<Record<string, unknown>> }
-  | { success: false; error: string };
 
 /**
  * Strip common Steam profile URL patterns to extract the identifier.
@@ -149,7 +146,7 @@ export async function GET(request: NextRequest) {
       searchLeaderboardByNameCached(query),
     ]);
 
-    const results: Array<Record<string, unknown>> = [];
+    const results: SearchResult[] = [];
     let ranLeaderboardSearch = false;
     let ranResolution = false;
     let steamAccountId: number | null = null;

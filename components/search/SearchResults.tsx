@@ -3,26 +3,7 @@
 import Image from "next/image";
 import { Trophy } from "lucide-react";
 import { SigilLoader } from "@/components/ui/SigilLoader";
-
-export interface SteamSearchResult {
-  source: "steam";
-  accountId: number;
-  name: string;
-  avatar: string;
-}
-
-export interface LeaderboardSearchResult {
-  source: "leaderboard";
-  accountId: number;
-  accountName: string;
-  rank: number;
-  rankedRank: number;
-  rankedSubrank: number;
-  topHeroIds: number[];
-  region: string;
-}
-
-export type SearchResult = SteamSearchResult | LeaderboardSearchResult;
+import type { LeaderboardSearchResult, SearchResult, SteamSearchResult } from "@/lib/api/types";
 
 interface SearchResultsProps {
   isLoading: boolean;

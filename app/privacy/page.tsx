@@ -43,11 +43,22 @@ export default function PrivacyPage() {
               </section>
 
               <section className="glass-panel rounded-lg p-6">
-                <h2 className="font-heading text-xl text-text-primary mb-3">No Cookies or Tracking</h2>
+                <h2 className="font-heading text-xl text-text-primary mb-3">Local Search History</h2>
                 <p className="text-text-secondary leading-relaxed">
-                  dltracker does not use cookies, analytics trackers, or any third-party
-                  tracking scripts. Your recent searches are stored in your browser&apos;s
-                  local storage and never leave your device.
+                  Your recent searches are stored in your browser&apos;s local storage
+                  so they can be shown on the home page. They are not tied to an
+                  account and are not saved by dltracker.
+                </p>
+              </section>
+
+              <section className="glass-panel rounded-lg p-6">
+                <h2 className="font-heading text-xl text-text-primary mb-3">Analytics and Error Monitoring</h2>
+                <p className="text-text-secondary leading-relaxed">
+                  dltracker uses Vercel Analytics to understand aggregate page
+                  usage and Sentry to diagnose errors. These services may receive
+                  technical details such as page URLs, device/browser information,
+                  and error stack traces. Sensitive request headers are stripped
+                  before errors are sent to Sentry.
                 </p>
               </section>
 
