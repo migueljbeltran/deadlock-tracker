@@ -8,6 +8,7 @@ import PlayerContent from "@/components/player/PlayerContent";
 import { getHeroes, getRanks, type PlayerSnapshotResponse } from "@/lib/api";
 import { getLatestGlobalPlayerMetricsBenchmark } from "@/lib/playerBenchmark";
 import { getPlayerSnapshotState } from "@/lib/playerSnapshot";
+import { accountIdSchema } from "@/lib/validations";
 
 // DO NOT convert to ISR. Player URLs are a long-tail of unique account IDs —
 // ISR would generate a CDN write per unique visit ($$$). Redis snapshot system
@@ -19,30 +20,27 @@ interface PlayerPageProps {
   params: Promise<{ accountId: string }>;
 }
 
-function isValidAccountId(id: string): boolean {
-  const n = Number(id);
-  return Number.isInteger(n) && n > 0 && n < 2_147_483_647;
-}
-
 export async function generateMetadata(
   { params }: PlayerPageProps,
 ): Promise<Metadata> {
   const { accountId: raw } = await params;
+  const parsed = accountIdSchema.safeParse(raw);
 
-  if (!isValidAccountId(raw)) {
+  if (!parsed.success) {
     return { title: "Player Not Found", robots: { index: false } };
   }
+  const accountId = parsed.data;
 
   return {
-    title: `Player ${raw} — Deadlock Player Stats`,
-    description: `Deadlock stats, match history, and hero performance for player ${raw}. View win rates, recent matches, and top heroes.`,
+    title: `Player ${accountId} — Deadlock Player Stats`,
+    description: `Deadlock stats, match history, and hero performance for player ${accountId}. View win rates, recent matches, and top heroes.`,
     alternates: {
-      canonical: `/player/${raw}`,
+      canonical: `/player/${accountId}`,
     },
     openGraph: {
-      title: `Player ${raw} — Deadlock Player Stats`,
-      description: `Deadlock stats and match history for player ${raw}.`,
-      url: `/player/${raw}`,
+      title: `Player ${accountId} — Deadlock Player Stats`,
+      description: `Deadlock stats and match history for player ${accountId}.`,
+      url: `/player/${accountId}`,
     },
     robots: { index: false },
   };
@@ -50,12 +48,13 @@ export async function generateMetadata(
 
 export default async function PlayerPage({ params }: PlayerPageProps) {
   const { accountId: raw } = await params;
+  const parsed = accountIdSchema.safeParse(raw);
 
-  if (!isValidAccountId(raw)) {
+  if (!parsed.success) {
     notFound();
   }
 
-  const accountId = Number(raw);
+  const accountId = parsed.data;
 
   // Server-side existence gate so a missing player returns a real HTTP 404 (not a
   // 200 + client-side "not found" UI, which Google flags as Soft 404).

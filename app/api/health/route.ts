@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { checkRequestRateLimit, rateLimitResponse } from "@/lib/ratelimit";
 
 interface HealthCheck {
   status: "ok" | "error";
@@ -8,7 +9,10 @@ interface HealthCheck {
   error?: string;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const { success: allowed, reset } = await checkRequestRateLimit(request, "healthApi");
+  if (!allowed) return rateLimitResponse(reset);
+
   const checks: Record<string, HealthCheck> = {
     app: { status: "ok" },
   };

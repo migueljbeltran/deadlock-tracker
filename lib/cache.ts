@@ -1,6 +1,7 @@
 import "server-only";
 
 import { Redis } from "@upstash/redis";
+import { getOptionalServerEnv } from "@/lib/env";
 import logger from "@/lib/logger";
 
 const PREFIX = "dltracker:cache:";
@@ -10,11 +11,13 @@ let redis: Redis | null = null;
 function getRedis(): Redis | null {
   if (redis) return redis;
 
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const url = getOptionalServerEnv("UPSTASH_REDIS_REST_URL");
+  const token = getOptionalServerEnv("UPSTASH_REDIS_REST_TOKEN");
 
   if (!url || !token) return null;
 
+  // Keep Redis reads static-friendly for ISR pages. Large public snapshots are
+  // compacted before storage so Upstash responses stay below Next's 2MB limit.
   redis = new Redis({ url, token, cache: "force-cache" });
   return redis;
 }

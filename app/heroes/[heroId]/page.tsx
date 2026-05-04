@@ -13,6 +13,7 @@ import { getHero, getHeroAnalyticsSnapshot, getRanks } from "@/lib/api";
 import type { DeadlockHeroAnalytics } from "@/lib/api";
 import { HeroRankBreakdown } from "@/components/hero/HeroRankBreakdown";
 import { FadeIn } from "@/components/motion";
+import { heroIdSchema } from "@/lib/validations";
 
 interface HeroDetailPageProps {
   params: Promise<{ heroId: string }>;
@@ -27,8 +28,9 @@ export async function generateMetadata(
   { params }: HeroDetailPageProps,
 ): Promise<Metadata> {
   const { heroId } = await params;
-  const id = Number(heroId);
-  if (isNaN(id)) return { title: "Hero Not Found" };
+  const parsed = heroIdSchema.safeParse(heroId);
+  if (!parsed.success) return { title: "Hero Not Found" };
+  const id = parsed.data;
 
   try {
     const hero = await getHero(id);
@@ -37,12 +39,12 @@ export async function generateMetadata(
       title: `${hero.name} — Deadlock Hero Stats & Win Rate`,
       description,
       alternates: {
-        canonical: `/heroes/${heroId}`,
+        canonical: `/heroes/${id}`,
       },
       openGraph: {
         title: `${hero.name} — Deadlock Hero Stats`,
         description,
-        url: `/heroes/${heroId}`,
+        url: `/heroes/${id}`,
         images: hero.images?.minimap_image
           ? [{ url: hero.images.minimap_image, alt: hero.name }]
           : undefined,
@@ -55,8 +57,9 @@ export async function generateMetadata(
 
 export default async function HeroDetailPage({ params }: HeroDetailPageProps) {
   const { heroId } = await params;
-  const id = Number(heroId);
-  if (isNaN(id)) notFound();
+  const parsed = heroIdSchema.safeParse(heroId);
+  if (!parsed.success) notFound();
+  const id = parsed.data;
 
   let hero;
   try {

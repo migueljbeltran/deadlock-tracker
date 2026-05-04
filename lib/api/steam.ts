@@ -6,6 +6,7 @@ import type {
   SteamPlayerSummary,
 } from "./types";
 import { ApiError } from "./types";
+import { getRequiredServerEnv } from "@/lib/env";
 import logger from "@/lib/logger";
 
 const STEAM_API_BASE = "https://api.steampowered.com";
@@ -18,11 +19,7 @@ interface SteamFetchOptions {
 }
 
 function getSteamApiKey(): string {
-  const key = process.env.STEAM_API_KEY;
-  if (!key) {
-    throw new Error("STEAM_API_KEY environment variable is not set.");
-  }
-  return key;
+  return getRequiredServerEnv("STEAM_API_KEY");
 }
 
 // ---- ID Conversion ----

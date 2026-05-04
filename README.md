@@ -18,7 +18,7 @@ Track players, analyze heroes, and explore match history in Deadlock — wrapped
 
 ### Player Profiles
 
-Search any player by Steam ID, vanity URL, or profile link. View career stats, estimated rank, performance percentiles, top heroes, and paginated match history.
+Search any player by player name, Steam ID, vanity URL, or profile link. View career stats, estimated rank, performance percentiles, top heroes, and paginated match history.
 
 ![Player Profile](docs/screenshots/player-profile.png)
 

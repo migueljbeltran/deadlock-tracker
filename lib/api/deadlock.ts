@@ -1,5 +1,6 @@
 import "server-only";
 
+import { request } from "node:https";
 import type {
   DeadlockHero,
   DeadlockItem,
@@ -81,6 +82,45 @@ async function deadlockFetch<T>(url: string, options: DeadlockFetchOptions): Pro
   throw new ApiError("Max retries exceeded", 429, url);
 }
 
+function fetchLargeJson<T>(url: string, timeoutMs = 10_000): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const req = request(
+      url,
+      {
+        method: "GET",
+        headers: { Accept: "application/json" },
+      },
+      (res) => {
+        const statusCode = res.statusCode ?? 0;
+        const chunks: Buffer[] = [];
+
+        res.on("data", (chunk: Buffer | string) => {
+          chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+        });
+
+        res.on("end", () => {
+          if (statusCode < 200 || statusCode >= 300) {
+            reject(new ApiError(`Deadlock API error: ${res.statusMessage ?? statusCode}`, statusCode, url));
+            return;
+          }
+
+          try {
+            resolve(JSON.parse(Buffer.concat(chunks).toString("utf8")) as T);
+          } catch (error) {
+            reject(error);
+          }
+        });
+      },
+    );
+
+    req.setTimeout(timeoutMs, () => {
+      req.destroy(new ApiError("Request timeout", 408, url));
+    });
+    req.on("error", reject);
+    req.end();
+  });
+}
+
 // ---- Assets API ----
 
 export async function getHeroes(): Promise<DeadlockHero[]> {
@@ -111,24 +151,14 @@ export async function getItems(): Promise<DeadlockItem[]> {
   itemsExpiry = Date.now() + ITEMS_CACHE_TTL;
   const itemsUrl = `${ASSETS_API}/v2/items/by-type/upgrade`;
   itemsPromise = (async () => {
-    let res: Response;
     try {
-      res = await fetch(itemsUrl, {
-        next: { revalidate: 604800 },
-        signal: AbortSignal.timeout(10_000),
-      });
+      return await fetchLargeJson<DeadlockItem[]>(itemsUrl);
     } catch (err) {
-      if (err instanceof Error && (err.name === "AbortError" || err.name === "TimeoutError")) {
+      if (err instanceof ApiError && err.status === 408) {
         logger.error({ url: itemsUrl }, "Items API timeout");
-        throw new ApiError("Request timeout", 408, itemsUrl);
       }
       throw err;
     }
-    if (!res.ok) {
-      logger.warn({ url: res.url, status: res.status }, "Deadlock API error");
-      throw new ApiError(`Deadlock API error: ${res.statusText}`, res.status, res.url);
-    }
-    return res.json() as Promise<DeadlockItem[]>;
   })().catch((err) => {
     // Reset cache on failure so next request retries
     itemsPromise = null;

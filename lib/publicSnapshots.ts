@@ -20,6 +20,57 @@ const SNAPSHOT_TTL_SECONDS = 604800;
 const SNAPSHOT_FRESHNESS_SECONDS = 604800;
 const SNAPSHOT_LOCK_TTL_SECONDS = 300;
 
+function compactItemStats(stats: DeadlockItemStats[]): DeadlockItemStats[] {
+  return stats.map((stat) => ({
+    item_id: stat.item_id,
+    bucket: stat.bucket,
+    wins: stat.wins,
+    matches: stat.matches,
+  }) as DeadlockItemStats);
+}
+
+function compactHeroAnalytics(analytics: DeadlockHeroAnalytics[]): DeadlockHeroAnalytics[] {
+  return analytics.map((entry) => ({
+    hero_id: entry.hero_id,
+    bucket: entry.bucket,
+    wins: entry.wins,
+    losses: entry.losses,
+    matches: entry.matches,
+    players: entry.players,
+    total_kills: entry.total_kills,
+    total_deaths: entry.total_deaths,
+    total_assists: entry.total_assists,
+    total_net_worth: entry.total_net_worth,
+    total_last_hits: entry.total_last_hits,
+    total_denies: entry.total_denies,
+    total_player_damage: entry.total_player_damage,
+    total_player_damage_taken: entry.total_player_damage_taken,
+    total_boss_damage: entry.total_boss_damage,
+    total_creep_damage: entry.total_creep_damage,
+    total_neutral_damage: entry.total_neutral_damage,
+    total_shots_hit: entry.total_shots_hit,
+    total_shots_missed: entry.total_shots_missed,
+    total_max_health: entry.total_max_health,
+  }));
+}
+
+function compactShopableItem(item: DeadlockItem): DeadlockItem {
+  return {
+    id: item.id,
+    class_name: item.class_name,
+    name: item.name,
+    image: item.image,
+    image_webp: item.image_webp,
+    shop_image: item.shop_image,
+    shop_image_webp: item.shop_image_webp,
+    cost: item.cost,
+    item_tier: item.item_tier,
+    item_slot_type: item.item_slot_type,
+    activation: item.activation,
+    shopable: item.shopable,
+  };
+}
+
 function isSnapshotStale<T>(snapshot: PublicSnapshot<T>): boolean {
   const fetchedAt = Date.parse(snapshot.fetchedAt);
   if (Number.isNaN(fetchedAt)) return true;
@@ -91,17 +142,17 @@ async function getOrBuildSnapshot<T>(
 
 export async function getHeroAnalyticsSnapshot(): Promise<PublicSnapshot<DeadlockHeroAnalytics[]>> {
   return getOrBuildSnapshot(
-    "public-snapshot:hero-analytics:v1",
+    "public-snapshot:hero-analytics:v2",
     "hero-analytics",
-    getHeroAnalytics,
+    async () => compactHeroAnalytics(await getHeroAnalytics()),
   );
 }
 
 export async function getItemStatsSnapshot(): Promise<PublicSnapshot<DeadlockItemStats[]>> {
   return getOrBuildSnapshot(
-    "public-snapshot:item-stats:v1",
+    "public-snapshot:item-stats:v2",
     "item-stats",
-    getItemStats,
+    async () => compactItemStats(await getItemStats()),
   );
 }
 
@@ -115,11 +166,13 @@ export async function getApiInfoSnapshot(): Promise<PublicSnapshot<DeadlockApiIn
 
 export async function getShopableItemsSnapshot(): Promise<PublicSnapshot<DeadlockItem[]>> {
   return getOrBuildSnapshot(
-    "public-snapshot:shopable-items:v1",
+    "public-snapshot:shopable-items:v2",
     "shopable-items",
     async () => {
       const items = await getItems();
-      return items.filter((item) => item.shopable === true);
+      return items
+        .filter((item) => item.shopable === true)
+        .map(compactShopableItem);
     },
   );
 }

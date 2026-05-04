@@ -7,8 +7,6 @@ import { ArtDecoDivider } from "@/components/layout/ArtDecoDivider";
 import { MatchHeader } from "@/components/match/MatchHeader";
 import { TeamScoreboard } from "@/components/match/TeamScoreboard";
 import {
-  getMatchDetail,
-  getMatchPlayerItems,
   getHeroes,
   getShopableItemsSnapshot,
   getRanks,
@@ -17,7 +15,9 @@ import {
   steam64ToAccountId,
 } from "@/lib/api";
 import type { SteamPlayerSummary, DeadlockItem } from "@/lib/api";
+import { getMatchSnapshot } from "@/lib/matchSnapshot";
 import { FadeIn } from "@/components/motion";
+import { matchIdSchema } from "@/lib/validations";
 
 // Match data is immutable — cache permanently, never rewrite
 export const revalidate = false;
@@ -35,28 +35,28 @@ export async function generateMetadata(
   { params }: MatchDetailPageProps,
 ): Promise<Metadata> {
   const { matchId } = await params;
+  const parsed = matchIdSchema.safeParse(matchId);
+  const safeMatchId = parsed.success ? String(parsed.data) : "unknown";
   return {
-    title: `Match #${matchId} — Deadlock Match Details`,
-    description: `Scoreboard, team composition, and player stats for Deadlock match #${matchId}.`,
+    title: `Match #${safeMatchId} — Deadlock Match Details`,
+    description: `Scoreboard, team composition, and player stats for Deadlock match #${safeMatchId}.`,
     robots: { index: false },
     alternates: {
-      canonical: `/match/${matchId}`,
+      canonical: parsed.success ? `/match/${parsed.data}` : "/match",
     },
   };
 }
 
 export default async function MatchDetailPage({ params }: MatchDetailPageProps) {
   const { matchId } = await params;
-  const id = Number(matchId);
-  if (!Number.isInteger(id) || id <= 0) notFound();
+  const parsed = matchIdSchema.safeParse(matchId);
+  if (!parsed.success) notFound();
+  const id = parsed.data;
 
-  let match;
-  try {
-    match = await getMatchDetail(id);
-  } catch {
-    notFound();
-  }
+  const matchSnapshot = await getMatchSnapshot(id);
+  if (!matchSnapshot) notFound();
 
+  const match = matchSnapshot.match;
   const players = match.players ?? [];
   if (players.length === 0) notFound();
 
@@ -67,7 +67,7 @@ export default async function MatchDetailPage({ params }: MatchDetailPageProps) 
     getRanks(),
     getPlayerSummaries(steam64Ids).catch(() => [] as SteamPlayerSummary[]),
     getShopableItemsSnapshot().catch(() => null),
-    getMatchPlayerItems(id).catch(() => new Map<number, number[]>()),
+    Promise.resolve(new Map<number, number[]>(matchSnapshot.playerItems)),
   ]);
 
   const heroMap = new Map(heroes.map((h) => [h.id, h]));

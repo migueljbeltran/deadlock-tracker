@@ -26,5 +26,8 @@ jobs:
       - name: Type check
         run: npx tsc --noEmit
 
+      - name: Security audit
+        run: npm audit --audit-level=high
+
       # Build step removed — Vercel deploy preview validates the build on every PR.
       # Lint + typecheck above catch the vast majority of CI failures.

@@ -114,7 +114,7 @@ export function SearchBar({ onPlayerFound }: SearchBarProps) {
         </Button>
       </form>
       <p className="mt-2 text-sm text-text-muted">
-        Search by Account ID, Steam ID, vanity URL, or profile link
+        Search by player name, Account ID, Steam ID, vanity URL, or profile link
       </p>
       {isNavigating ? (
         <div className="mt-3 flex items-center gap-2 rounded-md glass-panel px-3 py-2 text-sm text-text-secondary">

@@ -49,3 +49,4 @@ next-env.d.ts
 .claude/
 CLAUDE.md
 prd.md
+SECURITY_AUDIT.md

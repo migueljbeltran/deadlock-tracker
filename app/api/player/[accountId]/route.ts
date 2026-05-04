@@ -3,36 +3,39 @@ import type { PlayerSnapshotResponse } from "@/lib/api";
 import logger from "@/lib/logger";
 import { getLatestGlobalPlayerMetricsBenchmark } from "@/lib/playerBenchmark";
 import { getPlayerSnapshotState } from "@/lib/playerSnapshot";
-
-function isValidAccountId(id: string): boolean {
-  const n = Number(id);
-  return Number.isInteger(n) && n > 0 && n < 2_147_483_647;
-}
+import { checkRequestRateLimit, rateLimitResponse } from "@/lib/ratelimit";
+import { accountIdSchema } from "@/lib/validations";
 
 interface PlayerRouteProps {
   params: Promise<{ accountId: string }>;
 }
 
 export async function GET(_request: NextRequest, { params }: PlayerRouteProps) {
-  const { accountId: raw } = await params;
+  const { success: allowed, reset } = await checkRequestRateLimit(_request, "playerApi");
+  if (!allowed) return rateLimitResponse(reset);
 
-  if (!isValidAccountId(raw)) {
-    const body: PlayerSnapshotResponse = { success: false, error: "Invalid account ID", notFound: true };
+  const { accountId: raw } = await params;
+  const parsed = accountIdSchema.safeParse(raw);
+
+  if (!parsed.success) {
+    const body: PlayerSnapshotResponse = { success: false, error: "Invalid account ID" };
     return NextResponse.json(body, {
-      status: 404,
-      headers: { "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400" },
+      status: 400,
+      headers: { "Cache-Control": "no-store" },
     });
   }
+
+  const accountId = parsed.data;
 
   let playerState: Awaited<ReturnType<typeof getPlayerSnapshotState>>;
   let benchmark: Awaited<ReturnType<typeof getLatestGlobalPlayerMetricsBenchmark>>;
   try {
     [playerState, benchmark] = await Promise.all([
-      getPlayerSnapshotState(Number(raw)),
+      getPlayerSnapshotState(accountId),
       getLatestGlobalPlayerMetricsBenchmark(),
     ]);
   } catch (error) {
-    logger.error({ accountId: raw, error }, "Player snapshot route failed unexpectedly");
+    logger.error({ accountId, error }, "Player snapshot route failed unexpectedly");
     const body: PlayerSnapshotResponse = { success: false, error: "Temporarily unavailable" };
     return NextResponse.json(body, {
       status: 503,

@@ -10,7 +10,7 @@ import {
 import { cacheGet, cacheSet } from "@/lib/cache";
 import { searchLeaderboardByNameCached } from "@/lib/leaderboardSearch";
 import { searchQuerySchema } from "@/lib/validations";
-import { checkRateLimit } from "@/lib/ratelimit";
+import { checkRequestRateLimit, rateLimitResponse } from "@/lib/ratelimit";
 import logger from "@/lib/logger";
 
 const SEARCH_CACHE_TTL_SECONDS = 86400; // 24 hours — prefer cache hits over repeated search fan-out
@@ -47,22 +47,11 @@ function extractQuery(raw: string): string {
 }
 
 export async function GET(request: NextRequest) {
-  // Rate limiting
-  const ip =
-    request.headers.get("x-real-ip") ??
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    "127.0.0.1";
-  const { success: allowed, reset } = await checkRateLimit(ip);
+  const { success: allowed, reset, ip } = await checkRequestRateLimit(request, "search");
 
   if (!allowed) {
     logger.warn({ ip }, "Rate limit exceeded");
-    return NextResponse.json(
-      { success: false, error: "Too many requests. Please try again later." },
-      {
-        status: 429,
-        headers: reset ? { "Retry-After": String(Math.max(1, Math.ceil((reset - Date.now()) / 1000))) } : {},
-      },
-    );
+    return rateLimitResponse(reset);
   }
 
   // Input validation
