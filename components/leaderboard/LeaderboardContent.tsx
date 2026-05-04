@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { LeaderboardTable } from "@/components/leaderboard/LeaderboardTable";
 import { RegionSelector } from "@/components/leaderboard/RegionSelector";
 import { Pagination } from "@/components/ui/Pagination";
 import { DataFreshness } from "@/components/ui/DataFreshness";
 import { LeaderboardTableSkeleton } from "@/components/leaderboard/LeaderboardTableSkeleton";
+import { useLeaderboardSnapshot } from "@/lib/hooks/useLeaderboardSnapshot";
 import type { DeadlockRegion, DeadlockHero, DeadlockRank } from "@/lib/api";
-import type { ResolvedLeaderboardEntry } from "@/lib/leaderboardSnapshot";
 
 const PAGE_SIZE = 100;
 const VALID_REGIONS: DeadlockRegion[] = ["NAmerica", "SAmerica", "Europe", "Asia", "Oceania"];
@@ -16,11 +16,6 @@ const VALID_REGIONS: DeadlockRegion[] = ["NAmerica", "SAmerica", "Europe", "Asia
 interface LeaderboardContentProps {
   heroes: DeadlockHero[];
   ranks: DeadlockRank[];
-}
-
-interface LeaderboardSnapshot {
-  fetchedAt: string;
-  entries: ResolvedLeaderboardEntry[];
 }
 
 export default function LeaderboardContent({ heroes, ranks }: LeaderboardContentProps) {
@@ -32,35 +27,7 @@ export default function LeaderboardContent({ heroes, ranks }: LeaderboardContent
   const rawPage = Number(searchParams.get("page"));
   const page = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 
-  const [snapshot, setSnapshot] = useState<LeaderboardSnapshot | null>(null);
-  const [hasError, setHasError] = useState(false);
-  const [loadedRegion, setLoadedRegion] = useState<string | null>(null);
-
-  // Derived: loading whenever the fetched region doesn't match the requested one.
-  // Avoids synchronous setState at the top of the effect.
-  const isLoading = loadedRegion !== region;
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    fetch(`/api/leaderboard?region=${region}`, { signal: controller.signal })
-      .then((r) => r.json() as Promise<LeaderboardSnapshot>)
-      .then((data) => {
-        if (!controller.signal.aborted) {
-          setSnapshot(data);
-          setHasError(false);
-          setLoadedRegion(region);
-        }
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) {
-          setHasError(true);
-          setLoadedRegion(region);
-        }
-      });
-
-    return () => controller.abort();
-  }, [region]);
+  const { snapshot, isLoading, hasError } = useLeaderboardSnapshot(region);
 
   const rankMap = useMemo(() => new Map(ranks.map((r) => [r.tier, r])), [ranks]);
   const heroMap = useMemo(() => new Map(heroes.map((h) => [h.id, h])), [heroes]);

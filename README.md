@@ -91,7 +91,8 @@ Regional rankings across NA, SA, EU, Asia, and Oceania with rank badges and top 
 | Cache / Rate Limiting | Upstash Redis |
 | Monitoring | Sentry, Pino (structured JSON logging), Vercel Analytics |
 | Validation | Zod |
-| CI/CD | GitHub Actions (lint, typecheck, build) |
+| Testing | Vitest, React Testing Library, jsdom, Playwright |
+| CI/CD | GitHub Actions (lint, typecheck, unit tests, security audit) |
 | Data Sources | [Deadlock Community API](https://deadlock-api.com) + Steam Web API |
 
 ### Key Engineering Decisions
@@ -101,7 +102,22 @@ Regional rankings across NA, SA, EU, Asia, and Oceania with rank badges and top 
 - **Multi-signal account resolution** on the leaderboard — the Deadlock API returns ambiguous account IDs for ranked players. Built a scoring system that cross-references Steam profiles and hero play patterns to resolve the correct account.
 - **In-memory promise cache** for the 2.5MB items endpoint — Next.js fetch cache has a 2MB limit, so items use a process-level cache with thundering herd protection.
 - **Rank estimation from match badges** — Deadlock has no public rank API. Estimated player ranks by averaging team badge values from recent matches and mapping to rank tiers.
+- **Runtime API guards** — critical Steam and Deadlock payloads are validated with Zod before cached data reaches rendering code.
+- **Reusable client snapshot hooks** — player and leaderboard client views keep fetch state, abort handling, refresh behavior, and loading transitions in focused hooks with unit coverage.
 - **Custom design system** — "Occult Noir Ascended" theme with glassmorphism panels, animated conic-gradient borders, per-page atmospheric gradients, and glowing stat bars. All defined as CSS utilities and variables.
+
+### Local Verification
+
+```bash
+npm run lint
+npx tsc --noEmit
+npm run test:unit
+npm run test:e2e
+npm audit --audit-level=high
+npm run build
+```
+
+GitHub Actions runs lint, typecheck, unit tests, and high-severity audit on pull requests. Vercel deploy previews validate production builds.
 
 ### Data Flow
 

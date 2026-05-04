@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import { AlertTriangle } from "lucide-react";
 import { ArtDecoDivider } from "@/components/layout/ArtDecoDivider";
 import { PlayerHeader } from "@/components/player/PlayerHeader";
@@ -11,6 +11,7 @@ import { PlayerMatchSection } from "@/components/player/PlayerMatchSection";
 import { PlayerDataRecovery } from "@/components/player/PlayerDataRecovery";
 import { FadeIn } from "@/components/motion";
 import { SigilLoader } from "@/components/ui/SigilLoader";
+import { usePlayerSnapshot } from "@/lib/hooks/usePlayerSnapshot";
 import type { DeadlockHero, DeadlockRank, PlayerSnapshotResponse } from "@/lib/api";
 
 interface PlayerContentProps {
@@ -21,56 +22,7 @@ interface PlayerContentProps {
 }
 
 export default function PlayerContent({ accountId, heroes, ranks, initialData }: PlayerContentProps) {
-  const [data, setData] = useState<PlayerSnapshotResponse | null>(initialData ?? null);
-  const [isLoading, setIsLoading] = useState(!initialData);
-  const [reloadToken, setReloadToken] = useState(0);
-  const [fetchError, setFetchError] = useState<string | null>(null);
-  const mountedRef = useRef(true);
-
-  const refetch = useCallback(() => {
-    setReloadToken((value) => value + 1);
-  }, []);
-
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    // Skip the initial fetch when the server provided seeded data; subsequent
-    // refetches (manual refresh, recovery flow) still trigger the API call.
-    if (initialData && reloadToken === 0) {
-      return;
-    }
-
-    const controller = new AbortController();
-
-    async function load() {
-      setIsLoading(true);
-      setFetchError(null);
-
-      try {
-        const res = await fetch(`/api/player/${accountId}?v=${reloadToken}`, {
-          cache: "no-store",
-          signal: controller.signal,
-        });
-        const body = await res.json() as PlayerSnapshotResponse;
-        if (!mountedRef.current || controller.signal.aborted) return;
-        setData(body);
-      } catch {
-        if (!mountedRef.current || controller.signal.aborted) return;
-        setFetchError("Failed to load player data.");
-      } finally {
-        if (!mountedRef.current || controller.signal.aborted) return;
-        setIsLoading(false);
-      }
-    }
-
-    void load();
-    return () => controller.abort();
-  }, [accountId, reloadToken, initialData]);
+  const { data, isLoading, fetchError, refetch } = usePlayerSnapshot({ accountId, initialData });
 
   const heroMap = useMemo(
     () => new Map(heroes.map((hero) => [hero.id, hero])),
