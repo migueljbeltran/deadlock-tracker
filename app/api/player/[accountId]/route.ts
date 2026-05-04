@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { PlayerSnapshotResponse } from "@/lib/api";
+import logger from "@/lib/logger";
 import { getLatestGlobalPlayerMetricsBenchmark } from "@/lib/playerBenchmark";
 import { getPlayerSnapshotState } from "@/lib/playerSnapshot";
 
@@ -23,10 +24,21 @@ export async function GET(_request: NextRequest, { params }: PlayerRouteProps) {
     });
   }
 
-  const [playerState, benchmark] = await Promise.all([
-    getPlayerSnapshotState(Number(raw)),
-    getLatestGlobalPlayerMetricsBenchmark(),
-  ]);
+  let playerState: Awaited<ReturnType<typeof getPlayerSnapshotState>>;
+  let benchmark: Awaited<ReturnType<typeof getLatestGlobalPlayerMetricsBenchmark>>;
+  try {
+    [playerState, benchmark] = await Promise.all([
+      getPlayerSnapshotState(Number(raw)),
+      getLatestGlobalPlayerMetricsBenchmark(),
+    ]);
+  } catch (error) {
+    logger.error({ accountId: raw, error }, "Player snapshot route failed unexpectedly");
+    const body: PlayerSnapshotResponse = { success: false, error: "Temporarily unavailable" };
+    return NextResponse.json(body, {
+      status: 503,
+      headers: { "Cache-Control": "no-store" },
+    });
+  }
   const { snapshot, isStale, shouldRefresh } = playerState;
 
   if (!snapshot) {

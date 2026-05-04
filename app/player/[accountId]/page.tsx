@@ -5,7 +5,9 @@ import { Footer } from "@/components/layout/Footer";
 import { SigilBackground } from "@/components/layout/SigilBackground";
 import { PlayerSearchBar } from "@/components/search/PlayerSearchBar";
 import PlayerContent from "@/components/player/PlayerContent";
-import { getHeroes, getRanks } from "@/lib/api";
+import { getHeroes, getRanks, type PlayerSnapshotResponse } from "@/lib/api";
+import { getLatestGlobalPlayerMetricsBenchmark } from "@/lib/playerBenchmark";
+import { getPlayerSnapshotState } from "@/lib/playerSnapshot";
 
 // DO NOT convert to ISR. Player URLs are a long-tail of unique account IDs —
 // ISR would generate a CDN write per unique visit ($$$). Redis snapshot system
@@ -54,7 +56,29 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
   }
 
   const accountId = Number(raw);
-  const [heroes, ranks] = await Promise.all([getHeroes(), getRanks()]);
+
+  // Server-side existence gate so a missing player returns a real HTTP 404 (not a
+  // 200 + client-side "not found" UI, which Google flags as Soft 404).
+  // getPlayerSnapshotState is Redis-cached and returns { snapshot: null } on
+  // upstream failures — it does not throw — so this is safe to call directly.
+  const [heroes, ranks, playerState, benchmark] = await Promise.all([
+    getHeroes(),
+    getRanks(),
+    getPlayerSnapshotState(accountId),
+    getLatestGlobalPlayerMetricsBenchmark(),
+  ]);
+
+  if (!playerState.snapshot) {
+    notFound();
+  }
+
+  const initialData: PlayerSnapshotResponse = {
+    success: true,
+    snapshot: playerState.snapshot,
+    benchmark,
+    isStale: playerState.isStale,
+    shouldRefresh: playerState.shouldRefresh,
+  };
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -68,7 +92,12 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
           <PlayerSearchBar />
         </div>
 
-        <PlayerContent accountId={accountId} heroes={heroes} ranks={ranks} />
+        <PlayerContent
+          accountId={accountId}
+          heroes={heroes}
+          ranks={ranks}
+          initialData={initialData}
+        />
       </main>
 
       <Footer />

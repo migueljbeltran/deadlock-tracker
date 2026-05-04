@@ -50,6 +50,12 @@ async function deadlockFetch<T>(url: string, options: DeadlockFetchOptions): Pro
       res = await fetch(url, fetchOptions);
     } catch (err) {
       if (err instanceof Error && (err.name === "AbortError" || err.name === "TimeoutError")) {
+        if (attempt < MAX_RETRIES) {
+          const delay = 500 * (attempt + 1);
+          logger.warn({ url, attempt, delay }, "Deadlock API timeout, retrying");
+          await new Promise((r) => setTimeout(r, delay));
+          continue;
+        }
         logger.error({ url }, "Deadlock API timeout");
         throw new ApiError("Request timeout", 408, url);
       }

@@ -17,11 +17,12 @@ interface PlayerContentProps {
   accountId: number;
   heroes: DeadlockHero[];
   ranks: DeadlockRank[];
+  initialData?: PlayerSnapshotResponse;
 }
 
-export default function PlayerContent({ accountId, heroes, ranks }: PlayerContentProps) {
-  const [data, setData] = useState<PlayerSnapshotResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export default function PlayerContent({ accountId, heroes, ranks, initialData }: PlayerContentProps) {
+  const [data, setData] = useState<PlayerSnapshotResponse | null>(initialData ?? null);
+  const [isLoading, setIsLoading] = useState(!initialData);
   const [reloadToken, setReloadToken] = useState(0);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const mountedRef = useRef(true);
@@ -38,6 +39,12 @@ export default function PlayerContent({ accountId, heroes, ranks }: PlayerConten
   }, []);
 
   useEffect(() => {
+    // Skip the initial fetch when the server provided seeded data; subsequent
+    // refetches (manual refresh, recovery flow) still trigger the API call.
+    if (initialData && reloadToken === 0) {
+      return;
+    }
+
     const controller = new AbortController();
 
     async function load() {
@@ -63,7 +70,7 @@ export default function PlayerContent({ accountId, heroes, ranks }: PlayerConten
 
     void load();
     return () => controller.abort();
-  }, [accountId, reloadToken]);
+  }, [accountId, reloadToken, initialData]);
 
   const heroMap = useMemo(
     () => new Map(heroes.map((hero) => [hero.id, hero])),

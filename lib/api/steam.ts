@@ -57,6 +57,12 @@ async function steamFetch(url: string, options: SteamFetchOptions): Promise<Resp
       });
     } catch (err) {
       if (err instanceof Error && (err.name === "AbortError" || err.name === "TimeoutError")) {
+        if (attempt < MAX_RETRIES) {
+          const delay = 500 * (attempt + 1);
+          logger.warn({ url: url.replace(/key=[^&]+/, "key=***"), attempt, delay }, "Steam API timeout, retrying");
+          await new Promise((r) => setTimeout(r, delay));
+          continue;
+        }
         logger.error({ url: url.replace(/key=[^&]+/, "key=***") }, "Steam API timeout");
         throw new ApiError("Request timeout", 408, url);
       }

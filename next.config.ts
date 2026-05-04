@@ -55,6 +55,17 @@ const nextConfig: NextConfig = {
         source: "/(.*)",
         headers: securityHeaders,
       },
+      // Defense-in-depth noindex on long-tail dynamic pages — robots.txt
+      // disallows them, and metadata.robots sets noindex, but an HTTP header is
+      // the most authoritative signal for crawlers that ignore the rest.
+      {
+        source: "/player/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
+        source: "/match/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
     ];
   },
 };

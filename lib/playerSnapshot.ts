@@ -123,12 +123,15 @@ function isSnapshotStale(snapshot: PlayerSnapshot): boolean {
 
 async function buildPlayerSnapshot(accountId: number): Promise<PlayerSnapshot | null> {
   const [
-    player,
+    playerResult,
     heroStatsResult,
     matchesResult,
     metricsResult,
   ] = await Promise.all([
-    getPlayerIdentity(accountId),
+    getPlayerIdentity(accountId).then(
+      (value) => ({ ok: true as const, value }),
+      (error) => ({ ok: false as const, error }),
+    ),
     getPlayerHeroStats(accountId).then(
       (value) => ({ ok: true as const, value }),
       (error) => ({ ok: false as const, error }),
@@ -143,6 +146,11 @@ async function buildPlayerSnapshot(accountId: number): Promise<PlayerSnapshot | 
     ),
   ]);
 
+  if (!playerResult.ok) {
+    logger.warn({ accountId, error: playerResult.error }, "Player identity lookup failed");
+    return null;
+  }
+  const player = playerResult.value;
   if (!player) return null;
 
   // Strip the `matches: number[]` array (all historical match IDs per hero) — it's never used
@@ -195,7 +203,14 @@ export async function getPlayerSnapshotState(accountId: number): Promise<{
     return { snapshot, isStale, shouldRefresh };
   }
 
-  const builtSnapshot = await buildPlayerSnapshot(accountId);
+  let builtSnapshot: PlayerSnapshot | null = null;
+  try {
+    builtSnapshot = await buildPlayerSnapshot(accountId);
+  } catch (error) {
+    logger.warn({ accountId, error }, "Player snapshot build failed");
+    return { snapshot: null, isStale: false, shouldRefresh: true };
+  }
+
   if (builtSnapshot) {
     await cacheSet(cacheKey, builtSnapshot, SNAPSHOT_TTL_SECONDS);
     logger.info(
