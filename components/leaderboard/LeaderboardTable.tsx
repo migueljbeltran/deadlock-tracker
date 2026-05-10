@@ -54,8 +54,9 @@ export function LeaderboardTable({
         >
           {entries.map((entry, idx) => {
             const rank = rankMap.get(entry.ranked_rank);
-            const playerAccountId = entry.resolvedAccountId;
-            const isConfident = entry.confident;
+            const playerAccountId = entry.profileAccountId;
+            const hasProfileLink = entry.profileLinkStatus === "available" && playerAccountId != null;
+            const playerLabel = entry.account_name || `Player #${entry.rank}`;
 
             const isTop1 = entry.rank === 1;
             const isTop2 = entry.rank === 2;
@@ -83,7 +84,7 @@ export function LeaderboardTable({
                 </td>
                 <td className="px-3 py-2">
                   <div className="flex items-center gap-1.5">
-                    {playerAccountId && isConfident ? (
+                    {hasProfileLink ? (
                       <Link
                         href={`/player/${playerAccountId}`}
                         className={cn(
@@ -93,11 +94,22 @@ export function LeaderboardTable({
                             : "text-text-primary",
                         )}
                       >
-                        {entry.account_name || `Player #${entry.rank}`}
+                        {playerLabel}
                       </Link>
                     ) : (
-                      <span className="text-text-muted">
-                        {entry.account_name || `Player #${entry.rank}`}
+                      <span
+                        className={cn(
+                          isTop1
+                            ? "bg-clip-text text-transparent bg-gradient-to-b from-amber-light to-amber"
+                            : "text-text-primary",
+                        )}
+                        title={
+                          entry.profileLinkStatus === "ambiguous"
+                            ? "Profile link unavailable because the leaderboard returned multiple possible accounts."
+                            : "Profile link unavailable."
+                        }
+                      >
+                        {playerLabel}
                       </span>
                     )}
                   </div>

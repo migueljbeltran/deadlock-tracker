@@ -56,7 +56,7 @@ export function PlayerMatchSection({
   );
 
   return (
-    <section key={`matches-page-${page}`}>
+    <section>
       <FadeIn delay={0.4}>
         <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
           <div className="flex items-center gap-3">

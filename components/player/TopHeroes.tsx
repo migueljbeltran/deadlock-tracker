@@ -107,7 +107,11 @@ export function TopHeroes({ heroStats, heroMap }: TopHeroesProps) {
         )}
       </div>
 
-      <StaggerList key={`${sortMode}-${showAll}`} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <StaggerList
+        key={`${sortMode}-${showAll}`}
+        triggerOnScroll={false}
+        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+      >
         {visible.map((stat, index) => {
           const hero = heroMap[stat.hero_id];
           const winRate = getWinRate(stat);

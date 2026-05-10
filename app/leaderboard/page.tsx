@@ -7,7 +7,13 @@ import { Footer } from "@/components/layout/Footer";
 import { SigilBackground } from "@/components/layout/SigilBackground";
 import LeaderboardContent from "@/components/leaderboard/LeaderboardContent";
 import { LeaderboardTableSkeleton } from "@/components/leaderboard/LeaderboardTableSkeleton";
-import { getHeroes, getRanks } from "@/lib/api";
+import { getHeroes, getRanks, getResolvedLeaderboardSnapshot, type DeadlockRegion } from "@/lib/api";
+
+const VALID_REGIONS: DeadlockRegion[] = ["NAmerica", "SAmerica", "Europe", "Asia", "Oceania"];
+
+interface LeaderboardPageProps {
+  searchParams?: Promise<{ page?: string; region?: string }>;
+}
 
 export const metadata: Metadata = {
   title: "Deadlock Ranked Leaderboard — Top Players by Region",
@@ -24,8 +30,23 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function LeaderboardPage() {
-  const [ranks, heroes] = await Promise.all([getRanks(), getHeroes()]);
+export default async function LeaderboardPage({ searchParams }: LeaderboardPageProps) {
+  const params = await searchParams;
+  const requestedRegion = params?.region;
+  const initialRegion: DeadlockRegion = VALID_REGIONS.includes(requestedRegion as DeadlockRegion)
+    ? (requestedRegion as DeadlockRegion)
+    : "NAmerica";
+  const rawPage = Number(params?.page);
+  const initialPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
+
+  const [ranks, heroes, initialSnapshot] = await Promise.all([
+    getRanks(),
+    getHeroes(),
+    getResolvedLeaderboardSnapshot(initialRegion, {
+      page: initialPage,
+      enrichProfileLinks: true,
+    }).catch(() => null),
+  ]);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -36,7 +57,12 @@ export default async function LeaderboardPage() {
 
         <div className="atmosphere-amber relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
           <Suspense fallback={<LeaderboardTableSkeleton />}>
-            <LeaderboardContent ranks={ranks} heroes={heroes} />
+            <LeaderboardContent
+              ranks={ranks}
+              heroes={heroes}
+              initialRegion={initialRegion}
+              initialSnapshot={initialSnapshot}
+            />
           </Suspense>
         </div>
       </main>
