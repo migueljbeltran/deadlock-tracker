@@ -1,10 +1,15 @@
 import { getHeroes, getHeroAnalyticsSnapshot, getRanks } from "@/lib/api";
 import { HeroesClientView } from "@/components/hero/HeroesClientView";
+import type { AnalyticsTimeRange } from "@/lib/analyticsTimeRange";
 
-export default async function HeroesContent() {
+interface HeroesContentProps {
+  timeRange: AnalyticsTimeRange;
+}
+
+export default async function HeroesContent({ timeRange }: HeroesContentProps) {
   const [heroes, analyticsSnapshot, ranks] = await Promise.all([
     getHeroes(),
-    getHeroAnalyticsSnapshot(),
+    getHeroAnalyticsSnapshot(timeRange),
     getRanks(),
   ]);
 
@@ -30,6 +35,7 @@ export default async function HeroesContent() {
       analytics={analyticsSnapshot.data}
       rankOptions={rankOptions}
       fetchedAt={analyticsSnapshot.fetchedAt}
+      timeRange={timeRange}
     />
   );
 }

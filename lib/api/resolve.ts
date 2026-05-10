@@ -191,27 +191,47 @@ export async function resolveAccountIds(
     heroDataMap: new Map(primaryData.heroDataMap),
   };
   let totalFetchedCandidates = primaryData.fetchedCandidateCount;
-  let fallbackExpandedEntries = 0;
+  const fallbackEntries: { idx: number; entry: ResolvableEntry }[] = [];
+  const scoredByIndex = new Map<number, ScoredResolution>();
   let confidentResolutions = 0;
 
   for (const { idx, entry } of ambiguous) {
     const primaryCandidates = entry.possible_account_ids.slice(0, PRIMARY_CANDIDATE_LIMIT);
-    let scored = scoreEntry(entry, primaryCandidates, aggregateData);
+    const scored = scoreEntry(entry, primaryCandidates, aggregateData);
+    scoredByIndex.set(idx, scored);
 
     if (
       scored.bestScore < CONFIDENT_SCORE_THRESHOLD &&
       entry.possible_account_ids.length > PRIMARY_CANDIDATE_LIMIT
     ) {
-      fallbackExpandedEntries++;
-      const expandedCandidates = entry.possible_account_ids.slice(0, FALLBACK_CANDIDATE_LIMIT);
-      const additionalIds = expandedCandidates.filter((id) => !fetchedCandidateIds.has(id));
-      const fallbackData = await fetchCandidateData(additionalIds);
-      totalFetchedCandidates += fallbackData.fetchedCandidateCount;
-      for (const id of additionalIds) fetchedCandidateIds.add(id);
-      for (const [id, name] of fallbackData.nameMap) aggregateData.nameMap.set(id, name);
-      for (const [id, heroData] of fallbackData.heroDataMap) aggregateData.heroDataMap.set(id, heroData);
-      scored = scoreEntry(entry, expandedCandidates, aggregateData);
+      fallbackEntries.push({ idx, entry });
     }
+  }
+
+  if (fallbackEntries.length > 0) {
+    const additionalIds = new Set<number>();
+    for (const { entry } of fallbackEntries) {
+      const expandedCandidates = entry.possible_account_ids.slice(0, FALLBACK_CANDIDATE_LIMIT);
+      for (const id of expandedCandidates) {
+        if (!fetchedCandidateIds.has(id)) additionalIds.add(id);
+      }
+    }
+
+    const fallbackData = await fetchCandidateData([...additionalIds]);
+    totalFetchedCandidates += fallbackData.fetchedCandidateCount;
+    for (const id of additionalIds) fetchedCandidateIds.add(id);
+    for (const [id, name] of fallbackData.nameMap) aggregateData.nameMap.set(id, name);
+    for (const [id, heroData] of fallbackData.heroDataMap) aggregateData.heroDataMap.set(id, heroData);
+
+    for (const { idx, entry } of fallbackEntries) {
+      const expandedCandidates = entry.possible_account_ids.slice(0, FALLBACK_CANDIDATE_LIMIT);
+      scoredByIndex.set(idx, scoreEntry(entry, expandedCandidates, aggregateData));
+    }
+  }
+
+  for (const { idx } of ambiguous) {
+    const scored = scoredByIndex.get(idx);
+    if (!scored) continue;
 
     const confident = scored.bestScore >= CONFIDENT_SCORE_THRESHOLD;
     if (confident) confidentResolutions++;
@@ -222,7 +242,7 @@ export async function resolveAccountIds(
     entries: entries.length,
     ambiguous: ambiguous.length,
     confidentResolutions,
-    fallbackExpandedEntries,
+    fallbackExpandedEntries: fallbackEntries.length,
     fetchedCandidates: totalFetchedCandidates,
   }, "Account resolution complete");
 

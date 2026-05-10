@@ -1,12 +1,11 @@
 import "server-only";
 
-import type { DeadlockLeaderboardEntry, DeadlockRegion, LeaderboardSearchMatch } from "@/lib/api";
-import { cacheDelete, cacheGet, cacheSet, cacheSetIfNotExists, isCacheAvailable } from "@/lib/cache";
+import type { DeadlockLeaderboardEntry } from "@/lib/api/types";
+import { getLeaderboard, type DeadlockRegion, type LeaderboardSearchMatch } from "@/lib/api/deadlock";
+import { cacheGetOrBuildSnapshot } from "@/lib/cache";
 import logger from "@/lib/logger";
 
-const GAME_API = "https://api.deadlock-api.com";
-const CORPUS_KEY = "leaderboard-search:corpus:v1";
-const CORPUS_LOCK_KEY = "leaderboard-search-refresh-lock";
+const CORPUS_KEY = "leaderboard-search:corpus:v2";
 const CORPUS_FRESHNESS_SECONDS = 86400;
 const CORPUS_TTL_SECONDS = 604800;
 const CORPUS_LOCK_TTL_SECONDS = 600;
@@ -37,28 +36,8 @@ interface LeaderboardSearchCorpus {
   entries: CachedLeaderboardSearchEntry[];
 }
 
-function isCorpusStale(corpus: LeaderboardSearchCorpus): boolean {
-  const fetchedAt = Date.parse(corpus.fetchedAt);
-  if (Number.isNaN(fetchedAt)) return true;
-  return (Date.now() - fetchedAt) / 1000 >= CORPUS_FRESHNESS_SECONDS;
-}
-
-async function fetchLiveLeaderboard(region: DeadlockRegion): Promise<DeadlockLeaderboardEntry[]> {
-  const res = await fetch(`${GAME_API}/v1/leaderboard/${region}`, {
-    cache: "no-store",
-    signal: AbortSignal.timeout(10_000),
-  });
-
-  if (!res.ok) {
-    throw new Error(`Leaderboard fetch failed for ${region}: ${res.status}`);
-  }
-
-  const data = await res.json() as { entries: DeadlockLeaderboardEntry[] };
-  return data.entries;
-}
-
-async function buildLeaderboardSearchCorpus(): Promise<LeaderboardSearchCorpus> {
-  const boards = await Promise.all(ALL_REGIONS.map(fetchLiveLeaderboard));
+async function buildLeaderboardSearchEntries(): Promise<CachedLeaderboardSearchEntry[]> {
+  const boards: DeadlockLeaderboardEntry[][] = await Promise.all(ALL_REGIONS.map(getLeaderboard));
   const entries: CachedLeaderboardSearchEntry[] = [];
 
   for (let i = 0; i < boards.length; i++) {
@@ -79,49 +58,23 @@ async function buildLeaderboardSearchCorpus(): Promise<LeaderboardSearchCorpus> 
     }
   }
 
-  const corpus: LeaderboardSearchCorpus = {
-    fetchedAt: new Date().toISOString(),
-    entries,
-  };
-
-  await cacheSet(CORPUS_KEY, corpus, CORPUS_TTL_SECONDS);
   logger.info({ entries: entries.length }, "Leaderboard search corpus rebuilt");
-  return corpus;
+  return entries;
 }
 
 async function getLeaderboardSearchCorpus(): Promise<LeaderboardSearchCorpus | null> {
-  if (!isCacheAvailable()) return null;
+  const snapshot = await cacheGetOrBuildSnapshot({
+    key: CORPUS_KEY,
+    label: "leaderboard-search-corpus",
+    ttlSeconds: CORPUS_TTL_SECONDS,
+    freshnessSeconds: CORPUS_FRESHNESS_SECONDS,
+    lockTtlSeconds: CORPUS_LOCK_TTL_SECONDS,
+    builder: buildLeaderboardSearchEntries,
+  });
 
-  const cached = await cacheGet<LeaderboardSearchCorpus>(CORPUS_KEY);
-  if (!cached) {
-    const lockAcquired = await cacheSetIfNotExists(CORPUS_LOCK_KEY, "1", CORPUS_LOCK_TTL_SECONDS);
-    if (!lockAcquired) return null;
-
-    try {
-      return await buildLeaderboardSearchCorpus();
-    } finally {
-      await cacheDelete(CORPUS_LOCK_KEY);
-    }
-  }
-
-  if (!isCorpusStale(cached)) {
-    return cached;
-  }
-
-  const lockAcquired = await cacheSetIfNotExists(CORPUS_LOCK_KEY, "1", CORPUS_LOCK_TTL_SECONDS);
-  if (!lockAcquired) {
-    logger.info("Leaderboard corpus stale but refresh lock is held; serving stale corpus");
-    return cached;
-  }
-
-  try {
-    return await buildLeaderboardSearchCorpus();
-  } catch (error) {
-    logger.warn({ error }, "Leaderboard corpus rebuild failed; serving stale corpus");
-    return cached;
-  } finally {
-    await cacheDelete(CORPUS_LOCK_KEY);
-  }
+  return snapshot
+    ? { fetchedAt: snapshot.fetchedAt, entries: snapshot.data }
+    : null;
 }
 
 export async function searchLeaderboardByNameCached(

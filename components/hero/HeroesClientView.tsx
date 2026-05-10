@@ -5,9 +5,11 @@ import { Shield } from "lucide-react";
 import { HeroGrid } from "@/components/hero/HeroGrid";
 import { RankFilter } from "@/components/hero/RankFilter";
 import { DataFreshness } from "@/components/ui/DataFreshness";
+import { TimeRangeFilter } from "@/components/ui/TimeRangeFilter";
 import type { HeroWithStats } from "@/components/hero/HeroCard";
 import type { DeadlockHeroAnalytics } from "@/lib/api/types";
 import { aggregateHeroAnalytics, parseRankTier } from "@/lib/utils/heroAnalytics";
+import { getAnalyticsTimeRangeLabel, type AnalyticsTimeRange } from "@/lib/analyticsTimeRange";
 
 interface PlayableHero {
   id: number;
@@ -28,9 +30,16 @@ interface HeroesClientViewProps {
   analytics: DeadlockHeroAnalytics[];
   rankOptions: RankOption[];
   fetchedAt: string;
+  timeRange: AnalyticsTimeRange;
 }
 
-export function HeroesClientView({ playableHeroes, analytics, rankOptions, fetchedAt }: HeroesClientViewProps) {
+export function HeroesClientView({
+  playableHeroes,
+  analytics,
+  rankOptions,
+  fetchedAt,
+  timeRange,
+}: HeroesClientViewProps) {
   const searchParams = useSearchParams();
   const validMinTier = parseRankTier(searchParams.get("rank") ?? undefined);
 
@@ -55,6 +64,7 @@ export function HeroesClientView({ playableHeroes, analytics, rankOptions, fetch
   const activeRank = validMinTier != null
     ? rankOptions.find((r) => r.tier === validMinTier)
     : null;
+  const timeRangeLabel = getAnalyticsTimeRangeLabel(timeRange);
 
   return (
     <>
@@ -66,8 +76,8 @@ export function HeroesClientView({ playableHeroes, analytics, rankOptions, fetch
             </h1>
             <p className="mt-2 text-text-secondary">
               {activeRank
-                ? `Stats for ${activeRank.name}+ rank bracket.`
-                : "Global stats across all rank brackets."}
+                ? `${timeRangeLabel} stats for ${activeRank.name}+ rank bracket.`
+                : `${timeRangeLabel} stats across all rank brackets.`}
             </p>
             <div className="mt-3 inline-flex items-center gap-2 rounded-full glass-panel px-4 py-1.5 text-xs text-text-secondary">
               <Shield className="h-3.5 w-3.5 text-sigil" />
@@ -78,7 +88,8 @@ export function HeroesClientView({ playableHeroes, analytics, rankOptions, fetch
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <TimeRangeFilter currentRange={timeRange} baseUrl="/heroes" />
             <RankFilter
               ranks={rankOptions}
               currentMinTier={validMinTier}

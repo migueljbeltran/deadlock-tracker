@@ -7,13 +7,21 @@ import { Footer } from "@/components/layout/Footer";
 import { SigilBackground } from "@/components/layout/SigilBackground";
 import ItemsContent from "@/components/item/ItemsContent";
 import { SigilLoader } from "@/components/ui/SigilLoader";
+import { parseAnalyticsTimeRange } from "@/lib/analyticsTimeRange";
 
 export const metadata: Metadata = {
   title: "Items | dltracker",
   description: "Browse all Deadlock shop items with win rates and pick rates.",
 };
 
-export default function ItemsPage() {
+interface ItemsPageProps {
+  searchParams?: Promise<{ time?: string }>;
+}
+
+export default async function ItemsPage({ searchParams }: ItemsPageProps) {
+  const params = await searchParams;
+  const timeRange = parseAnalyticsTimeRange(params?.time);
+
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
@@ -23,7 +31,7 @@ export default function ItemsPage() {
 
         <div className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
           <Suspense fallback={<SigilLoader />}>
-            <ItemsContent />
+            <ItemsContent timeRange={timeRange} />
           </Suspense>
         </div>
       </main>

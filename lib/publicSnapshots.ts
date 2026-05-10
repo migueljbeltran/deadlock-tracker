@@ -8,6 +8,10 @@ import type {
 } from "@/lib/api/types";
 import { getApiInfo, getHeroAnalytics, getItemStats, getItems } from "@/lib/api/deadlock";
 import { cacheDelete, cacheGet, cacheSet, cacheSetIfNotExists, isCacheAvailable } from "@/lib/cache";
+import {
+  DEFAULT_ANALYTICS_TIME_RANGE,
+  type AnalyticsTimeRange,
+} from "@/lib/analyticsTimeRange";
 import logger from "@/lib/logger";
 
 interface PublicSnapshot<T> {
@@ -18,6 +22,7 @@ interface PublicSnapshot<T> {
 const SNAPSHOT_TTL_SECONDS = 604800;
 // Hero/item data only changes on game patches (~every 2 weeks) — refresh weekly, not daily
 const SNAPSHOT_FRESHNESS_SECONDS = 604800;
+const ANALYTICS_SNAPSHOT_FRESHNESS_SECONDS = 3600;
 const SNAPSHOT_LOCK_TTL_SECONDS = 300;
 
 function compactItemStats(stats: DeadlockItemStats[]): DeadlockItemStats[] {
@@ -71,16 +76,17 @@ function compactShopableItem(item: DeadlockItem): DeadlockItem {
   };
 }
 
-function isSnapshotStale<T>(snapshot: PublicSnapshot<T>): boolean {
+function isSnapshotStale<T>(snapshot: PublicSnapshot<T>, freshnessSeconds: number): boolean {
   const fetchedAt = Date.parse(snapshot.fetchedAt);
   if (Number.isNaN(fetchedAt)) return true;
-  return (Date.now() - fetchedAt) / 1000 >= SNAPSHOT_FRESHNESS_SECONDS;
+  return (Date.now() - fetchedAt) / 1000 >= freshnessSeconds;
 }
 
 async function getOrBuildSnapshot<T>(
   key: string,
   label: string,
   builder: () => Promise<T>,
+  freshnessSeconds = SNAPSHOT_FRESHNESS_SECONDS,
 ): Promise<PublicSnapshot<T>> {
   if (!isCacheAvailable()) {
     return {
@@ -114,7 +120,7 @@ async function getOrBuildSnapshot<T>(
     }
   }
 
-  if (!isSnapshotStale(cached)) {
+  if (!isSnapshotStale(cached, freshnessSeconds)) {
     return cached;
   }
 
@@ -140,19 +146,25 @@ async function getOrBuildSnapshot<T>(
   }
 }
 
-export async function getHeroAnalyticsSnapshot(): Promise<PublicSnapshot<DeadlockHeroAnalytics[]>> {
+export async function getHeroAnalyticsSnapshot(
+  timeRange: AnalyticsTimeRange = DEFAULT_ANALYTICS_TIME_RANGE,
+): Promise<PublicSnapshot<DeadlockHeroAnalytics[]>> {
   return getOrBuildSnapshot(
-    "public-snapshot:hero-analytics:v2",
-    "hero-analytics",
-    async () => compactHeroAnalytics(await getHeroAnalytics()),
+    `public-snapshot:hero-analytics:${timeRange}:v3`,
+    `hero-analytics-${timeRange}`,
+    async () => compactHeroAnalytics(await getHeroAnalytics(timeRange)),
+    ANALYTICS_SNAPSHOT_FRESHNESS_SECONDS,
   );
 }
 
-export async function getItemStatsSnapshot(): Promise<PublicSnapshot<DeadlockItemStats[]>> {
+export async function getItemStatsSnapshot(
+  timeRange: AnalyticsTimeRange = DEFAULT_ANALYTICS_TIME_RANGE,
+): Promise<PublicSnapshot<DeadlockItemStats[]>> {
   return getOrBuildSnapshot(
-    "public-snapshot:item-stats:v2",
-    "item-stats",
-    async () => compactItemStats(await getItemStats()),
+    `public-snapshot:item-stats:${timeRange}:v3`,
+    `item-stats-${timeRange}`,
+    async () => compactItemStats(await getItemStats(undefined, timeRange)),
+    ANALYTICS_SNAPSHOT_FRESHNESS_SECONDS,
   );
 }
 

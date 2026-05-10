@@ -6,10 +6,12 @@ import Link from "next/link";
 import { Crown, TrendingUp } from "lucide-react";
 import { RankFilter } from "@/components/hero/RankFilter";
 import { DataFreshness } from "@/components/ui/DataFreshness";
+import { TimeRangeFilter } from "@/components/ui/TimeRangeFilter";
 import { cn } from "@/lib/utils/cn";
 import { FadeIn } from "@/components/motion";
 import type { DeadlockHeroAnalytics } from "@/lib/api/types";
 import { aggregateHeroAnalytics, parseRankTier } from "@/lib/utils/heroAnalytics";
+import { getAnalyticsTimeRangeLabel, type AnalyticsTimeRange } from "@/lib/analyticsTimeRange";
 
 interface PlayableHero {
   id: number;
@@ -47,9 +49,16 @@ interface TierListClientViewProps {
   analytics: DeadlockHeroAnalytics[];
   rankOptions: RankOption[];
   fetchedAt: string;
+  timeRange: AnalyticsTimeRange;
 }
 
-export function TierListClientView({ playableHeroes, analytics, rankOptions, fetchedAt }: TierListClientViewProps) {
+export function TierListClientView({
+  playableHeroes,
+  analytics,
+  rankOptions,
+  fetchedAt,
+  timeRange,
+}: TierListClientViewProps) {
   const searchParams = useSearchParams();
   const validMinTier = parseRankTier(searchParams.get("rank") ?? undefined);
 
@@ -84,6 +93,7 @@ export function TierListClientView({ playableHeroes, analytics, rankOptions, fet
   const activeRank = validMinTier != null
     ? rankOptions.find((r) => r.tier === validMinTier)
     : null;
+  const timeRangeLabel = getAnalyticsTimeRangeLabel(timeRange);
 
   return (
     <>
@@ -96,15 +106,16 @@ export function TierListClientView({ playableHeroes, analytics, rankOptions, fet
             </h1>
             <p className="mt-2 text-text-secondary">
               {activeRank
-                ? `Heroes ranked by win rate and pick rate in ${activeRank.name}+ bracket.`
-                : "Heroes ranked by win rate and pick rate across all brackets."}
+                ? `Heroes ranked by ${timeRangeLabel.toLowerCase()} win rate and pick rate in ${activeRank.name}+ bracket.`
+                : `Heroes ranked by ${timeRangeLabel.toLowerCase()} win rate and pick rate across all brackets.`}
             </p>
             <div className="mt-3">
               <DataFreshness fetchedAt={fetchedAt} />
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <TimeRangeFilter currentRange={timeRange} baseUrl="/heroes/tier-list" />
             <RankFilter
               ranks={rankOptions}
               currentMinTier={validMinTier}
@@ -178,7 +189,7 @@ export function TierListClientView({ playableHeroes, analytics, rankOptions, fet
       <div className="mt-6 glass-panel rounded-lg p-4 flex items-start gap-3">
         <TrendingUp className="h-4 w-4 text-amber flex-shrink-0 mt-0.5" />
         <p className="text-xs text-text-muted">
-          Tier rankings are computed from a weighted combination of win rate (70%) and pick rate (30%){activeRank ? ` for ${activeRank.name}+ matches` : " across all rank brackets"}. Heroes with higher win rates and pick rates score higher. Tiers are distributed by percentile: S (top 10%), A (next 20%), B (next 30%), C (next 25%), D (bottom 15%).
+          Tier rankings are computed from a weighted combination of win rate (70%) and pick rate (30%) using {timeRangeLabel.toLowerCase()} data{activeRank ? ` for ${activeRank.name}+ matches` : " across all rank brackets"}. Heroes with higher win rates and pick rates score higher. Tiers are distributed by percentile: S (top 10%), A (next 20%), B (next 30%), C (next 25%), D (bottom 15%).
         </p>
       </div>
     </>
