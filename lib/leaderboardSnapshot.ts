@@ -1,5 +1,6 @@
 import "server-only";
 
+import { createHash } from "node:crypto";
 import type { DeadlockLeaderboardEntry } from "@/lib/api/types";
 import type { DeadlockRegion } from "@/lib/api/deadlock";
 import { getLeaderboard } from "@/lib/api/deadlock";
@@ -35,12 +36,12 @@ function getSnapshotLockKey(region: DeadlockRegion): string {
   return `leaderboard-snapshot-refresh-lock:${region}`;
 }
 
-function getProfileLinksKey(region: DeadlockRegion, page: number): string {
-  return `leaderboard-profile-links:${region}:page-${page}:v1`;
+function getProfileLinksKey(region: DeadlockRegion, page: number, pageIdentity: string): string {
+  return `leaderboard-profile-links:${region}:page-${page}:${pageIdentity}:v2`;
 }
 
-function getProfileLinksLockKey(region: DeadlockRegion, page: number): string {
-  return `${getProfileLinksKey(region, page)}:refresh-lock`;
+function getProfileLinksLockKey(region: DeadlockRegion, page: number, pageIdentity: string): string {
+  return `${getProfileLinksKey(region, page, pageIdentity)}:refresh-lock`;
 }
 
 function isSnapshotStale(snapshot: ResolvedLeaderboardSnapshot): boolean {
@@ -93,6 +94,20 @@ function getPageEntries(entries: ResolvedLeaderboardEntry[], page: number): Reso
   return entries.slice(offset, offset + LEADERBOARD_PAGE_SIZE);
 }
 
+function getPageIdentity(entries: ResolvedLeaderboardEntry[], page: number): string {
+  const pageEntries = getPageEntries(entries, page).map((entry) => ({
+    accountName: entry.account_name,
+    possibleAccountIds: entry.possible_account_ids,
+    rank: entry.rank,
+    topHeroIds: entry.top_hero_ids,
+  }));
+
+  return createHash("sha256")
+    .update(JSON.stringify(pageEntries))
+    .digest("hex")
+    .slice(0, 16);
+}
+
 function mergeProfileLinks(
   snapshot: ResolvedLeaderboardSnapshot,
   page: number,
@@ -138,7 +153,8 @@ async function resolveProfileLinksForPage(
   page: number,
 ): Promise<ProfileLinkMap | null> {
   const safePage = Number.isInteger(page) && page > 0 ? page : 1;
-  const cacheKey = getProfileLinksKey(region, safePage);
+  const pageIdentity = getPageIdentity(entries, safePage);
+  const cacheKey = getProfileLinksKey(region, safePage, pageIdentity);
   const cached = await cacheGet<ProfileLinkMap>(cacheKey);
   if (cached) return cached;
 
@@ -156,7 +172,7 @@ async function resolveProfileLinksForPage(
 
   if (isCacheAvailable()) {
     const lockAcquired = await cacheSetIfNotExists(
-      getProfileLinksLockKey(region, safePage),
+      getProfileLinksLockKey(region, safePage, pageIdentity),
       "1",
       PROFILE_LINK_LOCK_TTL_SECONDS,
     );
@@ -190,7 +206,7 @@ async function resolveProfileLinksForPage(
     return null;
   } finally {
     if (isCacheAvailable()) {
-      await cacheDelete(getProfileLinksLockKey(region, safePage));
+      await cacheDelete(getProfileLinksLockKey(region, safePage, pageIdentity));
     }
   }
 }

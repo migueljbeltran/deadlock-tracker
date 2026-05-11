@@ -48,6 +48,7 @@ export async function getMatchSnapshot(matchId: number): Promise<MatchSnapshot |
       freshnessSeconds: MATCH_SNAPSHOT_FRESHNESS_SECONDS,
       lockTtlSeconds: MATCH_SNAPSHOT_LOCK_TTL_SECONDS,
       builder: () => buildMatchSnapshot(matchId),
+      onLockedMiss: () => buildMatchSnapshot(matchId),
     });
     if (!snapshot) return null;
 

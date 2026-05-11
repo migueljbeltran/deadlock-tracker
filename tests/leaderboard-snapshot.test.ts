@@ -93,4 +93,38 @@ describe("getResolvedLeaderboardSnapshot", () => {
     expect(snapshot.entries[50].profileAccountId).toBeNull();
     expect(snapshot.entries[50].profileLinkStatus).toBe("ambiguous");
   });
+
+  it("does not reuse profile links when the visible page identity changes", async () => {
+    getLeaderboard
+      .mockResolvedValueOnce([
+        createEntry(1, [111, 222]),
+      ])
+      .mockResolvedValueOnce([
+        createEntry(1, [333, 444]),
+      ]);
+    resolveAccountIds
+      .mockResolvedValueOnce(new Map([
+        [0, { accountId: 111, confident: true }],
+      ]))
+      .mockResolvedValueOnce(new Map([
+        [0, { accountId: 333, confident: true }],
+      ]));
+
+    const { getResolvedLeaderboardSnapshot } = await import("@/lib/leaderboardSnapshot");
+    const firstSnapshot = await getResolvedLeaderboardSnapshot("NAmerica", {
+      page: 1,
+      enrichProfileLinks: true,
+    });
+
+    cacheStore.delete("leaderboard-snapshot:NAmerica:v1");
+
+    const secondSnapshot = await getResolvedLeaderboardSnapshot("NAmerica", {
+      page: 1,
+      enrichProfileLinks: true,
+    });
+
+    expect(firstSnapshot.entries[0].profileAccountId).toBe(111);
+    expect(secondSnapshot.entries[0].profileAccountId).toBe(333);
+    expect(resolveAccountIds).toHaveBeenCalledTimes(2);
+  });
 });
