@@ -4,7 +4,7 @@
 
 **A living record of souls and matches from the Cursed Apple.**
 
-Track players, analyze heroes, and explore match history in Deadlock — wrapped in an atmospheric Occult Noir interface inspired by 1930s Art Deco and the supernatural.
+Track players, analyze heroes, and explore match history in Deadlock, wrapped in an atmospheric Occult Noir interface inspired by 1930s Art Deco and the supernatural.
 
 **[dltracker.app](https://dltracker.app)**
 
@@ -18,7 +18,7 @@ Track players, analyze heroes, and explore match history in Deadlock — wrapped
 
 ### Player Profiles
 
-Search any player by player name, Steam ID, vanity URL, or profile link. View career stats, estimated rank, performance percentiles, top heroes, and paginated match history.
+Search any player by player name, Steam ID, vanity URL, or profile link. View career stats, estimated rank, performance percentiles, top heroes, and resilient paginated match history.
 
 ![Player Profile](docs/screenshots/player-profile.png)
 
@@ -66,7 +66,7 @@ Heroes ranked into S/A/B/C/D tiers by win rate and pick rate. Filter by time ran
 
 ### Leaderboard
 
-Regional rankings across NA, SA, EU, Asia, and Oceania with rank badges and top heroes.
+Regional rankings across NA, SA, EU, Asia, and Oceania with rank badges, top heroes, top-50 initial loading, and safely enriched player profile links.
 
 <details>
 <summary>View leaderboard screenshot</summary>
@@ -97,14 +97,14 @@ Regional rankings across NA, SA, EU, Asia, and Oceania with rank badges and top 
 
 ### Key Engineering Decisions
 
-- **ISR + `generateStaticParams`** for hero and match pages — pre-renders 38 hero pages at build time, caches match pages on first visit. Reduced Vercel CPU usage by ~75%.
-- **Suspense streaming** on data-heavy pages — the page shell renders instantly while API data streams in, improving perceived load time.
-- **Multi-signal account resolution** on the leaderboard — the Deadlock API returns ambiguous account IDs for ranked players. Built a scoring system that cross-references Steam profiles and hero play patterns to resolve the correct account.
-- **In-memory promise cache** for the 2.5MB items endpoint — Next.js fetch cache has a 2MB limit, so items use a process-level cache with thundering herd protection.
-- **Rank estimation from match badges** — Deadlock has no public rank API. Estimated player ranks by averaging team badge values from recent matches and mapping to rank tiers.
-- **Runtime API guards** — critical Steam and Deadlock payloads are validated with Zod before cached data reaches rendering code.
-- **Reusable client snapshot hooks** — player and leaderboard client views keep fetch state, abort handling, refresh behavior, and loading transitions in focused hooks with unit coverage.
-- **Custom design system** — "Occult Noir Ascended" theme with glassmorphism panels, animated conic-gradient borders, per-page atmospheric gradients, and glowing stat bars. All defined as CSS utilities and variables.
+- **ISR + `generateStaticParams`** for hero and match pages: pre-renders 38 hero pages at build time and caches match pages on first visit.
+- **Suspense streaming** on data-heavy pages: the page shell renders instantly while API data streams in, improving perceived load time.
+- **Multi-signal account resolution** on the leaderboard: ambiguous leaderboard account IDs are resolved with Steam profile and hero-pattern signals only for the visible page.
+- **Cache resilience for expensive paths**: shared read-through cache helpers serve stale snapshots on rebuild failure and avoid duplicate rebuilds with short Redis locks.
+- **Rank estimation from match badges**: player ranks are estimated by averaging team badge values from recent matches and mapping them to rank tiers.
+- **Runtime API guards**: critical Steam and Deadlock payloads are validated with Zod before cached data reaches rendering code.
+- **Reusable client snapshot hooks**: player and leaderboard views keep fetch state, abort handling, refresh behavior, and loading transitions in focused hooks with unit coverage.
+- **Custom design system**: "Occult Noir Ascended" theme with glassmorphism panels, animated conic-gradient borders, per-page atmospheric gradients, and glowing stat bars.
 
 ### Local Verification
 
