@@ -8,6 +8,21 @@ const PREFIX = "dltracker:cache:";
 
 let redis: Redis | null = null;
 
+export interface CachedSnapshot<T> {
+  fetchedAt: string;
+  data: T;
+}
+
+interface CacheSnapshotOptions<T> {
+  key: string;
+  label: string;
+  ttlSeconds: number;
+  freshnessSeconds: number;
+  lockTtlSeconds: number;
+  builder: () => Promise<T>;
+  onLockedMiss?: () => Promise<T | null> | T | null;
+}
+
 function getRedis(): Redis | null {
   if (redis) return redis;
 
@@ -86,6 +101,88 @@ export async function cacheDelete(key: string): Promise<void> {
     await client.del(`${PREFIX}${key}`);
   } catch (err) {
     logger.warn({ err, key }, "Cache delete failed");
+  }
+}
+
+function isCachedSnapshotStale<T>(
+  snapshot: CachedSnapshot<T>,
+  freshnessSeconds: number,
+): boolean {
+  const fetchedAt = Date.parse(snapshot.fetchedAt);
+  if (Number.isNaN(fetchedAt)) return true;
+  return (Date.now() - fetchedAt) / 1000 >= freshnessSeconds;
+}
+
+/**
+ * Read-through cache for expensive upstream calls.
+ * Serves stale cached data when rebuilds fail and uses a short lock to avoid
+ * thundering herd rebuilds across serverless instances.
+ */
+export async function cacheGetOrBuildSnapshot<T>({
+  key,
+  label,
+  ttlSeconds,
+  freshnessSeconds,
+  lockTtlSeconds,
+  builder,
+  onLockedMiss,
+}: CacheSnapshotOptions<T>): Promise<CachedSnapshot<T> | null> {
+  if (!isCacheAvailable()) {
+    return {
+      fetchedAt: new Date().toISOString(),
+      data: await builder(),
+    };
+  }
+
+  const cached = await cacheGet<CachedSnapshot<T>>(key);
+  const lockKey = `${key}:refresh-lock`;
+
+  if (!cached) {
+    const lockAcquired = await cacheSetIfNotExists(lockKey, "1", lockTtlSeconds);
+    if (!lockAcquired) {
+      logger.info({ key: label }, "Cache snapshot cold miss locked");
+      const fallback = onLockedMiss ? await onLockedMiss() : null;
+      return fallback == null
+        ? null
+        : { fetchedAt: new Date().toISOString(), data: fallback };
+    }
+
+    try {
+      const snapshot = {
+        fetchedAt: new Date().toISOString(),
+        data: await builder(),
+      };
+      await cacheSet(key, snapshot, ttlSeconds);
+      logger.info({ key: label }, "Cache snapshot built on miss");
+      return snapshot;
+    } finally {
+      await cacheDelete(lockKey);
+    }
+  }
+
+  if (!isCachedSnapshotStale(cached, freshnessSeconds)) {
+    return cached;
+  }
+
+  const lockAcquired = await cacheSetIfNotExists(lockKey, "1", lockTtlSeconds);
+  if (!lockAcquired) {
+    logger.info({ key: label }, "Cache snapshot stale; serving stale data");
+    return cached;
+  }
+
+  try {
+    const snapshot = {
+      fetchedAt: new Date().toISOString(),
+      data: await builder(),
+    };
+    await cacheSet(key, snapshot, ttlSeconds);
+    logger.info({ key: label }, "Cache snapshot rebuilt");
+    return snapshot;
+  } catch (error) {
+    logger.warn({ key: label, error }, "Cache snapshot rebuild failed; serving stale data");
+    return cached;
+  } finally {
+    await cacheDelete(lockKey);
   }
 }
 

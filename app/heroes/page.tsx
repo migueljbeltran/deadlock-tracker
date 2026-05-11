@@ -7,6 +7,7 @@ import { Footer } from "@/components/layout/Footer";
 import { SigilBackground } from "@/components/layout/SigilBackground";
 import HeroesContent from "@/components/hero/HeroesContent";
 import { SigilLoader } from "@/components/ui/SigilLoader";
+import { parseAnalyticsTimeRange } from "@/lib/analyticsTimeRange";
 
 export const metadata: Metadata = {
   title: "All Deadlock Heroes — Win Rates & Pick Rates",
@@ -23,7 +24,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function HeroesPage() {
+interface HeroesPageProps {
+  searchParams?: Promise<{ time?: string }>;
+}
+
+export default async function HeroesPage({ searchParams }: HeroesPageProps) {
+  const params = await searchParams;
+  const timeRange = parseAnalyticsTimeRange(params?.time);
+
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
@@ -33,7 +41,7 @@ export default function HeroesPage() {
 
         <div className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
           <Suspense fallback={<SigilLoader />}>
-            <HeroesContent />
+            <HeroesContent timeRange={timeRange} />
           </Suspense>
         </div>
       </main>

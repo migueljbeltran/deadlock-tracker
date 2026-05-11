@@ -24,7 +24,7 @@ Search any player by player name, Steam ID, vanity URL, or profile link. View ca
 
 ### Heroes
 
-Browse all 38 playable heroes with global win rates, pick rates, and match counts. Filter by rank bracket. Sort by any stat.
+Browse all 38 playable heroes with win rates, pick rates, and match counts. Filter by time range and rank bracket. Sort by any stat.
 
 ![Heroes Grid](docs/screenshots/heroes-grid.png)
 
@@ -49,13 +49,13 @@ Full team scoreboards with K/D/A, net worth, last hits, item builds, and cross-l
 
 ### Tier List
 
-Heroes ranked into S/A/B/C/D tiers by win rate and pick rate. Filter by rank bracket to see how the meta shifts at different skill levels.
+Heroes ranked into S/A/B/C/D tiers by win rate and pick rate. Filter by time range and rank bracket to see how the meta shifts.
 
 ![Tier List](docs/screenshots/tier-list.png)
 
 ### Items
 
-171 items tracked with win rates and match counts. Filter by type (Weapon/Vitality/Spirit) and tier.
+171 items tracked with win rates and match counts. Filter by time range, rank bracket, type (Weapon/Vitality/Spirit), and tier.
 
 <details>
 <summary>View items screenshot</summary>

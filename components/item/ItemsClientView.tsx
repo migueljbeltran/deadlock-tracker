@@ -6,9 +6,11 @@ import { Package } from "lucide-react";
 import { ItemGrid } from "@/components/item/ItemGrid";
 import { RankFilter } from "@/components/hero/RankFilter";
 import { DataFreshness } from "@/components/ui/DataFreshness";
+import { TimeRangeFilter } from "@/components/ui/TimeRangeFilter";
 import type { ItemWithStats } from "@/components/item/ItemCard";
 import type { DeadlockItemStats } from "@/lib/api/types";
 import { parseRankTier } from "@/lib/utils/heroAnalytics";
+import { getAnalyticsTimeRangeLabel, type AnalyticsTimeRange } from "@/lib/analyticsTimeRange";
 
 interface ShopableItem {
   id: number;
@@ -32,9 +34,16 @@ interface ItemsClientViewProps {
   itemStats: DeadlockItemStats[];
   rankOptions: RankOption[];
   fetchedAt: string;
+  timeRange: AnalyticsTimeRange;
 }
 
-export function ItemsClientView({ shopableItems, itemStats, rankOptions, fetchedAt }: ItemsClientViewProps) {
+export function ItemsClientView({
+  shopableItems,
+  itemStats,
+  rankOptions,
+  fetchedAt,
+  timeRange,
+}: ItemsClientViewProps) {
   const searchParams = useSearchParams();
   const validMinTier = parseRankTier(searchParams.get("rank") ?? undefined);
 
@@ -86,6 +95,7 @@ export function ItemsClientView({ shopableItems, itemStats, rankOptions, fetched
   const activeRank = validMinTier != null
     ? rankOptions.find((r) => r.tier === validMinTier)
     : null;
+  const timeRangeLabel = getAnalyticsTimeRangeLabel(timeRange);
 
   return (
     <>
@@ -97,8 +107,8 @@ export function ItemsClientView({ shopableItems, itemStats, rankOptions, fetched
             </h1>
             <p className="mt-2 text-text-secondary">
               {activeRank
-                ? `Item win rates for ${activeRank.name}+ matches.`
-                : "Shop items with global win rates across all matches."}
+                ? `${timeRangeLabel} item win rates for ${activeRank.name}+ matches.`
+                : `${timeRangeLabel} item win rates across all matches.`}
             </p>
             <div className="mt-3 inline-flex items-center gap-2 rounded-full glass-panel px-4 py-1.5 text-xs text-text-secondary">
               <Package className="h-3.5 w-3.5 text-amber" />
@@ -109,7 +119,8 @@ export function ItemsClientView({ shopableItems, itemStats, rankOptions, fetched
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <TimeRangeFilter currentRange={timeRange} baseUrl="/items" />
             <RankFilter
               ranks={rankOptions}
               currentMinTier={validMinTier}

@@ -7,18 +7,25 @@ import { RegionSelector } from "@/components/leaderboard/RegionSelector";
 import { Pagination } from "@/components/ui/Pagination";
 import { DataFreshness } from "@/components/ui/DataFreshness";
 import { LeaderboardTableSkeleton } from "@/components/leaderboard/LeaderboardTableSkeleton";
-import { useLeaderboardSnapshot } from "@/lib/hooks/useLeaderboardSnapshot";
+import { useLeaderboardSnapshot, type LeaderboardSnapshot } from "@/lib/hooks/useLeaderboardSnapshot";
 import type { DeadlockRegion, DeadlockHero, DeadlockRank } from "@/lib/api";
 
-const PAGE_SIZE = 100;
+const PAGE_SIZE = 50;
 const VALID_REGIONS: DeadlockRegion[] = ["NAmerica", "SAmerica", "Europe", "Asia", "Oceania"];
 
 interface LeaderboardContentProps {
   heroes: DeadlockHero[];
   ranks: DeadlockRank[];
+  initialRegion: DeadlockRegion;
+  initialSnapshot: LeaderboardSnapshot | null;
 }
 
-export default function LeaderboardContent({ heroes, ranks }: LeaderboardContentProps) {
+export default function LeaderboardContent({
+  heroes,
+  ranks,
+  initialRegion,
+  initialSnapshot,
+}: LeaderboardContentProps) {
   const searchParams = useSearchParams();
   const regionParam = searchParams.get("region") ?? "NAmerica";
   const region: DeadlockRegion = VALID_REGIONS.includes(regionParam as DeadlockRegion)
@@ -27,7 +34,10 @@ export default function LeaderboardContent({ heroes, ranks }: LeaderboardContent
   const rawPage = Number(searchParams.get("page"));
   const page = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 
-  const { snapshot, isLoading, hasError } = useLeaderboardSnapshot(region);
+  const { snapshot, isLoading, hasError } = useLeaderboardSnapshot(region, page, {
+    initialRegion,
+    initialSnapshot,
+  });
 
   const rankMap = useMemo(() => new Map(ranks.map((r) => [r.tier, r])), [ranks]);
   const heroMap = useMemo(() => new Map(heroes.map((h) => [h.id, h])), [heroes]);

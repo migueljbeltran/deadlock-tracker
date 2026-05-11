@@ -1,13 +1,18 @@
 import { getShopableItemsSnapshot, getItemStatsSnapshot, getRanks } from "@/lib/api";
 import { ItemsClientView } from "@/components/item/ItemsClientView";
+import type { AnalyticsTimeRange } from "@/lib/analyticsTimeRange";
 
-export default async function ItemsContent() {
+interface ItemsContentProps {
+  timeRange: AnalyticsTimeRange;
+}
+
+export default async function ItemsContent({ timeRange }: ItemsContentProps) {
   // Use the Redis-backed snapshot instead of raw getItems() — getItems() pulls
   // a 2.5 MB payload from the upstream Deadlock API on every ISR regeneration,
   // while the snapshot already pre-filters to shopable items and caches weekly.
   const [itemsSnapshot, itemStatsSnapshot, ranks] = await Promise.all([
     getShopableItemsSnapshot(),
-    getItemStatsSnapshot(),
+    getItemStatsSnapshot(timeRange),
     getRanks(),
   ]);
 
@@ -35,6 +40,7 @@ export default async function ItemsContent() {
       itemStats={itemStatsSnapshot.data}
       rankOptions={rankOptions}
       fetchedAt={itemStatsSnapshot.fetchedAt}
+      timeRange={timeRange}
     />
   );
 }

@@ -7,6 +7,7 @@ interface StaggerListProps {
   children: ReactNode;
   staggerDelay?: number;
   className?: string;
+  triggerOnScroll?: boolean;
 }
 
 const container = {
@@ -31,13 +32,15 @@ export function StaggerList({
   children,
   staggerDelay = 0.06,
   className,
+  triggerOnScroll = true,
 }: StaggerListProps) {
   return (
     <motion.div
       variants={container}
       initial="hidden"
-      whileInView="show"
-      viewport={{ once: true, margin: "-40px" }}
+      {...(triggerOnScroll
+        ? { whileInView: "show", viewport: { once: true, margin: "-40px" } }
+        : { animate: "show" })}
       custom={staggerDelay}
       className={className}
     >

@@ -28,6 +28,12 @@ import {
   parseExternalData,
   rawMatchDetailSchema,
 } from "./guards";
+import { cacheGetOrBuildSnapshot } from "@/lib/cache";
+import {
+  DEFAULT_ANALYTICS_TIME_RANGE,
+  getMinUnixTimestampForRange,
+  type AnalyticsTimeRange,
+} from "@/lib/analyticsTimeRange";
 import logger from "@/lib/logger";
 
 const ASSETS_API = "https://assets.deadlock-api.com";
@@ -35,6 +41,9 @@ const GAME_API = "https://api.deadlock-api.com";
 
 const MAX_RETRIES = 2;
 const PLAYER_DATA_REVALIDATE_SECONDS = 604800;
+const MATCH_HISTORY_CACHE_TTL_SECONDS = 604800;
+const MATCH_HISTORY_FRESHNESS_SECONDS = 3600;
+const MATCH_HISTORY_LOCK_TTL_SECONDS = 120;
 
 interface DeadlockFetchOptions {
   revalidate?: number;
@@ -188,11 +197,22 @@ export async function getItems(): Promise<DeadlockItem[]> {
   return itemsPromise;
 }
 
-export async function getItemStats(minBadge?: number): Promise<DeadlockItemStats[]> {
-  const params = minBadge != null ? `?min_average_badge=${minBadge}` : "";
+export async function getItemStats(
+  minBadge?: number,
+  timeRange: AnalyticsTimeRange = DEFAULT_ANALYTICS_TIME_RANGE,
+): Promise<DeadlockItemStats[]> {
+  const params = new URLSearchParams();
+  if (minBadge != null) params.set("min_average_badge", String(minBadge));
+  const minTimestamp = getMinUnixTimestampForRange(timeRange);
+  if (minTimestamp != null) params.set("min_unix_timestamp", String(minTimestamp));
+  const query = params.toString();
+
   return parseExternalData(
     deadlockItemStatsSchema.array(),
-    await deadlockFetch<unknown>(`${GAME_API}/v1/analytics/item-stats${params}`, { revalidate: 604800 }),
+    await deadlockFetch<unknown>(
+      `${GAME_API}/v1/analytics/item-stats${query ? `?${query}` : ""}`,
+      { revalidate: 3600 },
+    ),
     "Deadlock item stats",
   );
 }
@@ -238,12 +258,29 @@ export async function getMatchHistory(
   accountId: number,
   limit: number = 20,
 ): Promise<DeadlockMatchMetadata[]> {
+  const cacheKey = `deadlock:match-history:${accountId}:${limit}:v1`;
+  const matchHistoryUrl = `${GAME_API}/v1/matches/metadata?account_ids=${accountId}&include_player_info=true&limit=${limit}&order_by=start_time&order_direction=desc`;
+  const build = async () => parseExternalData(
+    deadlockMatchMetadataSchema.array(),
+    await deadlockFetch<unknown>(matchHistoryUrl, { cache: "no-store" }),
+    "Deadlock match history",
+  );
+
+  const snapshot = await cacheGetOrBuildSnapshot({
+    key: cacheKey,
+    label: "match-history",
+    ttlSeconds: MATCH_HISTORY_CACHE_TTL_SECONDS,
+    freshnessSeconds: MATCH_HISTORY_FRESHNESS_SECONDS,
+    lockTtlSeconds: MATCH_HISTORY_LOCK_TTL_SECONDS,
+    builder: build,
+    onLockedMiss: build,
+  });
+
+  if (snapshot) return snapshot.data;
+
   return parseExternalData(
     deadlockMatchMetadataSchema.array(),
-    await deadlockFetch<unknown>(
-      `${GAME_API}/v1/matches/metadata?account_ids=${accountId}&include_player_info=true&limit=${limit}&order_by=start_time&order_direction=desc`,
-      { cache: "no-store" },
-    ),
+    await deadlockFetch<unknown>(matchHistoryUrl, { cache: "no-store" }),
     "Deadlock match history",
   );
 }
@@ -306,10 +343,19 @@ export async function getApiInfo(): Promise<DeadlockApiInfo> {
   );
 }
 
-export async function getHeroAnalytics(): Promise<DeadlockHeroAnalytics[]> {
+export async function getHeroAnalytics(
+  timeRange: AnalyticsTimeRange = DEFAULT_ANALYTICS_TIME_RANGE,
+): Promise<DeadlockHeroAnalytics[]> {
+  const params = new URLSearchParams({ bucket: "avg_badge" });
+  const minTimestamp = getMinUnixTimestampForRange(timeRange);
+  if (minTimestamp != null) params.set("min_unix_timestamp", String(minTimestamp));
+
   return parseExternalData(
     deadlockHeroAnalyticsSchema.array(),
-    await deadlockFetch<unknown>(`${GAME_API}/v1/analytics/hero-stats?bucket=avg_badge`, { revalidate: 604800 }),
+    await deadlockFetch<unknown>(
+      `${GAME_API}/v1/analytics/hero-stats?${params.toString()}`,
+      { revalidate: 3600 },
+    ),
     "Deadlock hero analytics",
   );
 }
