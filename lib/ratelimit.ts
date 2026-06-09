@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 import { getOptionalServerEnv } from "@/lib/env";
+import logger from "@/lib/logger";
 
 const RATE_LIMITS = {
   search: { requests: 10, window: "60 s" },
@@ -45,7 +46,7 @@ function getRatelimit(name: RateLimitName): Ratelimit | null {
   const ratelimit = new Ratelimit({
     redis: client,
     limiter: Ratelimit.slidingWindow(config.requests, config.window),
-    analytics: true,
+    analytics: false,
     prefix: `dltracker:ratelimit:${name}`,
   });
   ratelimits.set(name, ratelimit);
@@ -83,8 +84,15 @@ export async function checkRateLimit(
     return { success: true };
   }
 
-  const result = await ratelimit.limit(identifier);
-  return { success: result.success, reset: result.reset };
+  try {
+    const result = await ratelimit.limit(identifier);
+    return { success: result.success, reset: result.reset };
+  } catch (error) {
+    // Rate limiting is defense-in-depth. Keep the application available when
+    // Redis is temporarily unavailable or rejecting writes.
+    logger.warn({ error, name }, "Rate limit check failed; allowing request");
+    return { success: true };
+  }
 }
 
 export async function checkRequestRateLimit(

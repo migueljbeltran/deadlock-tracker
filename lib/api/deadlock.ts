@@ -28,7 +28,6 @@ import {
   parseExternalData,
   rawMatchDetailSchema,
 } from "./guards";
-import { cacheGetOrBuildSnapshot } from "@/lib/cache";
 import {
   DEFAULT_ANALYTICS_TIME_RANGE,
   getMinUnixTimestampForRange,
@@ -41,9 +40,7 @@ const GAME_API = "https://api.deadlock-api.com";
 
 const MAX_RETRIES = 2;
 const PLAYER_DATA_REVALIDATE_SECONDS = 604800;
-const MATCH_HISTORY_CACHE_TTL_SECONDS = 604800;
-const MATCH_HISTORY_FRESHNESS_SECONDS = 3600;
-const MATCH_HISTORY_LOCK_TTL_SECONDS = 120;
+const MAX_LARGE_JSON_REDIRECTS = 3;
 
 interface DeadlockFetchOptions {
   revalidate?: number;
@@ -104,7 +101,11 @@ async function deadlockFetch<T>(url: string, options: DeadlockFetchOptions): Pro
   throw new ApiError("Max retries exceeded", 429, url);
 }
 
-function fetchLargeJson<T>(url: string, timeoutMs = 10_000): Promise<T> {
+function fetchLargeJson<T>(
+  url: string,
+  timeoutMs = 10_000,
+  redirectsRemaining = MAX_LARGE_JSON_REDIRECTS,
+): Promise<T> {
   return new Promise((resolve, reject) => {
     const req = request(
       url,
@@ -114,6 +115,26 @@ function fetchLargeJson<T>(url: string, timeoutMs = 10_000): Promise<T> {
       },
       (res) => {
         const statusCode = res.statusCode ?? 0;
+        const location = res.headers.location;
+
+        if ([301, 302, 303, 307, 308].includes(statusCode) && location) {
+          res.resume();
+          if (redirectsRemaining <= 0) {
+            reject(new ApiError("Too many redirects", 508, url));
+            return;
+          }
+
+          const redirectUrl = new URL(location, url);
+          if (redirectUrl.protocol !== "https:") {
+            reject(new ApiError("Unsafe redirect", 502, url));
+            return;
+          }
+
+          fetchLargeJson<T>(redirectUrl.toString(), timeoutMs, redirectsRemaining - 1)
+            .then(resolve, reject);
+          return;
+        }
+
         const chunks: Buffer[] = [];
 
         res.on("data", (chunk: Buffer | string) => {
@@ -258,26 +279,7 @@ export async function getMatchHistory(
   accountId: number,
   limit: number = 20,
 ): Promise<DeadlockMatchMetadata[]> {
-  const cacheKey = `deadlock:match-history:${accountId}:${limit}:v1`;
   const matchHistoryUrl = `${GAME_API}/v1/matches/metadata?account_ids=${accountId}&include_player_info=true&limit=${limit}&order_by=start_time&order_direction=desc`;
-  const build = async () => parseExternalData(
-    deadlockMatchMetadataSchema.array(),
-    await deadlockFetch<unknown>(matchHistoryUrl, { cache: "no-store" }),
-    "Deadlock match history",
-  );
-
-  const snapshot = await cacheGetOrBuildSnapshot({
-    key: cacheKey,
-    label: "match-history",
-    ttlSeconds: MATCH_HISTORY_CACHE_TTL_SECONDS,
-    freshnessSeconds: MATCH_HISTORY_FRESHNESS_SECONDS,
-    lockTtlSeconds: MATCH_HISTORY_LOCK_TTL_SECONDS,
-    builder: build,
-    onLockedMiss: build,
-  });
-
-  if (snapshot) return snapshot.data;
-
   return parseExternalData(
     deadlockMatchMetadataSchema.array(),
     await deadlockFetch<unknown>(matchHistoryUrl, { cache: "no-store" }),

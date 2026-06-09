@@ -1,6 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { DeadlockMatchMetadata } from "@/lib/api/types";
-
 const redisStore = new Map<string, unknown>();
 
 vi.mock("@upstash/redis", () => ({
@@ -34,7 +32,7 @@ vi.mock("@/lib/logger", () => ({
   },
 }));
 
-describe("Deadlock cached API paths", () => {
+describe("Deadlock API paths", () => {
   beforeEach(() => {
     redisStore.clear();
     vi.resetModules();
@@ -49,24 +47,21 @@ describe("Deadlock cached API paths", () => {
     vi.restoreAllMocks();
   });
 
-  it("serves stale match history when the upstream rebuild fails", async () => {
-    const { cacheSet } = await import("@/lib/cache");
+  it("fetches match history without writing the full response to Redis", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue([]),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
     const { getMatchHistory } = await import("@/lib/api/deadlock");
-    const cachedMatches = [{
-      match_id: 123,
-      start_time: 1_700_000_000,
-      duration_s: 1800,
-      players: [],
-    }] as unknown as DeadlockMatchMetadata[];
+    await expect(getMatchHistory(42, 20)).resolves.toEqual([]);
 
-    await cacheSet("deadlock:match-history:42:20:v1", {
-      fetchedAt: "2026-01-01T00:00:00.000Z",
-      data: cachedMatches,
-    }, 604800);
-
-    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("upstream failed")));
-
-    await expect(getMatchHistory(42, 20)).resolves.toEqual(cachedMatches);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("account_ids=42"),
+      expect.objectContaining({ cache: "no-store" }),
+    );
+    expect(redisStore.size).toBe(0);
   });
 
   it("adds time-window params to hero analytics requests", async () => {
