@@ -52,6 +52,11 @@ export function isValidSteam64(id: string): boolean {
 const MAX_RETRIES = 2;
 
 async function steamFetch(url: string, options: SteamFetchOptions): Promise<Response> {
+  // Never retain a credential-bearing URL in errors or logs that callers may
+  // serialize. Steam requires its API key in the request's query string.
+  const endpoint = new URL(url);
+  endpoint.search = "";
+  const safeEndpoint = endpoint.toString();
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     let res: Response;
     try {
@@ -63,20 +68,21 @@ async function steamFetch(url: string, options: SteamFetchOptions): Promise<Resp
       if (err instanceof Error && (err.name === "AbortError" || err.name === "TimeoutError")) {
         if (attempt < MAX_RETRIES) {
           const delay = 500 * (attempt + 1);
-          logger.warn({ url: url.replace(/key=[^&]+/, "key=***"), attempt, delay }, "Steam API timeout, retrying");
+          logger.warn({ url: safeEndpoint, attempt, delay }, "Steam API timeout, retrying");
           await new Promise((r) => setTimeout(r, delay));
           continue;
         }
-        logger.error({ url: url.replace(/key=[^&]+/, "key=***") }, "Steam API timeout");
-        throw new ApiError("Request timeout", 408, url);
+        logger.error({ url: safeEndpoint }, "Steam API timeout");
+        throw new ApiError("Request timeout", 408, safeEndpoint);
       }
-      throw err;
+      // Native fetch errors can also retain the original URL in their cause.
+      throw new ApiError("Steam API request failed", 502, safeEndpoint);
     }
 
     if ((res.status === 429 || res.status === 503) && attempt < MAX_RETRIES) {
       const retryAfter = res.headers.get("Retry-After");
       const delay = retryAfter ? Math.min(parseInt(retryAfter, 10) * 1000, 5000) : 1000 * (attempt + 1);
-      logger.warn({ url: url.replace(/key=[^&]+/, "key=***"), status: res.status, attempt, delay }, "Steam API rate limited, retrying");
+      logger.warn({ url: safeEndpoint, status: res.status, attempt, delay }, "Steam API rate limited, retrying");
       await new Promise((r) => setTimeout(r, delay));
       continue;
     }
@@ -84,7 +90,7 @@ async function steamFetch(url: string, options: SteamFetchOptions): Promise<Resp
     return res;
   }
 
-  throw new ApiError("Max retries exceeded", 429, url);
+  throw new ApiError("Max retries exceeded", 429, safeEndpoint);
 }
 
 // ---- API Functions ----

@@ -18,6 +18,23 @@ test("search input accepts text", async ({ page }) => {
   await expect(input).toHaveValue("test player");
 });
 
+test("security headers block an external base URL while the homepage remains usable", async ({ page }) => {
+  const response = await page.goto("/");
+  const headers = response?.headers();
+  expect(headers?.["content-security-policy"]).toContain("base-uri 'self'");
+  expect(headers?.["content-security-policy"]).toContain("object-src 'none'");
+  expect(headers?.["x-content-type-options"]).toBe("nosniff");
+  const originalBase = await page.evaluate(() => document.baseURI);
+  const afterInjection = await page.evaluate(() => {
+    const base = document.createElement("base");
+    base.href = "https://example.com/";
+    document.head.appendChild(base);
+    return document.baseURI;
+  });
+  expect(afterInjection).toBe(originalBase);
+  await expect(page.getByRole("searchbox", { name: "Search for a Deadlock player" })).toBeVisible();
+});
+
 test("numeric player URLs use the shared shell and browser API", async ({ page }) => {
   await page.route("**/api/player/123", (route) => route.fulfill({
     json: {

@@ -48,6 +48,14 @@ References: [Cloudflare Pages limits](https://developers.cloudflare.com/pages/pl
 
 This revision reduces identifiable waste. It does not establish a measured production budget or guarantee free hosting at arbitrary traffic levels.
 
+## Security protections
+
+Steam request errors and retry logs retain only the endpoint path, never the API key or query string. Native fetch error causes are discarded at this boundary because they can contain credential-bearing URLs.
+
+Redis normally provides distributed API rate limiting. If Redis is missing, errors, or returns the SDK's fail-open timeout result, a bounded per-instance fixed-window limiter takes over. It uses the existing endpoint budgets, caps tracking at 10,000 identifiers, rejects new identifiers at capacity, and retries Redis after 30 seconds. This limits abuse on each running instance; it cannot enforce one global budget across serverless instances or survive cold starts. Keep Redis configured in production for distributed protection.
+
+An enforced Content Security Policy restricts base URLs and form submissions to this origin and blocks embedded objects and framing. Script/resource restrictions remain report-only pending compatibility testing with generated Next scripts, Sentry, and Vercel Analytics. Environment files are ignored by Git except `.env.example`.
+
 ## Dependency audit
 
 The lockfile resolves compatible updates including Next.js 16.4.0, Sentry 10.76.2, and Vitest 4.1.11. The full `npm audit --audit-level=high` reports zero vulnerabilities, including development dependencies. The full-audit CI gate remains enabled.
@@ -57,6 +65,8 @@ Two targeted overrides remediate lint dependencies: the 1.x `brace-expansion` de
 ## Local verification completed
 
 Production build and type checks, lint, 52 unit tests, and six Chromium browser checks passed. Live community-data browser visits also passed for heroes, tier lists, items, hero details, the Asia leaderboard, a real player profile, and a real match. Player name search returned and rendered community results without a Steam key. Name search is fuzzy and the upstream corpus can omit an exact profile; numeric IDs are the more reliable lookup.
+
+The subsequent security hardening passed 63 unit tests, lint, TypeScript checks, and seven Chrome browser checks, including enforcement of the base-URL policy while the homepage remained usable.
 
 The build confirms `/` and `/player` are static. Desktop and mobile screenshots are saved in `docs/screenshots/homepage-revamp.png` and `docs/screenshots/homepage-mobile.png`. Local checks do not prove production CDN cache hits, a cleared Vercel pause, or monthly quota fit; those require the connected project and live usage measurements.
 

@@ -15,6 +15,12 @@ const securityHeaders = [
     value: "max-age=63072000; includeSubDomains; preload",
   },
   {
+    key: "Content-Security-Policy",
+    // Enforce directives compatible with static Next pages. Keep script and
+    // resource restrictions in report-only until nonce/hash support is tested.
+    value: "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'",
+  },
+  {
     key: "Content-Security-Policy-Report-Only",
     value: [
       "default-src 'self'",
