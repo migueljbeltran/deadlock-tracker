@@ -261,6 +261,18 @@ export interface PlayerRankEstimate {
   subrank: number;
 }
 
+export interface DeadlockPlayerRank {
+  badge: number;
+  rank: number;
+  subrank: number;
+  last_match: {
+    match_id: number;
+    start_time: number;
+    player_rank_initial_display_rank: number;
+    player_rank_initial_calibration_games?: number | null;
+  } | null;
+}
+
 export interface GlobalPlayerMetricThresholds {
   median: number | null;
   p75: number | null;
@@ -282,6 +294,7 @@ export interface PlayerSnapshot {
   matchDataIncomplete?: boolean;
   metrics: DeadlockPlayerMetrics | null;
   rankEstimate: PlayerRankEstimate | null;
+  rank?: DeadlockPlayerRank | null;
   status: "complete" | "partial";
   fetchedAt: string;
 }

@@ -13,6 +13,7 @@ import type {
   DeadlockLeaderboardEntry,
   DeadlockItemStats,
   DeadlockApiInfo,
+  DeadlockPlayerRank,
 } from "./types";
 import { ApiError } from "./types";
 import {
@@ -26,6 +27,8 @@ import {
   deadlockPlayerHeroStatSchema,
   deadlockPlayerMetricsSchema,
   deadlockRankSchema,
+  deadlockPlayerRankSchema,
+  deadlockAccountRankSchema,
   parseExternalData,
   rawMatchDetailSchema,
 } from "./guards";
@@ -240,12 +243,29 @@ export async function getItemStats(
   );
 }
 
-export async function getRanks(): Promise<DeadlockRank[]> {
+export const getRanks = unstable_cache(async (): Promise<DeadlockRank[]> => {
   return parseExternalData(
     deadlockRankSchema.array(),
-    await deadlockFetch<unknown>(`${ASSETS_API}/ranks`, { revalidate: 604800 }),
+    await deadlockFetch<unknown>(`${ASSETS_API}/ranks`, { cache: "no-store" }),
     "Deadlock ranks",
   );
+}, ["rank-assets-v2"], { revalidate: 86400 });
+
+export async function getPlayerRank(accountId: number): Promise<DeadlockPlayerRank> {
+  return parseExternalData(deadlockPlayerRankSchema,
+    await deadlockFetch<unknown>(`${GAME_API}/v1/players/${accountId}/rank`, { revalidate: 3600, tags: [getPlayerDataTag(accountId)] }),
+    "Player reported rank");
+}
+
+export async function getPlayerRanks(accountIds: number[]) {
+  // One bounded, canonical request per visible leaderboard page, not per row.
+  const ids = [...new Set(accountIds)].filter((id) => Number.isInteger(id) && id > 0 && id <= 2_147_483_646).sort((a, b) => a - b).slice(0, 50);
+  if (ids.length === 0) return [];
+  return parseExternalData(deadlockAccountRankSchema.array(),
+    // The caller persists a finite region/page snapshot. Do not create a new
+    // persistent cache entry for every changing combination of account IDs.
+    await deadlockFetch<unknown>(`${GAME_API}/v1/players/rank?account_ids=${ids.join(",")}`, { cache: "no-store" }),
+    "Leaderboard reported ranks");
 }
 
 // ---- Game Data API ----
@@ -390,7 +410,7 @@ export async function getLeaderboard(
 ): Promise<DeadlockLeaderboardEntry[]> {
   const data = parseExternalData(
     deadlockLeaderboardResponseSchema,
-    await deadlockFetch<unknown>(`${GAME_API}/v1/leaderboard/${region}`, { revalidate: 86400 }),
+    await deadlockFetch<unknown>(`${GAME_API}/v1/leaderboard/${region}`, { revalidate: 3600 }),
     `Deadlock leaderboard ${region}`,
   );
   return data.entries;

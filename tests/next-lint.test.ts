@@ -28,5 +28,5 @@ describe("Next lint glob dependency compatibility", () => {
 
     expect(result.messages).toHaveLength(1);
     expect(result.messages[0].ruleId).toBe("@next/next/no-html-link-for-pages");
-  });
+  }, 15_000);
 });

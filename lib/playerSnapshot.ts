@@ -7,7 +7,7 @@ import type {
   DeadlockPlayerMetrics,
   PlayerMatchSummary,
 } from "@/lib/api";
-import { getPlayerIdentity, getPlayerHeroStats, getMatchHistory, getPlayerMetrics } from "@/lib/api";
+import { getPlayerIdentity, getPlayerHeroStats, getMatchHistory, getPlayerMetrics, getPlayerRank } from "@/lib/api";
 import { cacheDelete, cacheGet, cacheSet, cacheSetIfNotExists, isCacheAvailable } from "@/lib/cache";
 import logger from "@/lib/logger";
 
@@ -181,7 +181,7 @@ async function buildPlayerSnapshot(accountId: number): Promise<PlayerSnapshot | 
   return snapshot;
 }
 
-export async function getPlayerSnapshotState(accountId: number): Promise<{
+async function getBasePlayerSnapshotState(accountId: number): Promise<{
   snapshot: PlayerSnapshot | null;
   isStale: boolean;
   shouldRefresh: boolean;
@@ -224,6 +224,14 @@ export async function getPlayerSnapshotState(accountId: number): Promise<{
     isStale: false,
     shouldRefresh: builtSnapshot?.status === "partial" || builtSnapshot?.matchDataIncomplete === true,
   };
+}
+
+export async function getPlayerSnapshotState(accountId: number) {
+  const [state, rank] = await Promise.all([
+    getBasePlayerSnapshotState(accountId),
+    getPlayerRank(accountId).catch(() => null),
+  ]);
+  return { ...state, snapshot: state.snapshot ? { ...state.snapshot, rank } : null };
 }
 
 export async function refreshPlayerSnapshot(
@@ -296,10 +304,10 @@ export async function refreshPlayerSnapshot(
     return { refreshed: false, reason: "failed" };
   } finally {
     if (lockAcquired === true) {
-      await cacheDelete(getRefreshLockKey(accountId));
-      if (mode === "manual" && cooldownApplied && !refreshed) {
-        await cacheDelete(getManualCooldownKey(accountId));
-      }
+      await cacheDelete(getRefreshLockKey(accountId), { bypassBackoff: true });
+    }
+    if (mode === "manual" && cooldownApplied === true && !refreshed) {
+      await cacheDelete(getManualCooldownKey(accountId), { bypassBackoff: true });
     }
   }
 }

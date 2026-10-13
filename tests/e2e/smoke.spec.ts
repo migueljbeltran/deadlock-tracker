@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const routes = ["/", "/about", "/privacy"] as const;
+const routes = ["/", "/about", "/privacy", "/terms"] as const;
 
 for (const route of routes) {
   test(`${route} renders`, async ({ page }) => {
@@ -9,6 +9,15 @@ for (const route of routes) {
     await expect(page.locator("body")).toBeVisible();
   });
 }
+
+test("privacy and terms pages expose the contact and linked notices", async ({ page }) => {
+  await page.goto("/privacy");
+  await expect(page.getByRole("heading", { name: "Privacy Policy", exact: true })).toBeVisible();
+  await expect(page.locator('main a[href="mailto:trazenmain@gmail.com"]').first()).toBeVisible();
+  await page.locator('footer a[href="/terms"]').click();
+  await expect(page.getByRole("heading", { name: "Terms of Use", exact: true })).toBeVisible();
+  await expect(page.locator('main a[href="/privacy"]')).toBeVisible();
+});
 
 test("search input accepts text", async ({ page }) => {
   await page.goto("/");

@@ -103,8 +103,11 @@ export async function cacheSetIfNotExists<T>(key: string, value: T, ttlSeconds: 
 /**
  * Delete a cached value. Silently swallows errors.
  */
-export async function cacheDelete(key: string): Promise<void> {
-  const client = getRedis();
+export async function cacheDelete(key: string, options: { bypassBackoff?: boolean } = {}): Promise<void> {
+  // Confirmed-owned locks still need cleanup after a snapshot SET fails.
+  // Reuse the initialized client for that one bounded cleanup attempt; ordinary
+  // cache operations continue to respect the outage circuit breaker.
+  const client = options.bypassBackoff ? redis : getRedis();
   if (!client) return;
 
   try {
@@ -166,7 +169,7 @@ export async function cacheGetOrBuildSnapshot<T>({
       logger.info({ key: label }, "Cache snapshot built on miss");
       return snapshot;
     } finally {
-      if (lockAcquired === true) await cacheDelete(lockKey);
+      if (lockAcquired === true) await cacheDelete(lockKey, { bypassBackoff: true });
     }
   }
 
@@ -192,7 +195,7 @@ export async function cacheGetOrBuildSnapshot<T>({
     logger.warn({ key: label, error }, "Cache snapshot rebuild failed; serving stale data");
     return cached;
   } finally {
-    await cacheDelete(lockKey);
+    await cacheDelete(lockKey, { bypassBackoff: true });
   }
 }
 

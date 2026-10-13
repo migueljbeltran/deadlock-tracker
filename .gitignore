@@ -14,6 +14,8 @@
 /coverage
 /test-results/
 /playwright-report/
+/blob-report/
+/playwright/.cache/
 
 # next.js
 /.next/
@@ -24,17 +26,27 @@
 
 # misc
 .DS_Store
+Thumbs.db
+Desktop.ini
 *.pem
+*.key
+*.p12
+*.pfx
 
 # debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+*.log
 
 # env files
 .env*
 !.env.example
+
+# Local CLI credentials and private operational records
+.sentryclirc
+/.privacy-requests/
 
 # vercel
 .vercel

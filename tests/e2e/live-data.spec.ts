@@ -35,6 +35,15 @@ test.describe("live data pages", () => {
     expect(body.entries.length).toBeGreaterThan(10);
     expect(body.entries[0].account_name).toBeTruthy();
     await page.goto("/leaderboard?region=Asia");
-    await expect(page.locator("main table tbody tr").first()).toContainText(body.entries[0].account_name, { timeout: 60_000 });
+    // API and SSR requests can straddle an upstream refresh. Check populated
+    // standings rather than requiring independently fetched snapshots to agree.
+    await expect.poll(() => page.locator("main table tbody tr").count(), { timeout: 60_000 }).toBeGreaterThan(10);
+    const rankedEntry = body.entries.find((entry: { ranked_rank?: number | null; profileAccountId?: number | null }) =>
+      entry.ranked_rank != null && entry.ranked_rank > 0 && entry.profileAccountId != null);
+    expect(rankedEntry).toBeTruthy();
+    await expect(page.locator("main table tbody tr td:nth-child(3) img").first()).toBeVisible({ timeout: 60_000 });
+    await page.goto(`/player/${rankedEntry.profileAccountId}`);
+    await expect(page.getByText("Latest ranked match", { exact: true })).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByText("(Estimated)", { exact: true })).toHaveCount(0);
   });
 });
