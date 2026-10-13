@@ -1,4 +1,4 @@
-import { withSentryConfig } from "@sentry/nextjs";
+import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
 
 const securityHeaders = [
@@ -13,6 +13,12 @@ const securityHeaders = [
   {
     key: "Strict-Transport-Security",
     value: "max-age=63072000; includeSubDomains; preload",
+  },
+  {
+    key: "Content-Security-Policy",
+    // Enforce directives compatible with static Next pages. Keep script and
+    // resource restrictions in report-only until nonce/hash support is tested.
+    value: "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'",
   },
   {
     key: "Content-Security-Policy-Report-Only",
@@ -30,6 +36,13 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  async rewrites() {
+    return {
+      beforeFiles: [{ source: "/player/:accountId(\\d{1,10})", destination: "/player" }],
+      afterFiles: [],
+      fallback: [],
+    };
+  },
   images: {
     remotePatterns: [
       {
@@ -58,6 +71,10 @@ const nextConfig: NextConfig = {
       // Defense-in-depth noindex on long-tail dynamic pages — robots.txt
       // disallows them, and metadata.robots sets noindex, but an HTTP header is
       // the most authoritative signal for crawlers that ignore the rest.
+      {
+        source: "/player",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
       {
         source: "/player/:path*",
         headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],

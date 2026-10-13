@@ -25,7 +25,7 @@ export default function PlayerError({
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <main className="flex flex-1 items-center justify-center atmosphere-blood">
+      <main id="main-content" className="flex flex-1 items-center justify-center atmosphere-blood">
         <div className="glass-panel rounded-xl px-10 py-8 flex flex-col items-center text-center max-w-md">
           <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blood/10 border border-blood/20">
             <AlertTriangle className="h-8 w-8 text-blood" style={{ filter: "drop-shadow(0 0 8px rgba(231,76,60,0.4))" }} />

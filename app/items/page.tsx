@@ -26,7 +26,7 @@ export default async function ItemsPage({ searchParams }: ItemsPageProps) {
     <div className="flex min-h-screen flex-col">
       <Header />
 
-      <main className="relative flex-1 atmosphere-amber">
+      <main id="main-content" className="relative flex-1 atmosphere-amber">
         <SigilBackground intensity="subtle" />
 
         <div className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">

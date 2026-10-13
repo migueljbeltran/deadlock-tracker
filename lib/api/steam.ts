@@ -1,4 +1,5 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
 
 import type {
   SteamResolveVanityResponse,
@@ -10,8 +11,9 @@ import {
   parseExternalData,
   steamPlayerSummariesResponseSchema,
   steamResolveVanityResponseSchema,
+  communitySteamProfileSchema,
 } from "./guards";
-import { getRequiredServerEnv } from "@/lib/env";
+import { getOptionalServerEnv, getRequiredServerEnv } from "@/lib/env";
 import logger from "@/lib/logger";
 
 const STEAM_API_BASE = "https://api.steampowered.com";
@@ -50,6 +52,11 @@ export function isValidSteam64(id: string): boolean {
 const MAX_RETRIES = 2;
 
 async function steamFetch(url: string, options: SteamFetchOptions): Promise<Response> {
+  // Never retain a credential-bearing URL in errors or logs that callers may
+  // serialize. Steam requires its API key in the request's query string.
+  const endpoint = new URL(url);
+  endpoint.search = "";
+  const safeEndpoint = endpoint.toString();
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     let res: Response;
     try {
@@ -61,20 +68,21 @@ async function steamFetch(url: string, options: SteamFetchOptions): Promise<Resp
       if (err instanceof Error && (err.name === "AbortError" || err.name === "TimeoutError")) {
         if (attempt < MAX_RETRIES) {
           const delay = 500 * (attempt + 1);
-          logger.warn({ url: url.replace(/key=[^&]+/, "key=***"), attempt, delay }, "Steam API timeout, retrying");
+          logger.warn({ url: safeEndpoint, attempt, delay }, "Steam API timeout, retrying");
           await new Promise((r) => setTimeout(r, delay));
           continue;
         }
-        logger.error({ url: url.replace(/key=[^&]+/, "key=***") }, "Steam API timeout");
-        throw new ApiError("Request timeout", 408, url);
+        logger.error({ url: safeEndpoint }, "Steam API timeout");
+        throw new ApiError("Request timeout", 408, safeEndpoint);
       }
-      throw err;
+      // Native fetch errors can also retain the original URL in their cause.
+      throw new ApiError("Steam API request failed", 502, safeEndpoint);
     }
 
     if ((res.status === 429 || res.status === 503) && attempt < MAX_RETRIES) {
       const retryAfter = res.headers.get("Retry-After");
       const delay = retryAfter ? Math.min(parseInt(retryAfter, 10) * 1000, 5000) : 1000 * (attempt + 1);
-      logger.warn({ url: url.replace(/key=[^&]+/, "key=***"), status: res.status, attempt, delay }, "Steam API rate limited, retrying");
+      logger.warn({ url: safeEndpoint, status: res.status, attempt, delay }, "Steam API rate limited, retrying");
       await new Promise((r) => setTimeout(r, delay));
       continue;
     }
@@ -82,7 +90,7 @@ async function steamFetch(url: string, options: SteamFetchOptions): Promise<Resp
     return res;
   }
 
-  throw new ApiError("Max retries exceeded", 429, url);
+  throw new ApiError("Max retries exceeded", 429, safeEndpoint);
 }
 
 // ---- API Functions ----
@@ -90,6 +98,7 @@ async function steamFetch(url: string, options: SteamFetchOptions): Promise<Resp
 export async function resolveVanityURL(
   vanityName: string,
 ): Promise<string | null> {
+  if (!getOptionalServerEnv("STEAM_API_KEY")) return null;
   const key = getSteamApiKey();
   const url = `${STEAM_API_BASE}/ISteamUser/ResolveVanityURL/v1/?key=${key}&vanityurl=${encodeURIComponent(vanityName)}`;
 
@@ -127,6 +136,10 @@ export async function getPlayerSummaries(
     throw new Error("Steam API supports at most 100 Steam IDs per request");
   }
 
+  if (!getOptionalServerEnv("STEAM_API_KEY")) {
+    return getCommunityPlayerSummaries(steamIds.map(steam64ToAccountId).sort((a, b) => a - b));
+  }
+
   const key = getSteamApiKey();
   const ids = steamIds.join(",");
   const url = `${STEAM_API_BASE}/ISteamUser/GetPlayerSummaries/v2/?key=${key}&steamids=${ids}`;
@@ -159,4 +172,24 @@ export async function getPlayerSummary(
 ): Promise<SteamPlayerSummary | null> {
   const players = await getPlayerSummaries([steamId]);
   return players[0] ?? null;
+}
+
+async function fetchCommunityProfiles(url: string): Promise<SteamPlayerSummary[]> {
+  const response = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(10_000) });
+  if (response.status === 404) return [];
+  if (!response.ok) throw new ApiError("Community profile lookup unavailable", response.status, url);
+  const profiles = parseExternalData(communitySteamProfileSchema.array(), await response.json(), "Community Steam profiles");
+  return profiles.map(({ account_id, ...profile }) => ({ ...profile, steamid: accountIdToSteam64(account_id) }));
+}
+
+// Cache only identity fields, not the upstream friends/match arrays.
+const getCommunityPlayerSummaries = unstable_cache(
+  async (accountIds: number[]) => fetchCommunityProfiles(`https://api.deadlock-api.com/v1/players/steam?account_ids=${accountIds.join(",")}`),
+  ["community-player-identities-v1"], { revalidate: 86400 },
+);
+
+export async function searchCommunityProfiles(query: string): Promise<SteamPlayerSummary[]> {
+  if (query.length < 3) return [];
+  const params = new URLSearchParams({ search_query: query, limit: "15", min_matches_played_last_30d: "0" });
+  return fetchCommunityProfiles(`https://api.deadlock-api.com/v1/players/steam-search?${params}`);
 }

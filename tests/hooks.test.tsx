@@ -163,6 +163,14 @@ afterEach(() => {
 });
 
 describe("usePlayerSnapshot", () => {
+  it("uses a shared CDN URL on an ordinary profile visit", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(createPlayerResponse()));
+    vi.stubGlobal("fetch", fetchMock);
+    renderHook(() => usePlayerSnapshot({ accountId: 123 }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(
+      "/api/player/123", expect.objectContaining({ cache: "default" }),
+    ));
+  });
   it("uses initialData without an initial fetch", () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
@@ -178,7 +186,7 @@ describe("usePlayerSnapshot", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("refetch triggers the player API with a cache-busting token", async () => {
+  it("refetch uses the explicit uncached player API", async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse(createPlayerResponse()));
     vi.stubGlobal("fetch", fetchMock);
 
@@ -191,7 +199,7 @@ describe("usePlayerSnapshot", () => {
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(
-        "/api/player/123?v=1&attempt=0",
+        "/api/player/123?refresh=1",
         expect.objectContaining({ cache: "no-store" }),
       );
     });

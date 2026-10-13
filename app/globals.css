@@ -60,7 +60,7 @@
   /* Text */
   --text-primary: #E6EDF3;
   --text-secondary: #8B949E;
-  --text-muted: #484F58;
+  --text-muted: #88939F;
 
   /* Font families */
   --font-display: "Cinzel Decorative", serif;
@@ -392,4 +392,26 @@ body {
   animation: spin 100s linear infinite;
   transform-origin: 0 0;
   will-change: transform;
+}
+
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 100;
+  padding: 12px 18px;
+  border-radius: 6px;
+  background: var(--soul);
+  color: var(--bg-void);
+  transform: translateY(-150%);
+}
+.skip-link:focus { transform: translateY(0); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

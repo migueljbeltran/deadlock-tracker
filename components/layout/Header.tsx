@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -18,6 +18,18 @@ const navLinks: { href: string; label: string; exact?: boolean }[] = [
 export function Header() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMobileOpen(false);
+        menuButton.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [mobileOpen]);
 
   function isActive(href: string, exact?: boolean) {
     if (href === "/" || exact) return pathname === href;
@@ -31,7 +43,7 @@ export function Header() {
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-3 group">
+        <Link prefetch={false} href="/" className="flex items-center gap-3 group">
           <div className="relative flex h-10 w-10 items-center justify-center">
             <svg
               viewBox="0 0 40 40"
@@ -58,13 +70,14 @@ export function Header() {
         </Link>
 
         {/* Desktop navigation */}
-        <nav className="hidden md:flex items-center gap-2">
+        <nav aria-label="Main navigation" className="hidden md:flex items-center gap-2">
           {navLinks.map((link) => {
             const active = isActive(link.href, link.exact);
             return (
-              <Link
+              <Link prefetch={false}
                 key={link.href}
                 href={link.href}
+                aria-current={active ? "page" : undefined}
                 className={cn(
                   "relative px-5 py-2 text-sm font-medium tracking-wide transition-colors",
                   active
@@ -87,9 +100,12 @@ export function Header() {
 
         {/* Mobile hamburger */}
         <button
+          ref={menuButton}
           className="md:hidden flex items-center justify-center h-10 w-10 rounded-md text-text-secondary hover:text-text-primary hover:bg-surface/30 transition-colors"
           onClick={() => setMobileOpen((prev) => !prev)}
           aria-label="Toggle navigation"
+          aria-expanded={mobileOpen}
+          aria-controls="mobile-navigation"
         >
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
@@ -99,6 +115,8 @@ export function Header() {
       <AnimatePresence>
         {mobileOpen && (
           <motion.nav
+            id="mobile-navigation"
+            aria-label="Mobile navigation"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
@@ -109,9 +127,10 @@ export function Header() {
               {navLinks.map((link) => {
                 const active = isActive(link.href, link.exact);
                 return (
-                  <Link
+                  <Link prefetch={false}
                     key={link.href}
                     href={link.href}
+                    aria-current={active ? "page" : undefined}
                     onClick={() => setMobileOpen(false)}
                     className={cn(
                       "block px-4 py-2.5 rounded-md text-sm font-medium tracking-wide transition-colors",

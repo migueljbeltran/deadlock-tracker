@@ -31,6 +31,7 @@ vi.mock("@/lib/api", () => ({
   isValidSteam64: vi.fn().mockReturnValue(false),
   resolveVanityURL: vi.fn().mockResolvedValue(null),
   getPlayerSummary: vi.fn().mockResolvedValue(null),
+  searchCommunityProfiles: vi.fn().mockResolvedValue([]),
   steam64ToAccountId: vi.fn(),
   accountIdToSteam64: vi.fn(),
   resolveAccountIds: vi.fn().mockResolvedValue(new Map()),

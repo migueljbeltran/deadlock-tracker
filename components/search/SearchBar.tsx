@@ -108,14 +108,15 @@ export function SearchBar({ onPlayerFound }: SearchBarProps) {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
           <Input
             type="search"
-            placeholder="Seek a soul..."
+            placeholder="Player name or Steam ID"
+            aria-label="Search for a Deadlock player"
             className="pl-10"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
         <Button type="submit" disabled={isLoading || !query.trim()}>
-          Consult
+          Search
         </Button>
       </form>
       <p className="mt-2 text-sm text-text-muted">

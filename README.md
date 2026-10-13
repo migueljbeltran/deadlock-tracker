@@ -4,11 +4,13 @@
 
 **A living record of souls and matches from the Cursed Apple.**
 
-Track players, analyze heroes, and explore match history in Deadlock, wrapped in an atmospheric Occult Noir interface inspired by 1930s Art Deco and the supernatural.
+Track players, analyze heroes, and explore match history in Deadlock. The homepage combines player search with a monthly meta snapshot, while the dark amber and green interface keeps the game's occult atmosphere.
 
 **[dltracker.app](https://dltracker.app)**
 
-![Homepage](docs/screenshots/homepage.png)
+Hosting paused? See the [free-hosting restoration guide](docs/free-hosting.md) for the CPU/ISR fixes, deployment checks, and remaining free-tier limits. Screenshots below show the earlier interface.
+
+![Homepage](docs/screenshots/homepage-revamp.png)
 
 </div>
 
@@ -24,7 +26,7 @@ Search any player by player name, Steam ID, vanity URL, or profile link. View ca
 
 ### Heroes
 
-Browse all 38 playable heroes with win rates, pick rates, and match counts. Filter by time range and rank bracket. Sort by any stat.
+Browse the current playable hero roster with win rates, pick rates, and match counts. Filter by time range and rank bracket. Sort by any stat.
 
 ![Heroes Grid](docs/screenshots/heroes-grid.png)
 
@@ -55,7 +57,7 @@ Heroes ranked into S/A/B/C/D tiers by win rate and pick rate. Filter by time ran
 
 ### Items
 
-171 items tracked with win rates and match counts. Filter by time range, rank bracket, type (Weapon/Vitality/Spirit), and tier.
+Shop items tracked with win rates and match counts. Filter by time range, rank bracket, type (Weapon/Vitality/Spirit), and tier.
 
 <details>
 <summary>View items screenshot</summary>
@@ -87,17 +89,20 @@ Regional rankings across NA, SA, EU, Asia, and Oceania with rank badges, top her
 | Language | TypeScript (strict mode) |
 | Styling | Tailwind CSS 4 (CSS-first config) |
 | Animations | Framer Motion |
-| Database | PostgreSQL via Prisma 6 (Supabase) |
+| Data storage | Compact Upstash snapshots; no SQL database required |
 | Cache / Rate Limiting | Upstash Redis |
 | Monitoring | Sentry, Pino (structured JSON logging), Vercel Analytics |
 | Validation | Zod |
 | Testing | Vitest, React Testing Library, jsdom, Playwright |
 | CI/CD | GitHub Actions (lint, typecheck, unit tests, security audit) |
-| Data Sources | [Deadlock Community API](https://deadlock-api.com) + Steam Web API |
+| Data Sources | [Deadlock Community API](https://deadlock-api.com), including cached Steam profiles; optional Steam Web API |
 
 ### Key Engineering Decisions
 
-- **ISR + `generateStaticParams`** for hero and match pages: pre-renders 38 hero pages at build time and caches match pages on first visit.
+- **ISR + `generateStaticParams`** for hero and match pages: pre-renders the available hero roster at build time and caches match pages on first visit. Large raw match responses are not also persisted in Next's fetch cache.
+- **Shared static player shell**: numeric player URLs rewrite to one CDN page; player JSON uses a stable, cached API URL. Explicit refreshes bypass the CDN. Unknown numeric profiles show an in-page message with an API 404.
+- **Bounded public dataset caching**: compact analytics use hourly time buckets and a finite set of time ranges. Redis REST commands are never persisted in Next's fetch cache, preserving lock and TTL behavior.
+- **Navigation and accessibility**: route prefetch is disabled, with a skip link, readable muted text, UTC update times, mobile menu state, and reduced-motion preferences.
 - **Suspense streaming** on data-heavy pages: the page shell renders instantly while API data streams in, improving perceived load time.
 - **Multi-signal account resolution** on the leaderboard: ambiguous leaderboard account IDs are resolved with Steam profile and hero-pattern signals only for the visible page.
 - **Cache resilience for expensive paths**: shared read-through cache helpers serve stale snapshots on rebuild failure and avoid duplicate rebuilds with short Redis locks.
@@ -128,14 +133,14 @@ User searches player name
   → Convert Steam64 → Account ID (subtract offset)
   → Deadlock API (hero stats, match history, performance metrics)
   → Rank estimation (badge averaging from recent matches)
-  → Server-rendered profile page with ISR caching
+  → Shared static player shell + CDN-cached player API + compact Redis snapshot
 ```
 
 ---
 
 ## Design
 
-The **Occult Noir Ascended** theme uses a dark palette with soul-green (`#3DDC84`) and amber accents, frosted glassmorphism panels, animated gradient borders on hover, and unique atmospheric radial gradients per page section. Typography pairs Cinzel Decorative (display) with JetBrains Mono (stats/data).
+The theme uses a dark palette with soul-green (`#3DDC84`) and amber accents. The homepage favors readable typography, direct navigation, and sample sizes over entrance effects. Existing detail views retain their atmospheric styling, with global contrast and motion improvements.
 
 ---
 

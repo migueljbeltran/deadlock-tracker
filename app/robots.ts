@@ -12,7 +12,7 @@ export default function robots(): MetadataRoute.Robots {
         // meta. Every crawl of a unique account/match URL would cost a
         // function invocation and a Redis/upstream fetch. Not worth it when
         // these pages provide no SEO value (noindex anyway).
-        disallow: ["/api/", "/player/", "/match/"],
+        disallow: ["/api/", "/player", "/match/"],
       },
     ],
     sitemap: "https://dltracker.app/sitemap.xml",

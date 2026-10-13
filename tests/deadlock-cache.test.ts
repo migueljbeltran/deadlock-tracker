@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const redisStore = new Map<string, unknown>();
+vi.mock("next/cache", () => ({ unstable_cache: (fn: () => unknown) => fn }));
 
 vi.mock("@upstash/redis", () => ({
   Redis: class {
@@ -64,6 +65,29 @@ describe("Deadlock API paths", () => {
     expect(redisStore.size).toBe(0);
   });
 
+  it("uses the current unified API host for game assets", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: vi.fn().mockResolvedValue([]) });
+    vi.stubGlobal("fetch", fetchMock);
+    const { getHeroes, getRanks } = await import("@/lib/api/deadlock");
+    await getHeroes();
+    await getRanks();
+    expect(fetchMock).toHaveBeenCalledWith("https://api.deadlock-api.com/v1/assets/heroes", expect.any(Object));
+    expect(fetchMock).toHaveBeenCalledWith("https://api.deadlock-api.com/v1/assets/ranks", expect.any(Object));
+  });
+
+  it("keeps large player responses out of Next's persistent cache", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: vi.fn().mockResolvedValue([]) });
+    vi.stubGlobal("fetch", fetchMock);
+    const { getPlayerHeroStats, getBatchPlayerHeroStats } = await import("@/lib/api/deadlock");
+    await getPlayerHeroStats(42);
+    await getBatchPlayerHeroStats([42, 43]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    for (const [, options] of fetchMock.mock.calls) {
+      expect(options.cache).toBe("no-store");
+      expect(options.next).toBeUndefined();
+    }
+  });
+
   it("adds time-window params to hero analytics requests", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -73,7 +97,6 @@ describe("Deadlock API paths", () => {
         wins: 10,
         losses: 5,
         matches: 15,
-        players: 12,
         total_kills: 100,
         total_deaths: 50,
         total_assists: 80,

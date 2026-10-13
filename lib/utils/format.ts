@@ -20,7 +20,10 @@ export function formatDuration(seconds: number): string {
  * e.g. "2h ago", "3d ago", "just now"
  */
 export function formatTimeAgo(input: string | number): string {
-  const date = typeof input === "number" ? new Date(input * 1000) : new Date(input);
+  const date = typeof input === "number" || /^\d+$/.test(input)
+    ? new Date(Number(input) * 1000)
+    : new Date(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(input) ? input.replace(" ", "T") + "Z" : input);
+  if (Number.isNaN(date.getTime())) return "Unknown time";
   const now = Date.now();
   const diffMs = now - date.getTime();
   const diffSec = Math.floor(diffMs / 1000);
@@ -46,6 +49,8 @@ export function formatUpdatedAt(input: string): string {
   if (Number.isNaN(date.getTime())) return "recently";
 
   return date.toLocaleString("en-US", {
+    timeZone: "UTC",
+    year: "numeric",
     month: "short",
     day: "numeric",
     hour: "numeric",

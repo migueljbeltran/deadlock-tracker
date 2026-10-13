@@ -19,7 +19,7 @@ export function HeroSearchSection() {
 
   return (
     <div className="w-full max-w-lg">
-      <div className="glass-panel animated-border rounded-xl p-8 shadow-[var(--shadow-depth-md)]">
+      <div className="rounded-xl border border-border-subtle bg-deep p-4 sm:p-5">
         <SearchBar onPlayerFound={handlePlayerFound} />
         <RecentSearches searches={searches} onSelect={handleRecentSelect} onClear={clearSearches} />
       </div>

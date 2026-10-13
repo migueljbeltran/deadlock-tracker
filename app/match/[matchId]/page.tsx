@@ -94,7 +94,7 @@ export default async function MatchDetailPage({ params }: MatchDetailPageProps) 
     <div className="flex min-h-screen flex-col">
       <Header />
 
-      <main className="relative flex-1">
+      <main id="main-content" className="relative flex-1">
         <SigilBackground intensity="subtle" />
 
         <div className="atmosphere-amber relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
