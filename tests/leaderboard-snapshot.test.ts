@@ -2,11 +2,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { DeadlockLeaderboardEntry } from "@/lib/api/types";
 
 const cacheStore = new Map<string, unknown>();
+vi.mock("next/cache", () => ({ unstable_cache: (fn: () => unknown) => fn }));
 const getLeaderboard = vi.fn();
 const resolveAccountIds = vi.fn();
+const getPlayerRanks = vi.fn().mockResolvedValue([]);
 
 vi.mock("@/lib/api/deadlock", () => ({
   getLeaderboard,
+  getPlayerRanks,
 }));
 
 vi.mock("@/lib/api/resolve", () => ({
@@ -56,6 +59,7 @@ describe("getResolvedLeaderboardSnapshot", () => {
     cacheStore.clear();
     getLeaderboard.mockReset();
     resolveAccountIds.mockReset();
+    getPlayerRanks.mockReset().mockResolvedValue([]);
     vi.resetModules();
   });
 
@@ -70,6 +74,22 @@ describe("getResolvedLeaderboardSnapshot", () => {
     expect(snapshot.entries[0].profileAccountId).toBeNull();
     expect(snapshot.entries[0].profileLinkStatus).toBe("ambiguous");
     expect(resolveAccountIds).not.toHaveBeenCalled();
+  });
+
+  it("batches only confirmed visible accounts and keeps placement separate from badges", async () => {
+    getLeaderboard.mockResolvedValue(Array.from({ length: 60 }, (_, index) => createEntry(index + 1, [1000 + index])));
+    getPlayerRanks.mockResolvedValue([
+      { account_id: 1000, badge: 113, rank: 11, subrank: 3, last_match: null },
+      { account_id: 1001, badge: 0, rank: 0, subrank: 0, last_match: null },
+    ]);
+    const { getResolvedLeaderboardSnapshot } = await import("@/lib/leaderboardSnapshot");
+    const snapshot = await getResolvedLeaderboardSnapshot("Asia", { page: 1 });
+    expect(getPlayerRanks).toHaveBeenCalledOnce();
+    expect(getPlayerRanks.mock.calls[0][0]).toHaveLength(50);
+    expect(getPlayerRanks.mock.calls[0][0]).not.toContain(1050);
+    expect(snapshot.entries[0]).toMatchObject({ rank: 1, badge_level: 113, ranked_rank: 11, ranked_subrank: 3 });
+    expect(snapshot.entries[1]).toMatchObject({ rank: 2, ranked_rank: 0 });
+    expect(snapshot.entries[2].ranked_rank).toBeNull(); // Omitted/protected accounts must not retain legacy badges.
   });
 
   it("enriches only visible page entries with confident profile links", async () => {
@@ -116,7 +136,7 @@ describe("getResolvedLeaderboardSnapshot", () => {
       enrichProfileLinks: true,
     });
 
-    cacheStore.delete("leaderboard-snapshot:NAmerica:v1");
+    cacheStore.delete("leaderboard-snapshot:NAmerica:v2");
 
     const secondSnapshot = await getResolvedLeaderboardSnapshot("NAmerica", {
       page: 1,

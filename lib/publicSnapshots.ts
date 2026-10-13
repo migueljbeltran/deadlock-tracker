@@ -159,7 +159,7 @@ async function buildPublicSnapshot<T>(
       logger.info({ key: label }, "Public snapshot built on miss");
       return snapshot;
     } finally {
-      if (lockAcquired === true) await cacheDelete(lockKey);
+      if (lockAcquired === true) await cacheDelete(lockKey, { bypassBackoff: true });
     }
   }
 
@@ -185,7 +185,7 @@ async function buildPublicSnapshot<T>(
     logger.warn({ key: label, error }, "Public snapshot rebuild failed; serving stale data");
     return cached;
   } finally {
-    await cacheDelete(lockKey);
+    await cacheDelete(lockKey, { bypassBackoff: true });
   }
 }
 

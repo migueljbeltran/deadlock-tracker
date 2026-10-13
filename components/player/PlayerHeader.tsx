@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { SteamPlayerSummary, DeadlockRank } from "@/lib/api";
+import { getRankImage } from "@/lib/utils/ranks";
 
 interface PlayerHeaderProps {
   player: SteamPlayerSummary;
@@ -7,6 +8,8 @@ interface PlayerHeaderProps {
   estimatedRank: DeadlockRank | null;
   estimatedSubrank?: number | null;
   rankUnavailable?: boolean;
+  rankSource?: "reported" | "estimated";
+  unrankedLabel?: string;
 }
 
 export function PlayerHeader({
@@ -15,6 +18,8 @@ export function PlayerHeader({
   estimatedRank,
   estimatedSubrank,
   rankUnavailable = false,
+  rankSource = "estimated",
+  unrankedLabel = "Unranked",
 }: PlayerHeaderProps) {
   return (
     <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
@@ -54,10 +59,7 @@ export function PlayerHeader({
         {estimatedRank ? (
           <div className="mt-3 flex items-center gap-2 glass-panel rounded-lg px-3 py-2">
             {(() => {
-              const subrankImg = estimatedSubrank
-                ? estimatedRank.images[`small_subrank${estimatedSubrank}_webp`]
-                : null;
-              const imgSrc = subrankImg || estimatedRank.images.large_webp || estimatedRank.images.large;
+              const imgSrc = getRankImage(estimatedRank, estimatedSubrank);
               return imgSrc ? (
                 <div className="relative h-7 w-7">
                   <Image
@@ -76,12 +78,14 @@ export function PlayerHeader({
             >
               {estimatedRank.name}{estimatedSubrank ? ` ${estimatedSubrank}` : ""}
             </span>
-            <span className="text-xs text-text-muted">(Estimated)</span>
+            <span className="text-xs text-text-muted" title="Rank at the end of the latest tracked ranked match; Eternus divisions are recalculated daily by Valve.">
+              {rankSource === "reported" ? "Latest ranked match" : "(Estimated)"}
+            </span>
           </div>
         ) : rankUnavailable ? (
           <p className="mt-3 text-sm text-text-muted">Rank unavailable right now</p>
         ) : (
-          <p className="mt-3 text-sm text-text-muted">Unranked</p>
+          <p className="mt-3 text-sm text-text-muted">{unrankedLabel}</p>
         )}
       </div>
     </div>

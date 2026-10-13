@@ -98,6 +98,22 @@ export const deadlockRankSchema = z.object({
   images: stringMapSchema,
 }).passthrough();
 
+export const deadlockPlayerRankSchema = z.object({
+  badge: z.number().int().nonnegative(),
+  rank: z.number().int().nonnegative(),
+  subrank: z.number().int().min(0).max(6),
+  last_match: z.object({
+    match_id: z.number().int().nonnegative(),
+    start_time: z.number().int().nonnegative(),
+    player_rank_initial_display_rank: z.number().int().nonnegative(),
+    player_rank_initial_calibration_games: z.number().int().nonnegative().nullish(),
+  }).nullable().optional().default(null),
+});
+
+export const deadlockAccountRankSchema = deadlockPlayerRankSchema.extend({
+  account_id: z.number().int().nonnegative(),
+});
+
 export const deadlockPlayerHeroStatSchema = z.object({
   account_id: z.number(),
   hero_id: z.number(),

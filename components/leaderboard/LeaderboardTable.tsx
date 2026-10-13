@@ -6,6 +6,7 @@ import { Medal } from "lucide-react";
 import { motion } from "framer-motion";
 import type { DeadlockRank, DeadlockHero } from "@/lib/api";
 import { cn } from "@/lib/utils/cn";
+import { getRankImage } from "@/lib/utils/ranks";
 import type { ResolvedLeaderboardEntry } from "@/lib/leaderboardSnapshot";
 
 interface LeaderboardTableProps {
@@ -43,7 +44,7 @@ export function LeaderboardTable({
           <tr className="border-b-2 border-amber bg-gradient-to-r from-amber/15 via-amber/5 to-transparent text-left uppercase tracking-[0.05em] text-xs text-amber">
             <th className="px-3 py-2 w-16 text-center">#</th>
             <th className="px-3 py-2">Player</th>
-            <th className="px-3 py-2 text-center">Rank</th>
+            <th className="px-3 py-2 text-center" title="Badge from the latest tracked ranked match, separate from leaderboard position">Rank badge</th>
             <th className="hidden px-3 py-2 sm:table-cell">Top Heroes</th>
           </tr>
         </thead>
@@ -54,6 +55,7 @@ export function LeaderboardTable({
         >
           {entries.map((entry, idx) => {
             const rank = entry.ranked_rank == null ? undefined : rankMap.get(entry.ranked_rank);
+            const rankImage = rank ? getRankImage(rank, entry.ranked_subrank) : undefined;
             const playerAccountId = entry.profileAccountId;
             const hasProfileLink = entry.profileLinkStatus === "available" && playerAccountId != null;
             const playerLabel = entry.account_name || `Player #${entry.rank}`;
@@ -115,10 +117,10 @@ export function LeaderboardTable({
                   </div>
                 </td>
                 <td className="px-3 py-2 text-center">
-                  {rank?.images ? (
+                  {rank && rankImage ? (
                     <div className="relative mx-auto h-7 w-7">
                       <Image
-                        src={rank.images[`small_subrank${entry.ranked_subrank}_webp`] ?? rank.images.large_webp ?? rank.images.large ?? ""}
+                        src={rankImage}
                         alt={rank.name}
                         fill
                         sizes="28px"

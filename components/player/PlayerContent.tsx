@@ -76,8 +76,8 @@ export default function PlayerContent({ accountId, heroes, ranks, initialData }:
   }
 
   const { snapshot, shouldRefresh, isStale } = data;
-  const estimatedRank = snapshot.rankEstimate
-    ? rankMap.get(snapshot.rankEstimate.tier) ?? null
+  const estimatedRank = snapshot.rank && snapshot.rank.rank > 0
+    ? rankMap.get(snapshot.rank.rank) ?? null
     : null;
   const matchesUnavailable = snapshot.matchDataIncomplete === true
     || (snapshot.status === "partial" && snapshot.matches.length === 0);
@@ -98,8 +98,11 @@ export default function PlayerContent({ accountId, heroes, ranks, initialData }:
           player={snapshot.player}
           accountId={accountId}
           estimatedRank={estimatedRank}
-          estimatedSubrank={snapshot.rankEstimate?.subrank ?? null}
-          rankUnavailable={matchesUnavailable}
+          estimatedSubrank={snapshot.rank?.subrank ?? null}
+          rankUnavailable={snapshot.rank == null || (snapshot.rank.rank > 0 && estimatedRank == null)}
+          rankSource="reported"
+          unrankedLabel={snapshot.rank?.last_match?.player_rank_initial_calibration_games
+            ? "Placement games" : "Obscurus · No rank reported"}
         />
       </FadeIn>
 

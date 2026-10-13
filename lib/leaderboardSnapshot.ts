@@ -1,9 +1,10 @@
 import "server-only";
 
 import { createHash } from "node:crypto";
+import { unstable_cache } from "next/cache";
 import type { DeadlockLeaderboardEntry } from "@/lib/api/types";
 import type { DeadlockRegion } from "@/lib/api/deadlock";
-import { getLeaderboard } from "@/lib/api/deadlock";
+import { getLeaderboard, getPlayerRanks } from "@/lib/api/deadlock";
 import { resolveAccountIds } from "@/lib/api/resolve";
 import { cacheDelete, cacheGet, cacheSet, cacheSetIfNotExists, isCacheAvailable } from "@/lib/cache";
 import logger from "@/lib/logger";
@@ -13,6 +14,7 @@ const LEADERBOARD_PAGE_SIZE = 50;
 export interface ResolvedLeaderboardEntry extends DeadlockLeaderboardEntry {
   profileAccountId: number | null;
   profileLinkStatus: "available" | "ambiguous" | "missing";
+  rankBadgeSource?: "latest-ranked-match";
 }
 
 interface ResolvedLeaderboardSnapshot {
@@ -21,15 +23,15 @@ interface ResolvedLeaderboardSnapshot {
 }
 
 const SNAPSHOT_TTL_SECONDS = 604800;
-// 2-day freshness: leaderboard shifts daily but perfect real-time accuracy isn't critical
-const SNAPSHOT_FRESHNESS_SECONDS = 172800;
+// Valve publishes the current leaderboard hourly.
+const SNAPSHOT_FRESHNESS_SECONDS = 3600;
 const SNAPSHOT_LOCK_TTL_SECONDS = 300;
 const PROFILE_LINK_TTL_SECONDS = 604800;
 const PROFILE_LINK_LOCK_TTL_SECONDS = 60;
 const PROFILE_LINK_RESOLUTION_TIMEOUT_MS = 3500;
 
 function getSnapshotKey(region: DeadlockRegion): string {
-  return `leaderboard-snapshot:${region}:v1`;
+  return `leaderboard-snapshot:${region}:v2`;
 }
 
 function getSnapshotLockKey(region: DeadlockRegion): string {
@@ -79,7 +81,7 @@ async function buildResolvedLeaderboardSnapshot(region: DeadlockRegion): Promise
 }
 
 export async function getResolvedLeaderboard(region: DeadlockRegion): Promise<ResolvedLeaderboardEntry[]> {
-  return (await getResolvedLeaderboardSnapshot(region)).entries;
+  return (await getBaseResolvedLeaderboardSnapshot(region)).entries;
 }
 
 interface ProfileLinkEntry {
@@ -207,12 +209,12 @@ async function resolveProfileLinksForPage(
     return null;
   } finally {
     if (lockAcquired === true) {
-      await cacheDelete(getProfileLinksLockKey(region, safePage, pageIdentity));
+      await cacheDelete(getProfileLinksLockKey(region, safePage, pageIdentity), { bypassBackoff: true });
     }
   }
 }
 
-export async function getResolvedLeaderboardSnapshot(
+async function getBaseResolvedLeaderboardSnapshot(
   region: DeadlockRegion,
   options: { page?: number; enrichProfileLinks?: boolean } = {},
 ): Promise<ResolvedLeaderboardSnapshot> {
@@ -250,7 +252,7 @@ export async function getResolvedLeaderboardSnapshot(
         await resolveProfileLinksForPage(region, snapshot.entries, options.page ?? 1),
       );
     } finally {
-      if (lockAcquired === true) await cacheDelete(getSnapshotLockKey(region));
+      if (lockAcquired === true) await cacheDelete(getSnapshotLockKey(region), { bypassBackoff: true });
     }
   }
 
@@ -286,6 +288,38 @@ export async function getResolvedLeaderboardSnapshot(
       await resolveProfileLinksForPage(region, cached.entries, options.page ?? 1),
     );
   } finally {
-    await cacheDelete(getSnapshotLockKey(region));
+    await cacheDelete(getSnapshotLockKey(region), { bypassBackoff: true });
+  }
+}
+
+export async function getResolvedLeaderboardSnapshot(
+  region: DeadlockRegion,
+  options: { page?: number; enrichProfileLinks?: boolean } = {},
+): Promise<ResolvedLeaderboardSnapshot> {
+  const snapshot = await getBaseResolvedLeaderboardSnapshot(region, options);
+  const pageEntries = getPageEntries(snapshot.entries, options.page ?? 1);
+  const pagePositions = new Set(pageEntries.map((entry) => entry.rank));
+  const currentSnapshot = { ...snapshot, entries: snapshot.entries.map((entry) => pagePositions.has(entry.rank)
+    ? { ...entry, ranked_rank: null, ranked_subrank: null, badge_level: null } : entry) };
+  const ids = pageEntries.filter((entry) => entry.profileLinkStatus === "available" && entry.profileAccountId != null)
+    .map((entry) => entry.profileAccountId!);
+  if (ids.length === 0) return currentSnapshot;
+  try {
+    const page = Number.isInteger(options.page) && (options.page ?? 0) > 0 ? options.page! : 1;
+    // A region/page is the cache unit for one hour, rather than every possible
+    // ID combination. Results are joined by account ID, so a changed standing
+    // can never attach an old player's badge to a new player.
+    const ranks = await unstable_cache(async () => getPlayerRanks(ids),
+      ["leaderboard-page-ranks-v1", region, String(page)], { revalidate: 3600 })();
+    const byAccount = new Map(ranks.map((rank) => [rank.account_id, rank]));
+    return { ...currentSnapshot, entries: currentSnapshot.entries.map((entry) => {
+      const rank = pagePositions.has(entry.rank) && entry.profileAccountId != null && entry.profileLinkStatus === "available"
+        ? byAccount.get(entry.profileAccountId) : undefined;
+      return rank ? { ...entry, ranked_rank: rank.rank, ranked_subrank: rank.subrank, badge_level: rank.badge,
+        rankBadgeSource: "latest-ranked-match" as const } : entry;
+    }) };
+  } catch {
+    logger.warn({ region, page: options.page ?? 1 }, "Reported rank enrichment unavailable");
+    return currentSnapshot;
   }
 }

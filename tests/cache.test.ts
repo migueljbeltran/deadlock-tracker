@@ -138,4 +138,26 @@ describe("cacheGetOrBuildSnapshot", () => {
     expect(await cacheSetIfNotExists("lock", "1", 10)).toBe(true);
     expect(await cacheSetIfNotExists("lock", "1", 10)).toBe(false);
   });
+
+  it("releases an acquired lock even when the snapshot write activates backoff", async () => {
+    vi.spyOn(Date, "now").mockReturnValue(60_000);
+    const { cacheGetOrBuildSnapshot, isCacheAvailable, cacheDelete } = await import("@/lib/cache");
+    const builder = vi.fn().mockImplementation(async () => {
+      failures.set = true;
+      return "fresh-data";
+    });
+    const options = { key: "cleanup", label: "cleanup", ttlSeconds: 60,
+      freshnessSeconds: 60, lockTtlSeconds: 600, builder };
+    expect((await cacheGetOrBuildSnapshot(options))?.data).toBe("fresh-data");
+    expect(isCacheAvailable()).toBe(false);
+    expect(redisStore.has("dltracker:cache:cleanup:refresh-lock")).toBe(false);
+    redisStore.set("dltracker:cache:ordinary", "keep");
+    await cacheDelete("ordinary");
+    expect(redisStore.has("dltracker:cache:ordinary")).toBe(true);
+    failures.set = false;
+    builder.mockResolvedValue("recovered-data");
+    vi.mocked(Date.now).mockReturnValue(90_000);
+    expect((await cacheGetOrBuildSnapshot(options))?.data).toBe("recovered-data");
+    expect(builder).toHaveBeenCalledTimes(2);
+  });
 });

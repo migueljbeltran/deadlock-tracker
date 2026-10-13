@@ -14,7 +14,7 @@ Sources checked October 13, 2026: [Hobby plan](https://vercel.com/docs/plans/hob
 | --- | --- |
 | Homepage | Hourly ISR with compact monthly analytics; no dataset-size query |
 | `/player/<numeric-id>` | A `beforeFiles` rewrite to one weekly static `/player` shell; browser loads the JSON API |
-| Player API | One stable URL per account, CDN cache for 30 minutes; Redis retains a compact snapshot for seven days with daily freshness |
+| Player API | One stable URL per account, CDN cache for 30 minutes; Redis retains a compact stats snapshot for seven days with daily freshness; reported rank lookups cache for one hour |
 | Explicit player refresh | `?refresh=1` response is `no-store`; refresh action still enforces its cooldown and rate limit |
 | Malformed player URLs | Existing dynamic route returns 404 |
 | Matches | On-demand cached rendered page; large raw upstream metadata fetched without also writing it into Next's persistent fetch cache |
@@ -78,10 +78,12 @@ The subsequent security hardening passed 63 unit tests, lint, TypeScript checks,
 
 The build confirms `/` and `/player` are static. Desktop and mobile screenshots are saved in `docs/screenshots/homepage-revamp.png` and `docs/screenshots/homepage-mobile.png`. Local checks do not prove production CDN cache hits, a cleared Vercel pause, or monthly quota fit; those require the connected project and live usage measurements.
 
-## Connected deployment attempt — October 13, 2026
+## Initial deployment restriction — October 13, 2026
 
 Vercel account access was verified for `deadlock-tracker` in `miguel-beltran-projects`. A preview deployment of the tested local source to the existing project was rejected with HTTP 402, code `resource_creation_blocked`: “Your Team exceeded our fair use limits and has been blocked.” No deployment was created, and no plan, billing setting, domain, or production deployment was changed.
 
-The account owner must resolve the team restriction before this project can accept a deployment. Suggested message for Vercel's available help channel:
+The team subsequently accepted deployments. After the deleted Redis database was replaced and production was redeployed, all 12 production browser checks passed, including hero statistics, tier-list rows, item win rates, and leaderboard entries. The restriction and message below are historical troubleshooting context, not the current deployment state.
+
+At the time of the initial failure, the suggested message for Vercel's help channel was:
 
 > My Hobby team `miguel-beltran-projects` was paused after a CPU/ISR usage spike. I have prepared and tested fixes that use a shared static player shell, bounded compact analytics caches, stable cache URLs, and disabled speculative route prefetching. On October 13, deploying a preview to my existing `deadlock-tracker` project still returns HTTP 402 `resource_creation_blocked` (“Your Team exceeded our fair use limits and has been blocked”). Can you explain the remaining restriction and how to restore this team on Hobby without upgrading? I can provide the request ID `sin1:sfo1::tb6cz-1791894512789-b4b52787d28b`.
