@@ -2,7 +2,10 @@ import { z } from "zod";
 import { ApiError } from "./types";
 import logger from "@/lib/logger";
 
-const stringMapSchema = z.record(z.string(), z.string().optional());
+// Unified assets use null for unavailable text and image URLs. Keep the
+// normalized output compatible with the UI's existing optional-field fallbacks.
+const optionalAssetStringSchema = z.string().nullish().transform((value) => value ?? undefined);
+const stringMapSchema = z.record(z.string(), optionalAssetStringSchema);
 const numberMapSchema = z.record(z.string(), z.object({
   avg: z.number().nullable(),
   std: z.number().nullable(),
@@ -59,9 +62,9 @@ export const deadlockHeroSchema = z.object({
   class_name: z.string(),
   name: z.string(),
   description: z.object({
-    lore: z.string().optional(),
-    role: z.string().optional(),
-    playstyle: z.string().optional(),
+    lore: optionalAssetStringSchema,
+    role: optionalAssetStringSchema,
+    playstyle: optionalAssetStringSchema,
   }).passthrough(),
   player_selectable: z.boolean().optional(),
   disabled: z.boolean().optional(),

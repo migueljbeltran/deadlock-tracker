@@ -8,6 +8,7 @@ vi.mock("@/lib/logger", () => ({
 
 import {
   deadlockHeroSchema,
+  deadlockRankSchema,
   deadlockLeaderboardResponseSchema,
   parseExternalData,
   steamPlayerSummariesResponseSchema,
@@ -41,6 +42,48 @@ describe("external API guards", () => {
       name: "Hero",
       description: {},
     }, "Hero test")).toThrow(ApiError);
+  });
+
+  it("normalizes nullable hero descriptions and image URLs without rejecting the roster", () => {
+    const parsed = parseExternalData(deadlockHeroSchema.array(), [{
+      id: 1,
+      class_name: "hero",
+      name: "Hero",
+      description: { lore: null, role: null, playstyle: null },
+      images: { icon_image_small: null, icon_hero_card: "card.jpg" },
+    }, {
+      id: 2,
+      class_name: "another_hero",
+      name: "Another Hero",
+      description: { lore: "Hero lore" },
+    }], "Hero roster test");
+
+    expect(parsed).toHaveLength(2);
+    expect(parsed[0].description).toEqual({ lore: undefined, role: undefined, playstyle: undefined });
+    expect(parsed[0].images).toEqual({ icon_image_small: undefined, icon_hero_card: "card.jpg" });
+    expect(parsed[1].description.lore).toBe("Hero lore");
+    expect(parsed[1].description.role).toBeUndefined();
+    expect(parsed[1].images).toBeUndefined();
+  });
+
+  it("normalizes nullable rank image URLs without rejecting the rank list", () => {
+    const parsed = parseExternalData(deadlockRankSchema.array(), [{
+      tier: 0,
+      name: "Unranked",
+      color: "#ffffff",
+      images: { large: null, small_webp: null, subrank1: "rank.jpg" },
+    }], "Rank assets test");
+
+    expect(parsed[0].images).toEqual({ large: undefined, small_webp: undefined, subrank1: "rank.jpg" });
+  });
+
+  it("still rejects non-string asset descriptions and image URLs", () => {
+    expect(deadlockHeroSchema.safeParse({
+      id: 1, class_name: "hero", name: "Hero", description: { lore: 123 },
+    }).success).toBe(false);
+    expect(deadlockRankSchema.safeParse({
+      tier: 0, name: "Unranked", color: "#ffffff", images: { large: 123 },
+    }).success).toBe(false);
   });
 
   it("accepts leaderboard response payloads", () => {
