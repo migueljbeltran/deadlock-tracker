@@ -83,7 +83,7 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
     <div className="flex min-h-screen flex-col">
       <Header />
 
-      <main className="atmosphere-soul relative flex-1">
+      <main id="main-content" className="atmosphere-soul relative flex-1">
         <SigilBackground intensity="subtle" />
 
         {/* Inline search — find another player without going home */}

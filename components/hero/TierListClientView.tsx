@@ -147,7 +147,7 @@ export function TierListClientView({
 
                 <div className="flex flex-wrap gap-2 p-3">
                   {heroesInTier.map((hero) => (
-                    <Link
+                    <Link prefetch={false}
                       key={hero.id}
                       href={`/heroes/${hero.id}`}
                       className="group flex items-center gap-2 rounded-md glass-panel px-2.5 py-1.5 transition-all hover:border-soul hover:translate-y-[-1px]"

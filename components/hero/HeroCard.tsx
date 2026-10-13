@@ -19,7 +19,7 @@ interface HeroCardProps {
 
 export function HeroCard({ hero }: HeroCardProps) {
   return (
-    <Link href={`/heroes/${hero.id}`} className="block">
+    <Link prefetch={false} href={`/heroes/${hero.id}`} className="block">
       <GlowCard>
         <div className={cn("p-4 border-l-2", hero.winRate >= 50 ? "border-l-soul" : "border-l-blood")}>
           <div className="flex items-center gap-3">

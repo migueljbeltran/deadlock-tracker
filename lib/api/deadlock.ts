@@ -1,4 +1,5 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
 
 import { request } from "node:https";
 import type {
@@ -35,11 +36,10 @@ import {
 } from "@/lib/analyticsTimeRange";
 import logger from "@/lib/logger";
 
-const ASSETS_API = "https://assets.deadlock-api.com";
+const ASSETS_API = "https://api.deadlock-api.com/v1/assets";
 const GAME_API = "https://api.deadlock-api.com";
 
 const MAX_RETRIES = 2;
-const PLAYER_DATA_REVALIDATE_SECONDS = 604800;
 const MAX_LARGE_JSON_REDIRECTS = 3;
 
 interface DeadlockFetchOptions {
@@ -166,18 +166,20 @@ function fetchLargeJson<T>(
 
 // ---- Assets API ----
 
-export async function getHeroes(): Promise<DeadlockHero[]> {
+export const getHeroes = unstable_cache(async (): Promise<DeadlockHero[]> => {
   return parseExternalData(
     deadlockHeroSchema.array(),
-    await deadlockFetch<unknown>(`${ASSETS_API}/v2/heroes`, { revalidate: 604800 }),
+    // The current roster response is >2MB. Strip unused properties before it
+    // enters Next's persistent cache, instead of caching the oversized raw JSON.
+    await deadlockFetch<unknown>(`${ASSETS_API}/heroes`, { cache: "no-store" }),
     "Deadlock heroes",
   );
-}
+}, ["hero-roster-v3"], { revalidate: 604800 });
 
 export async function getHero(heroId: number): Promise<DeadlockHero> {
   return parseExternalData(
     deadlockHeroSchema,
-    await deadlockFetch<unknown>(`${ASSETS_API}/v2/heroes/${heroId}`, { revalidate: 604800 }),
+    await deadlockFetch<unknown>(`${ASSETS_API}/heroes/${heroId}`, { revalidate: 604800 }),
     "Deadlock hero",
   );
 }
@@ -194,7 +196,7 @@ export async function getItems(): Promise<DeadlockItem[]> {
   }
 
   itemsExpiry = Date.now() + ITEMS_CACHE_TTL;
-  const itemsUrl = `${ASSETS_API}/v2/items/by-type/upgrade`;
+  const itemsUrl = `${ASSETS_API}/items/by-type/upgrade`;
   itemsPromise = (async () => {
     try {
       return parseExternalData(
@@ -232,7 +234,7 @@ export async function getItemStats(
     deadlockItemStatsSchema.array(),
     await deadlockFetch<unknown>(
       `${GAME_API}/v1/analytics/item-stats${query ? `?${query}` : ""}`,
-      { revalidate: 3600 },
+      { cache: "no-store" }, // Compact public snapshots own persistence.
     ),
     "Deadlock item stats",
   );
@@ -241,7 +243,7 @@ export async function getItemStats(
 export async function getRanks(): Promise<DeadlockRank[]> {
   return parseExternalData(
     deadlockRankSchema.array(),
-    await deadlockFetch<unknown>(`${ASSETS_API}/v2/ranks`, { revalidate: 604800 }),
+    await deadlockFetch<unknown>(`${ASSETS_API}/ranks`, { revalidate: 604800 }),
     "Deadlock ranks",
   );
 }
@@ -255,7 +257,7 @@ export async function getPlayerHeroStats(
     deadlockPlayerHeroStatSchema.array(),
     await deadlockFetch<unknown>(
       `${GAME_API}/v1/players/hero-stats?account_ids=${accountId}`,
-      { revalidate: PLAYER_DATA_REVALIDATE_SECONDS, tags: [getPlayerDataTag(accountId)] },
+      { cache: "no-store" }, // The compact player snapshot owns the cache.
     ),
     "Deadlock player hero stats",
   );
@@ -269,7 +271,7 @@ export async function getBatchPlayerHeroStats(
     deadlockPlayerHeroStatSchema.array(),
     await deadlockFetch<unknown>(
       `${GAME_API}/v1/players/hero-stats?account_ids=${accountIds.join(",")}`,
-      { revalidate: PLAYER_DATA_REVALIDATE_SECONDS },
+      { cache: "no-store" }, // Resolved account links are already Redis-cached.
     ),
     "Deadlock batch player hero stats",
   );
@@ -295,9 +297,8 @@ export async function getMatchDetail(
   // a different schema with numeric enums instead of strings.
   const results = parseExternalData(
     deadlockMatchMetadataSchema.array(),
-    await deadlockFetch<unknown>(
+    await fetchLargeJson<unknown>(
       `${GAME_API}/v1/matches/metadata?min_match_id=${matchId}&max_match_id=${matchId}&include_player_info=true`,
-      { revalidate: 604800 },
     ),
     "Deadlock match detail",
   );
@@ -316,7 +317,9 @@ export async function getMatchPlayerItems(
 ): Promise<Map<number, number[]>> {
   const data = parseExternalData(
     rawMatchDetailSchema,
-    await deadlockFetch<unknown>(`${GAME_API}/v1/matches/${matchId}/metadata`, { revalidate: 604800 }),
+    // The rendered match page is already cached. Avoid also persisting the
+    // much larger raw response (timelines, purchases, etc.) in Next's cache.
+    await fetchLargeJson<unknown>(`${GAME_API}/v1/matches/${matchId}/metadata`),
     "Deadlock raw match detail",
   );
 
@@ -356,7 +359,7 @@ export async function getHeroAnalytics(
     deadlockHeroAnalyticsSchema.array(),
     await deadlockFetch<unknown>(
       `${GAME_API}/v1/analytics/hero-stats?${params.toString()}`,
-      { revalidate: 3600 },
+      { cache: "no-store" }, // Persist only the compact rank-tier rollup.
     ),
     "Deadlock hero analytics",
   );
@@ -369,7 +372,7 @@ export async function getPlayerMetrics(
     deadlockPlayerMetricsSchema,
     await deadlockFetch<unknown>(
       `${GAME_API}/v1/analytics/player-stats/metrics?account_ids=${accountId}`,
-      { revalidate: PLAYER_DATA_REVALIDATE_SECONDS, tags: [getPlayerDataTag(accountId)] },
+      { cache: "no-store" }, // Cached together with the player's other stats.
     ),
     "Deadlock player metrics",
   );
@@ -387,7 +390,7 @@ export async function getLeaderboard(
 ): Promise<DeadlockLeaderboardEntry[]> {
   const data = parseExternalData(
     deadlockLeaderboardResponseSchema,
-    await deadlockFetch<unknown>(`${GAME_API}/v1/leaderboard/${region}`, { revalidate: 604800 }),
+    await deadlockFetch<unknown>(`${GAME_API}/v1/leaderboard/${region}`, { revalidate: 86400 }),
     `Deadlock leaderboard ${region}`,
   );
   return data.entries;
@@ -406,8 +409,8 @@ export interface LeaderboardSearchMatch {
   possibleAccountIds: number[];
   accountName: string;
   rank: number;
-  rankedRank: number;
-  rankedSubrank: number;
+  rankedRank: number | null;
+  rankedSubrank: number | null;
   topHeroIds: number[];
   region: DeadlockRegion;
 }

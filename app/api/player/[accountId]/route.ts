@@ -26,6 +26,7 @@ export async function GET(_request: NextRequest, { params }: PlayerRouteProps) {
   }
 
   const accountId = parsed.data;
+  const bypassCache = _request.nextUrl.searchParams.get("refresh") === "1";
 
   let playerState: Awaited<ReturnType<typeof getPlayerSnapshotState>>;
   let benchmark: Awaited<ReturnType<typeof getLatestGlobalPlayerMetricsBenchmark>>;
@@ -48,7 +49,7 @@ export async function GET(_request: NextRequest, { params }: PlayerRouteProps) {
     const body: PlayerSnapshotResponse = { success: false, error: "Player not found", notFound: true };
     return NextResponse.json(body, {
       status: 404,
-      headers: { "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400" },
+      headers: { "Cache-Control": bypassCache ? "no-store" : "public, s-maxage=300, stale-while-revalidate=3600" },
     });
   }
 
@@ -63,7 +64,7 @@ export async function GET(_request: NextRequest, { params }: PlayerRouteProps) {
   return NextResponse.json(body, {
     headers: {
       // Redis snapshot handles data freshness — CDN can serve this for 30 min safely
-      "Cache-Control": "public, s-maxage=1800, stale-while-revalidate=86400",
+      "Cache-Control": bypassCache ? "no-store" : "public, max-age=0, s-maxage=1800, stale-while-revalidate=86400",
     },
   });
 }

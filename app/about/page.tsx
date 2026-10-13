@@ -17,7 +17,7 @@ export default function AboutPage() {
     <div className="flex min-h-screen flex-col">
       <Header />
 
-      <main className="relative flex-1">
+      <main id="main-content" className="relative flex-1">
         <SigilBackground intensity="subtle" />
 
         <div className="atmosphere-amber relative z-10 mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
@@ -59,10 +59,16 @@ export default function AboutPage() {
                     <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-amber" />
                     <span>
                       <strong className="text-text-primary">Steam Web API</strong> — Player identity resolution
-                      (vanity URLs, display names, avatars). Requires a Steam API key on the server.
+                      (vanity URLs, display names, avatars). The community API also provides cached Steam identities and name search when no Steam key is configured.
                     </span>
                   </li>
                 </ul>
+              </section>
+
+              <section className="glass-panel rounded-lg p-6">
+                <h2 className="font-heading text-xl text-text-primary mb-3">Reading the stats</h2>
+                <p className="text-text-secondary leading-relaxed">Match coverage depends on the community API. A hero appearance is one hero in one match; it is not a unique game. Win rates describe that sample and do not guarantee a result. The homepage highlights heroes with at least 1,000 appearances in the past month.</p>
+                <p className="mt-3 text-text-secondary leading-relaxed">Public analytics refresh hourly, hero and item assets weekly, and player snapshots daily with a manual refresh option. Update times are shown in UTC. Player ranks are estimates from recent match badges, and unavailable data can lag behind a game patch.</p>
               </section>
 
               <section className="glass-panel rounded-lg p-6">
@@ -109,7 +115,7 @@ export default function AboutPage() {
           </FadeIn>
 
           <div className="mt-10 text-center">
-            <Link href="/" className="text-sm text-text-secondary hover:text-soul transition-colors">
+            <Link prefetch={false} href="/" className="text-sm text-text-secondary hover:text-soul transition-colors">
               &larr; Back to Home
             </Link>
           </div>

@@ -31,7 +31,7 @@ function getRedis(): Redis | null {
     return null;
   }
 
-  redis = new Redis({ url, token });
+  redis = new Redis({ url, token, cache: "no-store" });
   return redis;
 }
 
@@ -70,7 +70,7 @@ export function rateLimitResponse(reset?: number): NextResponse {
     { success: false, error: "Too many requests. Please try again later." },
     {
       status: 429,
-      headers: retryAfter ? { "Retry-After": retryAfter } : {},
+      headers: { "Cache-Control": "no-store", ...(retryAfter ? { "Retry-After": retryAfter } : {}) },
     },
   );
 }

@@ -9,7 +9,7 @@ export default function HeroNotFound() {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <main className="relative flex flex-1 items-center justify-center atmosphere-amber">
+      <main id="main-content" className="relative flex flex-1 items-center justify-center atmosphere-amber">
         <SigilBackground intensity="subtle" />
         <div className="relative z-10 glass-panel rounded-xl px-10 py-8 flex flex-col items-center text-center max-w-md">
           <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber/10 border border-amber/20">
@@ -22,7 +22,7 @@ export default function HeroNotFound() {
             This hero has not been catalogued in the archives.
             The identifier may be incorrect.
           </p>
-          <Link href="/heroes" className="mt-6">
+          <Link prefetch={false} href="/heroes" className="mt-6">
             <Button variant="primary">Browse All Heroes</Button>
           </Link>
         </div>

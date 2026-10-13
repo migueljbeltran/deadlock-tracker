@@ -41,6 +41,7 @@ export {
   resolveVanityURL,
   getPlayerSummaries,
   getPlayerSummary,
+  searchCommunityProfiles,
   steam64ToAccountId,
   accountIdToSteam64,
   isValidSteam64,

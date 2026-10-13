@@ -53,7 +53,7 @@ export function LeaderboardTable({
           transition={{ staggerChildren: 0.03 }}
         >
           {entries.map((entry, idx) => {
-            const rank = rankMap.get(entry.ranked_rank);
+            const rank = entry.ranked_rank == null ? undefined : rankMap.get(entry.ranked_rank);
             const playerAccountId = entry.profileAccountId;
             const hasProfileLink = entry.profileLinkStatus === "available" && playerAccountId != null;
             const playerLabel = entry.account_name || `Player #${entry.rank}`;
@@ -85,7 +85,7 @@ export function LeaderboardTable({
                 <td className="px-3 py-2">
                   <div className="flex items-center gap-1.5">
                     {hasProfileLink ? (
-                      <Link
+                      <Link prefetch={false}
                         href={`/player/${playerAccountId}`}
                         className={cn(
                           "hover:text-soul transition-colors",
@@ -123,11 +123,11 @@ export function LeaderboardTable({
                         fill
                         sizes="28px"
                         className="object-contain"
-                        title={`${rank.name} ${entry.ranked_subrank}`}
+                        title={`${rank.name}${entry.ranked_subrank == null ? "" : ` ${entry.ranked_subrank}`}`}
                       />
                     </div>
                   ) : (
-                    <span className="text-xs text-text-muted">{rank?.name ?? "—"}</span>
+                    <span className="text-xs text-text-muted" title="The API did not provide a rank badge">{rank?.name ?? "Unavailable"}</span>
                   )}
                 </td>
                 <td className="hidden px-3 py-2 sm:table-cell">
@@ -135,7 +135,7 @@ export function LeaderboardTable({
                     {entry.top_hero_ids.slice(0, 3).map((heroId) => {
                       const hero = heroMap.get(heroId);
                       return hero?.images?.icon_image_small_webp ? (
-                        <Link key={heroId} href={`/heroes/${heroId}`}>
+                        <Link prefetch={false} key={heroId} href={`/heroes/${heroId}`}>
                           <Image
                             src={hero.images.icon_image_small_webp}
                             alt={hero.name}

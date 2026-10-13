@@ -45,6 +45,15 @@ export const steamPlayerSummariesResponseSchema = z.object({
   }).passthrough(),
 }).passthrough();
 
+export const communitySteamProfileSchema = z.object({
+  account_id: z.number().int().nonnegative(),
+  personaname: z.string(),
+  profileurl: z.string(),
+  avatar: z.string(),
+  avatarmedium: z.string(),
+  avatarfull: z.string(),
+});
+
 export const deadlockHeroSchema = z.object({
   id: z.number(),
   class_name: z.string(),
@@ -58,7 +67,7 @@ export const deadlockHeroSchema = z.object({
   disabled: z.boolean().optional(),
   in_development: z.boolean().optional(),
   images: stringMapSchema.optional(),
-}).passthrough();
+}).strip();
 
 export const deadlockItemSchema = z.object({
   id: z.number(),
@@ -160,7 +169,7 @@ export const deadlockHeroAnalyticsSchema = z.object({
   wins: z.number(),
   losses: z.number(),
   matches: z.number(),
-  players: z.number(),
+  players: z.number().optional(),
   total_kills: z.number(),
   total_deaths: z.number(),
   total_assists: z.number(),
@@ -195,9 +204,9 @@ export const deadlockLeaderboardEntrySchema = z.object({
   possible_account_ids: z.array(z.number()),
   rank: z.number(),
   top_hero_ids: z.array(z.number()),
-  badge_level: z.number(),
-  ranked_rank: z.number(),
-  ranked_subrank: z.number(),
+  badge_level: z.number().nullable().optional().default(null),
+  ranked_rank: z.number().nullable().optional().default(null),
+  ranked_subrank: z.number().nullable().optional().default(null),
 }).passthrough();
 
 export const deadlockLeaderboardResponseSchema = z.object({
@@ -224,7 +233,8 @@ export function parseExternalData<T>(schema: z.ZodType<T>, data: unknown, label:
   logger.error(
     {
       label,
-      issues: parsed.error.issues.map((issue) => ({
+      issueCount: parsed.error.issues.length,
+      issues: parsed.error.issues.slice(0, 10).map((issue) => ({
         path: issue.path.join("."),
         message: issue.message,
       })),

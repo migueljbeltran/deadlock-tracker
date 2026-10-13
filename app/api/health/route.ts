@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/db";
 import { checkRequestRateLimit, rateLimitResponse } from "@/lib/ratelimit";
 
 interface HealthCheck {
@@ -17,22 +15,10 @@ export async function GET(request: NextRequest) {
     app: { status: "ok" },
   };
 
-  // Database check
-  try {
-    const start = Date.now();
-    await prisma.$queryRaw(Prisma.sql`SELECT 1`);
-    checks.database = { status: "ok", latency_ms: Date.now() - start };
-  } catch {
-    checks.database = {
-      status: "error",
-      error: "Service unavailable",
-    };
-  }
-
   // Deadlock API check
   try {
     const start = Date.now();
-    const res = await fetch("https://assets.deadlock-api.com/v2/heroes", {
+    const res = await fetch("https://api.deadlock-api.com/v1/assets/heroes", {
       method: "HEAD",
       next: { revalidate: 3600 },
       signal: AbortSignal.timeout(5000),
@@ -58,9 +44,9 @@ export async function GET(request: NextRequest) {
     { status, timestamp: new Date().toISOString(), checks },
     {
       status: httpStatus,
-      // Cache healthy responses for 60s so uptime monitors don't hammer the DB.
+      // Cache healthy responses for 60s so uptime monitors share the API probe.
       // Never cache degraded/unhealthy — monitors need to see recovery immediately.
-      headers: httpStatus === 200
+      headers: allOk
         ? { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" }
         : { "Cache-Control": "no-store" },
     },

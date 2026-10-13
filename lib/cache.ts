@@ -31,9 +31,10 @@ function getRedis(): Redis | null {
 
   if (!url || !token) return null;
 
-  // Keep Redis reads static-friendly for ISR pages. Large public snapshots are
-  // compacted before storage so Upstash responses stay below Next's 2MB limit.
-  redis = new Redis({ url, token, cache: "force-cache" });
+  // Redis owns its TTLs and lock semantics. Persistently caching its REST
+  // commands in Next can replay old GET/SET-NX results and adds ISR writes.
+  // Public snapshots use a bounded outer cache instead (publicSnapshots.ts).
+  redis = new Redis({ url, token, cache: "no-store" });
   return redis;
 }
 

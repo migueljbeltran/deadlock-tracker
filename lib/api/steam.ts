@@ -1,4 +1,5 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
 
 import type {
   SteamResolveVanityResponse,
@@ -10,8 +11,9 @@ import {
   parseExternalData,
   steamPlayerSummariesResponseSchema,
   steamResolveVanityResponseSchema,
+  communitySteamProfileSchema,
 } from "./guards";
-import { getRequiredServerEnv } from "@/lib/env";
+import { getOptionalServerEnv, getRequiredServerEnv } from "@/lib/env";
 import logger from "@/lib/logger";
 
 const STEAM_API_BASE = "https://api.steampowered.com";
@@ -90,6 +92,7 @@ async function steamFetch(url: string, options: SteamFetchOptions): Promise<Resp
 export async function resolveVanityURL(
   vanityName: string,
 ): Promise<string | null> {
+  if (!getOptionalServerEnv("STEAM_API_KEY")) return null;
   const key = getSteamApiKey();
   const url = `${STEAM_API_BASE}/ISteamUser/ResolveVanityURL/v1/?key=${key}&vanityurl=${encodeURIComponent(vanityName)}`;
 
@@ -127,6 +130,10 @@ export async function getPlayerSummaries(
     throw new Error("Steam API supports at most 100 Steam IDs per request");
   }
 
+  if (!getOptionalServerEnv("STEAM_API_KEY")) {
+    return getCommunityPlayerSummaries(steamIds.map(steam64ToAccountId).sort((a, b) => a - b));
+  }
+
   const key = getSteamApiKey();
   const ids = steamIds.join(",");
   const url = `${STEAM_API_BASE}/ISteamUser/GetPlayerSummaries/v2/?key=${key}&steamids=${ids}`;
@@ -159,4 +166,24 @@ export async function getPlayerSummary(
 ): Promise<SteamPlayerSummary | null> {
   const players = await getPlayerSummaries([steamId]);
   return players[0] ?? null;
+}
+
+async function fetchCommunityProfiles(url: string): Promise<SteamPlayerSummary[]> {
+  const response = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(10_000) });
+  if (response.status === 404) return [];
+  if (!response.ok) throw new ApiError("Community profile lookup unavailable", response.status, url);
+  const profiles = parseExternalData(communitySteamProfileSchema.array(), await response.json(), "Community Steam profiles");
+  return profiles.map(({ account_id, ...profile }) => ({ ...profile, steamid: accountIdToSteam64(account_id) }));
+}
+
+// Cache only identity fields, not the upstream friends/match arrays.
+const getCommunityPlayerSummaries = unstable_cache(
+  async (accountIds: number[]) => fetchCommunityProfiles(`https://api.deadlock-api.com/v1/players/steam?account_ids=${accountIds.join(",")}`),
+  ["community-player-identities-v1"], { revalidate: 86400 },
+);
+
+export async function searchCommunityProfiles(query: string): Promise<SteamPlayerSummary[]> {
+  if (query.length < 3) return [];
+  const params = new URLSearchParams({ search_query: query, limit: "15", min_matches_played_last_30d: "0" });
+  return fetchCommunityProfiles(`https://api.deadlock-api.com/v1/players/steam-search?${params}`);
 }

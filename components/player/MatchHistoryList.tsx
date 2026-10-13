@@ -27,7 +27,7 @@ export function MatchHistoryList({ matches, heroMap }: MatchHistoryListProps) {
         const hero = match.hero_id != null ? heroMap.get(match.hero_id) : null;
 
         return (
-          <Link
+          <Link prefetch={false}
             key={match.match_id}
             href={`/match/${match.match_id}`}
             className={cn(

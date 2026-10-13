@@ -27,5 +27,8 @@ export function getAnalyticsTimeRangeLabel(value: AnalyticsTimeRange): string {
 export function getMinUnixTimestampForRange(value: AnalyticsTimeRange): number | null {
   const range = ANALYTICS_TIME_RANGES.find((item) => item.value === value);
   if (!range || range.seconds == null) return null;
-  return Math.floor(Date.now() / 1000) - range.seconds;
+  // Analytics refresh hourly. Keep every visitor in that hour on the same URL
+  // instead of writing another persistent fetch-cache entry every second.
+  const hour = 3600;
+  return Math.floor(Date.now() / (hour * 1000)) * hour - range.seconds;
 }

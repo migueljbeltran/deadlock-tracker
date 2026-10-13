@@ -180,7 +180,7 @@ export function TeamScoreboard({
                       />
                     )}
                     {hero?.images?.icon_image_small_webp ? (
-                      <Link href={`/heroes/${hero.id}`}>
+                      <Link prefetch={false} href={`/heroes/${hero.id}`}>
                         <Image
                           src={hero.images.icon_image_small_webp}
                           alt={hero.name}
@@ -194,7 +194,7 @@ export function TeamScoreboard({
                         ?
                       </div>
                     )}
-                    <Link
+                    <Link prefetch={false}
                       href={`/player/${player.account_id}`}
                       className={cn(
                         "truncate text-text-primary hover:text-soul transition-colors",

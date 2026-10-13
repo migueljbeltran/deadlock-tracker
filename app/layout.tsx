@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Cinzel, Cinzel_Decorative, Inter, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
+import { MotionPreferences } from "@/components/motion/MotionPreferences";
 
 const cinzelDecorative = Cinzel_Decorative({
   variable: "--font-display",
@@ -97,22 +98,9 @@ export default function RootLayout({
             }),
           }}
         />
-        {children}
+        <a href="#main-content" className="skip-link">Skip to content</a>
+        <MotionPreferences>{children}</MotionPreferences>
         <Analytics />
-        {/* Vignette overlay — deeper edges + warm amber candlelight from above */}
-        <div
-          className="pointer-events-none fixed inset-0 z-50"
-          style={{
-            background: [
-              "radial-gradient(ellipse at center, transparent 0%, transparent 40%, rgba(8, 11, 16, 0.6) 100%)",
-              "radial-gradient(ellipse at 50% 0%, rgba(212, 168, 83, 0.03) 0%, transparent 60%)",
-            ].join(", "),
-            willChange: "auto",
-            contain: "strict",
-            transform: "translateZ(0)",
-          }}
-          aria-hidden="true"
-        />
       </body>
     </html>
   );

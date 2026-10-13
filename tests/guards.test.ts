@@ -58,4 +58,11 @@ describe("external API guards", () => {
 
     expect(parsed.entries[0].possible_account_ids).toEqual([123]);
   });
+  it("accepts current leaderboards without inventing missing rank badges", () => {
+    const parsed = parseExternalData(deadlockLeaderboardResponseSchema, {
+      entries: [{ account_name: "Player", possible_account_ids: [], rank: 1, top_hero_ids: [] }],
+    }, "Current leaderboard");
+    expect(parsed.entries[0].ranked_rank).toBeNull();
+    expect(parsed.entries[0].ranked_subrank).toBeNull();
+  });
 });

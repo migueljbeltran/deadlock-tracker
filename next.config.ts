@@ -1,4 +1,4 @@
-import { withSentryConfig } from "@sentry/nextjs";
+import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
 
 const securityHeaders = [
@@ -30,6 +30,13 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  async rewrites() {
+    return {
+      beforeFiles: [{ source: "/player/:accountId(\\d{1,10})", destination: "/player" }],
+      afterFiles: [],
+      fallback: [],
+    };
+  },
   images: {
     remotePatterns: [
       {
@@ -58,6 +65,10 @@ const nextConfig: NextConfig = {
       // Defense-in-depth noindex on long-tail dynamic pages — robots.txt
       // disallows them, and metadata.robots sets noindex, but an HTTP header is
       // the most authoritative signal for crawlers that ignore the rest.
+      {
+        source: "/player",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
       {
         source: "/player/:path*",
         headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],

@@ -6,6 +6,7 @@ import {
   steam64ToAccountId,
   accountIdToSteam64,
   resolveAccountIds,
+  searchCommunityProfiles,
 } from "@/lib/api";
 import { cacheGet, cacheSet } from "@/lib/cache";
 import { searchLeaderboardByNameCached } from "@/lib/leaderboardSearch";
@@ -139,6 +140,18 @@ export async function GET(request: NextRequest) {
           return NextResponse.json(body);
         }
       }
+    }
+
+    // Name search covers the community's Steam corpus, including unranked
+    // players, and avoids fetching all five leaderboards on every search.
+    const explicitVanityUrl = /steamcommunity\.com\/id\//i.test(parsed.data.q);
+    const profiles = explicitVanityUrl ? [] : await searchCommunityProfiles(query).catch(() => []);
+    if (profiles.length > 0) {
+      const body: SearchResponseBody = { success: true, results: profiles.map((player) => ({
+        source: "steam", accountId: steam64ToAccountId(player.steamid), name: player.personaname, avatar: player.avatarfull,
+      })) };
+      await cacheSet(cacheKey, body, SEARCH_CACHE_TTL_SECONDS);
+      return NextResponse.json(body, { headers: { "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400" } });
     }
 
     const [vanityResult, leaderboardResults] = await Promise.all([

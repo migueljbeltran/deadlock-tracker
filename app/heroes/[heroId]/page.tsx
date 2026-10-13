@@ -116,7 +116,6 @@ export default async function HeroDetailPage({ params }: HeroDetailPageProps) {
       existing.wins += entry.wins;
       existing.losses += entry.losses;
       existing.matches += entry.matches;
-      existing.players += entry.players;
       existing.total_kills += entry.total_kills;
       existing.total_deaths += entry.total_deaths;
       existing.total_assists += entry.total_assists;
@@ -168,7 +167,7 @@ export default async function HeroDetailPage({ params }: HeroDetailPageProps) {
     <div className="flex min-h-screen flex-col">
       <Header />
 
-      <main className="relative flex-1 atmosphere-amber">
+      <main id="main-content" className="relative flex-1 atmosphere-amber">
         <SigilBackground intensity="subtle" />
 
         <div className="relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">

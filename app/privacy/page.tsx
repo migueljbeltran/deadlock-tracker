@@ -16,7 +16,7 @@ export default function PrivacyPage() {
     <div className="flex min-h-screen flex-col">
       <Header />
 
-      <main className="relative flex-1">
+      <main id="main-content" className="relative flex-1">
         <SigilBackground intensity="subtle" />
 
         <div className="atmosphere-amber relative z-10 mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
@@ -104,7 +104,7 @@ export default function PrivacyPage() {
           </FadeIn>
 
           <div className="mt-10 text-center">
-            <Link href="/" className="text-sm text-text-secondary hover:text-soul transition-colors">
+            <Link prefetch={false} href="/" className="text-sm text-text-secondary hover:text-soul transition-colors">
               &larr; Back to Home
             </Link>
           </div>

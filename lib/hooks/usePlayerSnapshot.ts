@@ -117,8 +117,11 @@ export function usePlayerSnapshot({
         let latestBody: PlayerSnapshotResponse | null = null;
 
         for (let attempt = 0; attempt < 4; attempt++) {
-          const res = await fetch(`/api/player/${accountId}?v=${reloadToken}&attempt=${attempt}`, {
-            cache: "no-store",
+          // Normal visits share one CDN key. Explicit refreshes use one
+          // uncached endpoint rather than an unbounded sequence of URLs.
+          const bypassCache = reloadToken > 0 || attempt > 0;
+          const res = await fetch(`/api/player/${accountId}${bypassCache ? "?refresh=1" : ""}`, {
+            cache: bypassCache ? "no-store" : "default",
             signal: controller.signal,
           });
           const body = await res.json() as PlayerSnapshotResponse;

@@ -9,7 +9,7 @@ export default function MatchNotFound() {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <main className="relative flex flex-1 items-center justify-center atmosphere-amber">
+      <main id="main-content" className="relative flex flex-1 items-center justify-center atmosphere-amber">
         <SigilBackground intensity="subtle" />
         <div className="relative z-10 glass-panel rounded-xl px-10 py-8 flex flex-col items-center text-center max-w-md">
           <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber/10 border border-amber/20">
@@ -22,7 +22,7 @@ export default function MatchNotFound() {
             This match has not been recorded in the archives.
             The identifier may be incorrect, or the match may no longer exist.
           </p>
-          <Link href="/" className="mt-6">
+          <Link prefetch={false} href="/" className="mt-6">
             <Button variant="primary">Return to the Archives</Button>
           </Link>
         </div>

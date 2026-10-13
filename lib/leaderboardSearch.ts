@@ -25,8 +25,8 @@ interface CachedLeaderboardSearchEntry {
   accountName: string;
   normalizedName: string;
   rank: number;
-  rankedRank: number;
-  rankedSubrank: number;
+  rankedRank: number | null;
+  rankedSubrank: number | null;
   topHeroIds: number[];
   region: DeadlockRegion;
 }

@@ -14,12 +14,14 @@ let memoValue: GlobalPlayerMetricsBenchmark | null = null;
 let memoExpiry = 0;
 
 export async function getLatestGlobalPlayerMetricsBenchmark(): Promise<GlobalPlayerMetricsBenchmark | null> {
-  if (memoValue && Date.now() < memoExpiry) {
+  if (Date.now() < memoExpiry) {
     return memoValue;
   }
 
   const benchmark = await cacheGet<GlobalPlayerMetricsBenchmark>(PLAYER_METRICS_BENCHMARK_KEY);
   if (!benchmark) {
+    memoValue = null;
+    memoExpiry = Date.now() + BENCHMARK_MEMO_TTL_MS;
     logger.debug("Global player metrics benchmark missing");
     return null;
   }

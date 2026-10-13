@@ -1,4 +1,5 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
 
 import type {
   DeadlockApiInfo,
@@ -35,13 +36,12 @@ function compactItemStats(stats: DeadlockItemStats[]): DeadlockItemStats[] {
 }
 
 function compactHeroAnalytics(analytics: DeadlockHeroAnalytics[]): DeadlockHeroAnalytics[] {
-  return analytics.map((entry) => ({
+  const compact = analytics.map((entry) => ({
     hero_id: entry.hero_id,
     bucket: entry.bucket,
     wins: entry.wins,
     losses: entry.losses,
     matches: entry.matches,
-    players: entry.players,
     total_kills: entry.total_kills,
     total_deaths: entry.total_deaths,
     total_assists: entry.total_assists,
@@ -57,6 +57,26 @@ function compactHeroAnalytics(analytics: DeadlockHeroAnalytics[]): DeadlockHeroA
     total_shots_missed: entry.total_shots_missed,
     total_max_health: entry.total_max_health,
   }));
+  // All views filter/display rank tiers, not individual badge subranks.
+  // Sum additive metrics into those same tiers to shrink every snapshot.
+  const tiers = new Map<string, DeadlockHeroAnalytics>();
+  const totals = [
+    "wins", "losses", "matches", "total_kills", "total_deaths", "total_assists",
+    "total_net_worth", "total_last_hits", "total_denies", "total_player_damage",
+    "total_player_damage_taken", "total_boss_damage", "total_creep_damage",
+    "total_neutral_damage", "total_shots_hit", "total_shots_missed", "total_max_health",
+  ] as const;
+  for (const entry of compact) {
+    const bucket = Math.floor(entry.bucket / 10) * 10;
+    const key = `${entry.hero_id}:${bucket}`;
+    const existing = tiers.get(key);
+    if (existing) {
+      for (const field of totals) existing[field] += entry[field];
+    } else {
+      tiers.set(key, { ...entry, bucket });
+    }
+  }
+  return [...tiers.values()];
 }
 
 function compactShopableItem(item: DeadlockItem): DeadlockItem {
@@ -82,7 +102,31 @@ function isSnapshotStale<T>(snapshot: PublicSnapshot<T>, freshnessSeconds: numbe
   return (Date.now() - fetchedAt) / 1000 >= freshnessSeconds;
 }
 
-async function getOrBuildSnapshot<T>(
+const pendingSnapshots = new Map<string, Promise<PublicSnapshot<unknown>>>();
+
+function getOrBuildSnapshot<T>(
+  key: string,
+  label: string,
+  builder: () => Promise<T>,
+  freshnessSeconds = SNAPSHOT_FRESHNESS_SECONDS,
+): Promise<PublicSnapshot<T>> {
+  // Only a finite set of public datasets enters Next's persistent cache.
+  // Redis commands inside this boundary always reach Redis, while ISR pages
+  // can reuse a compact snapshot without becoming dynamic on every visit.
+  return unstable_cache(async () => {
+    const pending = pendingSnapshots.get(key);
+    if (pending) return pending as Promise<PublicSnapshot<T>>;
+    const promise = buildPublicSnapshot(key, label, builder, freshnessSeconds);
+    pendingSnapshots.set(key, promise);
+    try {
+      return await promise;
+    } finally {
+      pendingSnapshots.delete(key);
+    }
+  }, ["public-dataset-v5", key], { revalidate: freshnessSeconds })();
+}
+
+async function buildPublicSnapshot<T>(
   key: string,
   label: string,
   builder: () => Promise<T>,
@@ -101,10 +145,9 @@ async function getOrBuildSnapshot<T>(
   if (!cached) {
     const lockAcquired = await cacheSetIfNotExists(lockKey, "1", SNAPSHOT_LOCK_TTL_SECONDS);
     if (!lockAcquired) {
-      return {
-        fetchedAt: new Date().toISOString(),
-        data: await builder(),
-      };
+      // A different instance is building this dataset. Do not duplicate an
+      // expensive analytics rebuild merely because the cache is still cold.
+      throw new Error(`${label} is refreshing. Please try again shortly.`);
     }
 
     try {
@@ -150,7 +193,7 @@ export async function getHeroAnalyticsSnapshot(
   timeRange: AnalyticsTimeRange = DEFAULT_ANALYTICS_TIME_RANGE,
 ): Promise<PublicSnapshot<DeadlockHeroAnalytics[]>> {
   return getOrBuildSnapshot(
-    `public-snapshot:hero-analytics:${timeRange}:v3`,
+    `public-snapshot:hero-analytics:${timeRange}:v4`,
     `hero-analytics-${timeRange}`,
     async () => compactHeroAnalytics(await getHeroAnalytics(timeRange)),
     ANALYTICS_SNAPSHOT_FRESHNESS_SECONDS,

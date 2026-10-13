@@ -17,8 +17,8 @@ export interface SteamPlayerSummary {
   avatar: string; // 32x32
   avatarmedium: string; // 64x64
   avatarfull: string; // 184x184
-  personastate: number; // 0=offline, 1=online, etc.
-  communityvisibilitystate: number;
+  personastate?: number; // Not supplied by the community profile cache.
+  communityvisibilitystate?: number;
   lastlogoff?: number;
   realname?: string;
   loccountrycode?: string;
@@ -181,7 +181,7 @@ export interface DeadlockHeroAnalytics {
   wins: number;
   losses: number;
   matches: number;
-  players: number;
+  players?: number;
   total_kills: number;
   total_deaths: number;
   total_assists: number;
@@ -234,9 +234,9 @@ export interface DeadlockLeaderboardEntry {
   possible_account_ids: number[];
   rank: number;
   top_hero_ids: number[];
-  badge_level: number;
-  ranked_rank: number;
-  ranked_subrank: number;
+  badge_level: number | null;
+  ranked_rank: number | null;
+  ranked_subrank: number | null;
 }
 
 // ============================================================
@@ -316,8 +316,8 @@ export interface LeaderboardSearchResult {
   accountId: number;
   accountName: string;
   rank: number;
-  rankedRank: number;
-  rankedSubrank: number;
+  rankedRank: number | null;
+  rankedSubrank: number | null;
   topHeroIds: number[];
   region: string;
 }
