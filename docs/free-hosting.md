@@ -38,6 +38,14 @@ Player shells intentionally have generic, non-indexed metadata. Unknown numeric 
 
 Redis is a performance dependency in production. Without it, distributed snapshot sharing and rate limiting are unavailable. The application can still run, but it cannot be assumed to stay within free limits. Monitor Upstash's own storage and command quotas too. Application rate limits run inside functions and therefore cannot prevent every CPU invocation; use Vercel's available firewall controls for abusive traffic based on observed logs.
 
+### Recovering a deleted Redis database
+
+The October 13 production failure was a deleted Upstash database: its REST hostname returned `ENOTFOUND`. Failed lock writes were incorrectly treated as another refresh already being in progress. Cache locks now distinguish acquisition, contention, and unavailability. Redis commands have a two-second timeout, no automatic retries, and a 30-second outage backoff. Cold snapshots can rebuild from upstream during an outage; Next's persistent cache still stores compact public datasets. Existing stale snapshots remain usable, and only locks actually acquired by this request are released.
+
+Create a new free Upstash Redis database and update `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` in the Vercel project's Production and Preview environment settings. Then redeploy. Redis contains rebuildable data and rate-limit counters, so restoring old cached data is unnecessary. Do not publish the token or prefix it with `NEXT_PUBLIC_`.
+
+Run `PLAYWRIGHT_LIVE_DATA=1` with `PLAYWRIGHT_BASE_URL` pointing to the deployment to check actual hero statistics, tier-list rows, item win rates, and leaderboard entries. These checks exercise live APIs and are opt-in. The outage hotfix passed 66 unit tests and all 12 browser checks against a production build with Redis intentionally unreachable, including five real-data checks.
+
 ## If real traffic still exceeds Hobby
 
 A free platform change must match the workload. Cloudflare Pages serves static assets without charging for individual static requests, but Pages Functions inherit Workers limits. Workers Free currently limits dynamic requests and CPU per invocation; moving this server-rendered Next.js app there unchanged is not a guaranteed free solution.

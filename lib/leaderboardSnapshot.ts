@@ -170,13 +170,14 @@ async function resolveProfileLinksForPage(
 
   if (ambiguousEntries.length === 0) return {};
 
+  let lockAcquired: boolean | null = null;
   if (isCacheAvailable()) {
-    const lockAcquired = await cacheSetIfNotExists(
+    lockAcquired = await cacheSetIfNotExists(
       getProfileLinksLockKey(region, safePage, pageIdentity),
       "1",
       PROFILE_LINK_LOCK_TTL_SECONDS,
     );
-    if (!lockAcquired) return null;
+    if (lockAcquired === false) return null;
   }
 
   try {
@@ -205,7 +206,7 @@ async function resolveProfileLinksForPage(
     logger.warn({ region, page: safePage, error }, "Leaderboard profile link resolution failed");
     return null;
   } finally {
-    if (isCacheAvailable()) {
+    if (lockAcquired === true) {
       await cacheDelete(getProfileLinksLockKey(region, safePage, pageIdentity));
     }
   }
@@ -229,7 +230,7 @@ export async function getResolvedLeaderboardSnapshot(
   const cached = await cacheGet<ResolvedLeaderboardSnapshot>(key);
   if (!cached) {
     const lockAcquired = await cacheSetIfNotExists(getSnapshotLockKey(region), "1", SNAPSHOT_LOCK_TTL_SECONDS);
-    if (!lockAcquired) {
+    if (lockAcquired === false) {
       logger.info({ region }, "Resolved leaderboard snapshot cold miss locked");
       const snapshot = createSnapshot(await getLeaderboard(region));
       if (!options.enrichProfileLinks) return snapshot;
@@ -249,7 +250,7 @@ export async function getResolvedLeaderboardSnapshot(
         await resolveProfileLinksForPage(region, snapshot.entries, options.page ?? 1),
       );
     } finally {
-      await cacheDelete(getSnapshotLockKey(region));
+      if (lockAcquired === true) await cacheDelete(getSnapshotLockKey(region));
     }
   }
 
@@ -263,7 +264,7 @@ export async function getResolvedLeaderboardSnapshot(
   }
 
   const lockAcquired = await cacheSetIfNotExists(getSnapshotLockKey(region), "1", SNAPSHOT_LOCK_TTL_SECONDS);
-  if (!lockAcquired) {
+  if (lockAcquired !== true) {
     logger.info({ region }, "Resolved leaderboard snapshot stale; serving stale data");
     return cached;
   }

@@ -231,7 +231,8 @@ export async function refreshPlayerSnapshot(
   mode: "manual" | "background" = "manual",
 ): Promise<{ refreshed: boolean; reason: "fresh" | "stale" | "locked" | "throttled" | "rebuilt" | "failed" | "not_found"; }> {
   const cacheKey = getSnapshotKey(accountId);
-  let cooldownApplied = false;
+  let cooldownApplied: boolean | null = null;
+  let lockAcquired: boolean | null = null;
   let refreshed = false;
 
   if (mode === "background") {
@@ -248,18 +249,18 @@ export async function refreshPlayerSnapshot(
       "1",
       MANUAL_REFRESH_COOLDOWN_SECONDS,
     );
-    if (!cooldownApplied) {
+    if (cooldownApplied === false) {
       return { refreshed: false, reason: "throttled" };
     }
   }
 
   if (isCacheAvailable()) {
-    const lockAcquired = await cacheSetIfNotExists(
+    lockAcquired = await cacheSetIfNotExists(
       getRefreshLockKey(accountId),
       "1",
       REFRESH_LOCK_TTL_SECONDS,
     );
-    if (!lockAcquired) {
+    if (lockAcquired === false) {
       return { refreshed: false, reason: "locked" };
     }
   }
@@ -294,7 +295,7 @@ export async function refreshPlayerSnapshot(
     logger.warn({ accountId, mode, error }, "Player snapshot refresh failed");
     return { refreshed: false, reason: "failed" };
   } finally {
-    if (isCacheAvailable()) {
+    if (lockAcquired === true) {
       await cacheDelete(getRefreshLockKey(accountId));
       if (mode === "manual" && cooldownApplied && !refreshed) {
         await cacheDelete(getManualCooldownKey(accountId));

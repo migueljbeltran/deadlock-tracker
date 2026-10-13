@@ -66,4 +66,16 @@ describe("public snapshot rebuilds", () => {
     await expect(getHeroAnalyticsSnapshot()).rejects.toThrow("refreshing");
     expect(getHeroAnalytics).not.toHaveBeenCalled();
   });
+  it("builds and coalesces a cold dataset when Redis cannot acquire a lock due to an outage", async () => {
+    cacheAvailable.mockReturnValue(true);
+    acquireLock.mockResolvedValue(null);
+    getHeroAnalytics.mockResolvedValue([]);
+    const { getHeroAnalyticsSnapshot } = await import("@/lib/publicSnapshots");
+    const [a, b] = await Promise.all([getHeroAnalyticsSnapshot("month"), getHeroAnalyticsSnapshot("month")]);
+    expect(a.data).toEqual([]);
+    expect(b).toEqual(a);
+    expect(getHeroAnalytics).toHaveBeenCalledOnce();
+    const { cacheDelete } = await import("@/lib/cache");
+    expect(cacheDelete).not.toHaveBeenCalled();
+  });
 });

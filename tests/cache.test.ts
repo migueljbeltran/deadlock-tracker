@@ -1,10 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const redisStore = new Map<string, unknown>();
+const failures = vi.hoisted(() => ({ get: false, set: false }));
 
 vi.mock("@upstash/redis", () => ({
   Redis: class {
     async get<T>(key: string): Promise<T | null> {
+      if (failures.get) throw new Error("ENOTFOUND deleted-db.upstash.io");
       return (redisStore.get(key) as T | undefined) ?? null;
     }
 
@@ -13,6 +15,7 @@ vi.mock("@upstash/redis", () => ({
       value: T,
       options?: { nx?: boolean },
     ): Promise<"OK" | null> {
+      if (failures.set) throw new Error("Redis unavailable");
       if (options?.nx && redisStore.has(key)) return null;
       redisStore.set(key, value);
       return "OK";
@@ -35,6 +38,8 @@ vi.mock("@/lib/logger", () => ({
 describe("cacheGetOrBuildSnapshot", () => {
   beforeEach(() => {
     redisStore.clear();
+    failures.get = false;
+    failures.set = false;
     vi.resetModules();
     process.env.UPSTASH_REDIS_REST_URL = "https://example.upstash.io";
     process.env.UPSTASH_REDIS_REST_TOKEN = "token";
@@ -105,5 +110,32 @@ describe("cacheGetOrBuildSnapshot", () => {
 
     expect(snapshot).toBeNull();
     expect(builder).not.toHaveBeenCalled();
+  });
+
+  it("builds a cold snapshot when Redis DNS fails instead of treating the outage as a lock", async () => {
+    failures.get = true;
+    const { cacheGetOrBuildSnapshot, isCacheAvailable, cacheSetIfNotExists } = await import("@/lib/cache");
+    const builder = vi.fn().mockResolvedValue("live-data");
+    const snapshot = await cacheGetOrBuildSnapshot({
+      key: "offline", label: "offline", ttlSeconds: 60, freshnessSeconds: 60,
+      lockTtlSeconds: 10, builder,
+    });
+    expect(snapshot?.data).toBe("live-data");
+    expect(builder).toHaveBeenCalledOnce();
+    expect(isCacheAvailable()).toBe(false);
+    expect(await cacheSetIfNotExists("offline:refresh-lock", "1", 10)).toBeNull();
+  });
+
+  it("distinguishes a failed lock write from contention and retries Redis after backoff", async () => {
+    vi.spyOn(Date, "now").mockReturnValue(60_000);
+    failures.set = true;
+    const { cacheSetIfNotExists, isCacheAvailable } = await import("@/lib/cache");
+    expect(await cacheSetIfNotExists("lock", "1", 10)).toBeNull();
+    expect(isCacheAvailable()).toBe(false);
+    failures.set = false;
+    vi.mocked(Date.now).mockReturnValue(90_000);
+    expect(isCacheAvailable()).toBe(true);
+    expect(await cacheSetIfNotExists("lock", "1", 10)).toBe(true);
+    expect(await cacheSetIfNotExists("lock", "1", 10)).toBe(false);
   });
 });

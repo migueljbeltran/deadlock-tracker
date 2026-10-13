@@ -7,6 +7,13 @@ import logger from "@/lib/logger";
 const PREFIX = "dltracker:cache:";
 
 let redis: Redis | null = null;
+let redisRetryAt = 0;
+const REDIS_RETRY_DELAY_MS = 30_000;
+
+function recordCacheFailure(key: string, operation: string) {
+  redisRetryAt = Date.now() + REDIS_RETRY_DELAY_MS;
+  logger.warn({ key, operation }, "Redis cache unavailable; using upstream fallback");
+}
 
 export interface CachedSnapshot<T> {
   fetchedAt: string;
@@ -24,6 +31,7 @@ interface CacheSnapshotOptions<T> {
 }
 
 function getRedis(): Redis | null {
+  if (Date.now() < redisRetryAt) return null;
   if (redis) return redis;
 
   const url = getOptionalServerEnv("UPSTASH_REDIS_REST_URL");
@@ -34,7 +42,7 @@ function getRedis(): Redis | null {
   // Redis owns its TTLs and lock semantics. Persistently caching its REST
   // commands in Next can replay old GET/SET-NX results and adds ISR writes.
   // Public snapshots use a bounded outer cache instead (publicSnapshots.ts).
-  redis = new Redis({ url, token, cache: "no-store" });
+  redis = new Redis({ url, token, cache: "no-store", retry: { retries: 0 }, signal: () => AbortSignal.timeout(2000) });
   return redis;
 }
 
@@ -55,8 +63,8 @@ export async function cacheGet<T>(key: string): Promise<T | null> {
       logger.debug({ key }, "Cache hit");
     }
     return value ?? null;
-  } catch (err) {
-    logger.warn({ err, key }, "Cache get failed");
+  } catch {
+    recordCacheFailure(key, "get");
     return null;
   }
 }
@@ -70,24 +78,25 @@ export async function cacheSet<T>(key: string, value: T, ttlSeconds: number): Pr
 
   try {
     await client.set(`${PREFIX}${key}`, value, { ex: ttlSeconds });
-  } catch (err) {
-    logger.warn({ err, key }, "Cache set failed");
+  } catch {
+    recordCacheFailure(key, "set");
   }
 }
 
 /**
  * Store a value only if the key does not already exist.
+ * true = acquired, false = already exists, null = cache unavailable.
  */
-export async function cacheSetIfNotExists<T>(key: string, value: T, ttlSeconds: number): Promise<boolean> {
+export async function cacheSetIfNotExists<T>(key: string, value: T, ttlSeconds: number): Promise<boolean | null> {
   const client = getRedis();
-  if (!client) return false;
+  if (!client) return null;
 
   try {
     const result = await client.set(`${PREFIX}${key}`, value, { ex: ttlSeconds, nx: true });
     return result === "OK";
-  } catch (err) {
-    logger.warn({ err, key }, "Cache set-if-not-exists failed");
-    return false;
+  } catch {
+    recordCacheFailure(key, "set-nx");
+    return null;
   }
 }
 
@@ -100,8 +109,8 @@ export async function cacheDelete(key: string): Promise<void> {
 
   try {
     await client.del(`${PREFIX}${key}`);
-  } catch (err) {
-    logger.warn({ err, key }, "Cache delete failed");
+  } catch {
+    recordCacheFailure(key, "delete");
   }
 }
 
@@ -140,7 +149,7 @@ export async function cacheGetOrBuildSnapshot<T>({
 
   if (!cached) {
     const lockAcquired = await cacheSetIfNotExists(lockKey, "1", lockTtlSeconds);
-    if (!lockAcquired) {
+    if (lockAcquired === false) {
       logger.info({ key: label }, "Cache snapshot cold miss locked");
       const fallback = onLockedMiss ? await onLockedMiss() : null;
       return fallback == null
@@ -157,7 +166,7 @@ export async function cacheGetOrBuildSnapshot<T>({
       logger.info({ key: label }, "Cache snapshot built on miss");
       return snapshot;
     } finally {
-      await cacheDelete(lockKey);
+      if (lockAcquired === true) await cacheDelete(lockKey);
     }
   }
 
@@ -166,7 +175,7 @@ export async function cacheGetOrBuildSnapshot<T>({
   }
 
   const lockAcquired = await cacheSetIfNotExists(lockKey, "1", lockTtlSeconds);
-  if (!lockAcquired) {
+  if (lockAcquired !== true) {
     logger.info({ key: label }, "Cache snapshot stale; serving stale data");
     return cached;
   }
