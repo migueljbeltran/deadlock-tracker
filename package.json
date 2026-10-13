@@ -44,6 +44,10 @@
     "vitest": "^4.1.11"
   },
   "overrides": {
-    "postcss": "^8.5.10"
+    "postcss": "^8.5.10",
+    "brace-expansion@^1.1.0": "^1.1.21",
+    "@next/eslint-plugin-next": {
+      "fast-glob": "npm:tinyglobby@0.2.17"
+    }
   }
 }

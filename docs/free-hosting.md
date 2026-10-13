@@ -50,7 +50,9 @@ This revision reduces identifiable waste. It does not establish a measured produ
 
 ## Dependency audit
 
-The lockfile now resolves compatible updates including Next.js 16.4.0, Sentry 10.76.2, and Vitest 4.1.11. `npm audit --omit=dev --audit-level=high` reports zero vulnerabilities after removing unused Prisma dependencies. The full audit still reports six high findings through development tooling (`brace-expansion`, `braces`, and the ESLint/Next lint dependency chain). Do not apply the proposed forced ESLint downgrade just to silence the report. The existing full-audit CI gate will remain red until those findings are fixed or an explicit policy change is made.
+The lockfile resolves compatible updates including Next.js 16.4.0, Sentry 10.76.2, and Vitest 4.1.11. The full `npm audit --audit-level=high` reports zero vulnerabilities, including development dependencies. The full-audit CI gate remains enabled.
+
+Two targeted overrides remediate lint dependencies: the 1.x `brace-expansion` dependency resolves to patched 1.1.21 or later, and only `@next/eslint-plugin-next`'s `fast-glob` dependency is replaced with `npm:tinyglobby@0.2.17`. Next 16.4.0 uses `globSync(pattern, { onlyDirectories: true })`, which tinyglobby supports, avoiding the unpatched `braces` dependency without downgrading Next or disabling its lint rules. Compatibility tests exercise actual Next link linting with directory, array, and brace-pattern root settings. Recheck this override when upgrading the Next lint plugin; remove it once upstream drops or fixes the vulnerable dependency chain.
 
 ## Local verification completed
 
