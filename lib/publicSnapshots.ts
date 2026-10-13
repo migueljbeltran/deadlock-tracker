@@ -123,7 +123,7 @@ function getOrBuildSnapshot<T>(
     } finally {
       pendingSnapshots.delete(key);
     }
-  }, ["public-dataset-v5", key], { revalidate: freshnessSeconds })();
+  }, ["public-dataset-v6", key], { revalidate: freshnessSeconds })();
 }
 
 async function buildPublicSnapshot<T>(
@@ -144,7 +144,7 @@ async function buildPublicSnapshot<T>(
 
   if (!cached) {
     const lockAcquired = await cacheSetIfNotExists(lockKey, "1", SNAPSHOT_LOCK_TTL_SECONDS);
-    if (!lockAcquired) {
+    if (lockAcquired === false) {
       // A different instance is building this dataset. Do not duplicate an
       // expensive analytics rebuild merely because the cache is still cold.
       throw new Error(`${label} is refreshing. Please try again shortly.`);
@@ -159,7 +159,7 @@ async function buildPublicSnapshot<T>(
       logger.info({ key: label }, "Public snapshot built on miss");
       return snapshot;
     } finally {
-      await cacheDelete(lockKey);
+      if (lockAcquired === true) await cacheDelete(lockKey);
     }
   }
 
@@ -168,7 +168,7 @@ async function buildPublicSnapshot<T>(
   }
 
   const lockAcquired = await cacheSetIfNotExists(lockKey, "1", SNAPSHOT_LOCK_TTL_SECONDS);
-  if (!lockAcquired) {
+  if (lockAcquired !== true) {
     logger.info({ key: label }, "Public snapshot stale; serving stale data");
     return cached;
   }
